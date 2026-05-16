@@ -1,0 +1,3 @@
+-- Optional local seeds after migrations. Marketing defaults (site_settings, services)
+-- are applied in migrations/20260515000000_initial_schema.sql.
+-- Add INSERTs here for `supabase db reset` local workflow if needed.
