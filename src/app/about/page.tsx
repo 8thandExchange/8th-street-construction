@@ -39,7 +39,7 @@ export default function AboutPage() {
     <>
       <SiteHeader />
       <main className="bg-bone text-ink">
-        <section className="pt-40 pb-16 md:pt-52 md:pb-32">
+        <section className="pt-[calc(5.5rem+env(safe-area-inset-top))] pb-12 md:pt-[calc(7rem+env(safe-area-inset-top))] md:pb-32">
           <Container size="wide">
             <Reveal>
               <span className="section-num">— Studio</span>

@@ -37,6 +37,68 @@ body {
   font-weight: 400;
   line-height: 1.6;
   overflow-x: hidden;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Mobile section rhythm */
+.section-pad {
+  padding-top: clamp(4rem, 11vw, 10rem);
+  padding-bottom: clamp(4rem, 11vw, 10rem);
+}
+
+/* Horizontal scroll — Apple-style card rail */
+.scroll-rail {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 1.25rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 0.25rem;
+}
+
+.scroll-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-rail > * {
+  scroll-snap-align: start;
+  flex: 0 0 min(85vw, 22rem);
+}
+
+@media (min-width: 768px) {
+  .scroll-rail {
+    display: grid;
+    overflow: visible;
+    scroll-snap-type: none;
+    padding-bottom: 0;
+  }
+
+  .scroll-rail > * {
+    flex: unset;
+  }
+}
+
+/* Premium card surface */
+.surface-card {
+  background: rgb(var(--color-bone));
+  border: 1px solid rgba(10, 15, 20, 0.08);
+  transition: border-color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.surface-card:hover {
+  border-color: rgba(184, 111, 62, 0.35);
+  box-shadow: 0 24px 48px -24px rgba(10, 15, 20, 0.18);
+}
+
+.surface-card-dark {
+  background: rgba(11, 22, 32, 0.6);
+  border: 1px solid rgba(245, 241, 234, 0.12);
+  backdrop-filter: blur(8px);
 }
 
 /* =====================================================================

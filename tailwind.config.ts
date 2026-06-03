@@ -55,11 +55,16 @@ const config: Config = {
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       fontSize: {
-        "display-2xl": ["clamp(3.5rem, 8vw, 7rem)", { lineHeight: "0.95", letterSpacing: "-0.04em" }],
-        "display-xl": ["clamp(2.75rem, 6vw, 5rem)", { lineHeight: "1", letterSpacing: "-0.03em" }],
-        "display-lg": ["clamp(2.25rem, 4.5vw, 3.75rem)", { lineHeight: "1.05", letterSpacing: "-0.025em" }],
-        "display-md": ["clamp(1.875rem, 3.5vw, 2.75rem)", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
-        eyebrow: ["0.75rem", { lineHeight: "1", letterSpacing: "0.18em" }],
+        "display-2xl": ["clamp(2.5rem, 7vw, 7rem)", { lineHeight: "0.95", letterSpacing: "-0.04em" }],
+        "display-xl": ["clamp(2.125rem, 5.5vw, 5rem)", { lineHeight: "1", letterSpacing: "-0.03em" }],
+        "display-lg": ["clamp(1.875rem, 4vw, 3.75rem)", { lineHeight: "1.05", letterSpacing: "-0.025em" }],
+        "display-md": ["clamp(1.625rem, 3.25vw, 2.75rem)", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        eyebrow: ["0.6875rem", { lineHeight: "1.2", letterSpacing: "0.18em" }],
+      },
+      spacing: {
+        "safe-top": "max(1rem, env(safe-area-inset-top))",
+        "safe-bottom": "max(1rem, env(safe-area-inset-bottom))",
+        "section-y": "clamp(4rem, 12vw, 10rem)",
       },
       letterSpacing: {
         widest: "0.2em",

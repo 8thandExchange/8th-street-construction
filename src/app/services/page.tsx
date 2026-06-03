@@ -27,7 +27,7 @@ export default async function ServicesPage() {
       <SiteHeader />
       <main className="bg-bone text-ink">
         {/* Header */}
-        <section className="pt-40 pb-16 md:pt-52 md:pb-24">
+        <section className="pt-[calc(5.5rem+env(safe-area-inset-top))] pb-12 md:pt-[calc(7rem+env(safe-area-inset-top))] md:pb-24">
           <Container size="wide">
             <Reveal>
               <span className="section-num">— Services</span>
@@ -56,7 +56,7 @@ export default async function ServicesPage() {
                   className="grid grid-cols-12 gap-6 lg:gap-12 py-16 md:py-24 border-b border-ink/10 last:border-b-0"
                 >
                   <div className="col-span-12 lg:col-span-3">
-                    <div className="sticky top-32">
+                    <div className="md:sticky md:top-32 max-md:mb-4">
                       <span className="section-num">0{i + 1}</span>
                       <h2 className="mt-4 font-display text-display-md leading-[1.05]">
                         {service.name}

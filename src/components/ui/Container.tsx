@@ -15,7 +15,7 @@ export function Container({ children, className, size = "default", as: Tag = "di
     wide: "max-w-8xl",
   };
   return (
-    <Tag className={cn("mx-auto px-6 md:px-10 lg:px-14", sizes[size], className)}>
+    <Tag className={cn("mx-auto px-5 sm:px-6 md:px-10 lg:px-14", sizes[size], className)}>
       {children}
     </Tag>
   );

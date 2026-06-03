@@ -34,7 +34,7 @@ export default function BookPage() {
     <>
       <SiteHeader />
       <main className="bg-bone text-ink">
-        <section className="pt-40 pb-20 md:pt-52 md:pb-24">
+        <section className="pt-[calc(5.5rem+env(safe-area-inset-top))] pb-16 md:pt-[calc(7rem+env(safe-area-inset-top))] md:pb-24">
           <Container size="wide">
             <Reveal>
               <span className="section-num">— Consultation</span>
