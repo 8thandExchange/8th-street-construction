@@ -42,3 +42,19 @@ export const DOCUMENT_CATEGORIES = [
   { value: "invoice", label: "Invoice" },
   { value: "other", label: "Other" },
 ] as const;
+
+export const TASK_STATUS_LABELS: Record<string, string> = {
+  todo: "To Do",
+  in_progress: "In Progress",
+  blocked: "Blocked",
+  done: "Done",
+  cancelled: "Cancelled",
+};
+
+export const TASK_STATUS_STYLES: Record<string, string> = {
+  todo: "bg-stone-100 text-stone-500 border-stone-200",
+  in_progress: "bg-copper/10 text-copper border-copper/30",
+  blocked: "bg-amber-50 text-amber-800 border-amber-200",
+  done: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  cancelled: "bg-stone-100 text-stone-400 border-stone-200",
+};

@@ -30,6 +30,21 @@ export default async function ProjectCommandPage(props: { params: Promise<{ id: 
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
         <StatCard
+          label="Build System"
+          value={
+            summary.playbookApplied
+              ? `${summary.taskCompleted}/${summary.taskTotal}`
+              : "Setup"
+          }
+          hint={
+            summary.playbookApplied
+              ? "Checklist tasks done"
+              : "Apply GA playbook"
+          }
+          href={`${base}/build`}
+          accent={!summary.playbookApplied}
+        />
+        <StatCard
           label="Timeline"
           value={`${summary.milestoneCompleted}/${summary.milestoneTotal}`}
           hint={summary.milestoneTotal ? `${progress}% complete` : "Add milestones"}
@@ -76,8 +91,9 @@ export default async function ProjectCommandPage(props: { params: Promise<{ id: 
           <span className="eyebrow-copper">— Quick Actions</span>
           <ul className="mt-6 space-y-3">
             {[
+              { href: `${base}/build`, label: "Build system & checklists" },
+              { href: `${base}/tasks`, label: "Work phase checklists" },
               { href: `${base}/updates`, label: "Post a progress update" },
-              { href: `${base}/milestones`, label: "Manage timeline" },
               { href: `${base}/change-orders`, label: "Create change order" },
               { href: `${base}/messages`, label: "Message client" },
               { href: `${base}/overview`, label: "Edit project details" },

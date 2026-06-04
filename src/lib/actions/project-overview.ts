@@ -5,7 +5,8 @@ import { requireAdmin } from "@/lib/actions/admin-auth";
 
 function revalidate(projectId: string, slug?: string) {
   revalidatePath(`/admin/projects/${projectId}`);
-  revalidatePath(`/admin/projects/${projectId}/overview`);
+  revalidatePath(`/admin/projects/${projectId}/build`);
+  revalidatePath(`/admin/projects/${projectId}/tasks`);
   revalidatePath("/admin/projects");
   revalidatePath("/projects");
   revalidatePath("/");
@@ -34,6 +35,18 @@ export async function updateProject(formData: FormData) {
     narrative: String(formData.get("narrative") || "").trim() || null,
     hero_image_url: String(formData.get("hero_image_url") || "").trim() || null,
     location: String(formData.get("location") || "").trim() || null,
+    street_address: String(formData.get("street_address") || "").trim() || null,
+    jurisdiction: String(formData.get("jurisdiction") || "").trim() || null,
+    client_id: (() => {
+      const v = String(formData.get("client_id") || "").trim();
+      return v || null;
+    })(),
+    start_date: String(formData.get("start_date") || "").trim() || null,
+    target_completion_date:
+      String(formData.get("target_completion_date") || "").trim() || null,
+    contract_value: formData.get("contract_value")
+      ? Number(formData.get("contract_value"))
+      : null,
     year_completed: formData.get("year_completed")
       ? Number(formData.get("year_completed"))
       : null,

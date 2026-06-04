@@ -1,52 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
-import { ProjectFormFields } from "@/components/admin/ProjectFormFields";
 import Link from "next/link";
-
-async function createProject(formData: FormData) {
-  "use server";
-  const supabase = await createClient();
-
-  const payload = {
-    slug: String(formData.get("slug")).trim().toLowerCase(),
-    title: String(formData.get("title")).trim(),
-    subtitle: String(formData.get("subtitle") || "").trim() || null,
-    category: String(formData.get("category")),
-    status: String(formData.get("status")),
-    excerpt: String(formData.get("excerpt") || "").trim() || null,
-    narrative: String(formData.get("narrative") || "").trim() || null,
-    hero_image_url: String(formData.get("hero_image_url") || "").trim() || null,
-    location: String(formData.get("location") || "").trim() || null,
-    year_completed: formData.get("year_completed")
-      ? Number(formData.get("year_completed"))
-      : null,
-    square_footage: formData.get("square_footage")
-      ? Number(formData.get("square_footage"))
-      : null,
-    budget_range: String(formData.get("budget_range") || "").trim() || null,
-    meta_description: String(formData.get("meta_description") || "").trim() || null,
-    display_order: Number(formData.get("display_order") || 0),
-    featured: formData.get("featured") === "on",
-    published_at:
-      String(formData.get("status")) !== "draft" ? new Date().toISOString() : null,
-  };
-
-  const { data, error } = await supabase
-    .from("projects")
-    .insert(payload)
-    .select("id")
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  revalidatePath("/admin/projects");
-  revalidatePath("/projects");
-  revalidatePath("/");
-  redirect(`/admin/projects/${data.id}`);
-}
+import { ProjectFormFields } from "@/components/admin/ProjectFormFields";
+import { createProjectWithPlaybook } from "@/lib/actions/project-create";
 
 export default function NewProjectPage() {
   return (
@@ -60,22 +14,71 @@ export default function NewProjectPage() {
         </Link>
       </div>
       <div className="mb-10">
-        <span className="eyebrow">— New Project</span>
-        <h1 className="mt-2 font-display text-display-md text-ink">Create Project</h1>
+        <span className="eyebrow">— New Job</span>
+        <h1 className="mt-2 font-display text-display-md text-ink">Start a Build</h1>
+        <p className="mt-3 text-ink/65 max-w-xl">
+          Creates the project and optionally seeds the Georgia residential playbook — 11 phases,
+          70+ checklist items from pre-construction through warranty.
+        </p>
       </div>
 
-      <form action={createProject} className="bg-paper border border-ink/15 p-8 md:p-12">
-        <ProjectFormFields />
-        <div className="mt-10 pt-6 border-t border-ink/15 flex gap-3">
+      <form
+        action={createProjectWithPlaybook}
+        className="bg-paper border border-ink/15 p-8 md:p-12 space-y-8"
+      >
+        <ProjectFormFields defaults={{ status: "pre_construction", category: "custom_home" }} />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-ink/15">
+          <div>
+            <label className="field-label">Street address</label>
+            <input name="street_address" className="field-input" placeholder="608 Macon Ave" />
+          </div>
+          <div>
+            <label className="field-label">Jurisdiction</label>
+            <input
+              name="jurisdiction"
+              className="field-input"
+              placeholder="City of Augusta, Richmond County, GA"
+            />
+          </div>
+          <div>
+            <label className="field-label">Start date</label>
+            <input type="date" name="start_date" className="field-input" />
+          </div>
+          <div>
+            <label className="field-label">Target completion</label>
+            <input type="date" name="target_completion_date" className="field-input" />
+          </div>
+        </div>
+
+        <label className="flex items-start gap-3 cursor-pointer border border-copper/30 bg-copper/5 p-5">
+          <input
+            type="checkbox"
+            name="apply_playbook"
+            defaultChecked
+            className="w-5 h-5 accent-copper mt-0.5"
+          />
+          <span>
+            <span className="text-sm font-medium text-ink block">
+              Apply Georgia Custom Residential playbook
+            </span>
+            <span className="text-xs text-ink/60 mt-1 block leading-relaxed">
+              Seeds milestones + internal checklists (permits, inspections, termite pretreat,
+              lien waivers, CO, warranty walks).
+            </span>
+          </span>
+        </label>
+
+        <div className="pt-6 border-t border-ink/15 flex gap-3">
           <button
             type="submit"
-            className="inline-flex h-12 items-center px-6 bg-ink text-bone hover:bg-copper font-mono text-[11px] tracking-[0.2em] uppercase transition-colors duration-500"
+            className="inline-flex h-12 items-center px-6 bg-ink text-bone hover:bg-copper font-mono text-[11px] tracking-[0.2em] uppercase transition-colors"
           >
-            Create Project
+            Create & Open Build System
           </button>
           <Link
             href="/admin/projects"
-            className="inline-flex h-12 items-center px-6 border border-ink/30 text-ink hover:bg-ink hover:text-bone font-mono text-[11px] tracking-[0.2em] uppercase transition-colors duration-500"
+            className="inline-flex h-12 items-center px-6 border border-ink/30 font-mono text-[11px] tracking-[0.2em] uppercase"
           >
             Cancel
           </Link>

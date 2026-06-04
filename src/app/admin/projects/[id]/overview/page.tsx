@@ -1,6 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { ProjectFormFields } from "@/components/admin/ProjectFormFields";
+import Link from "next/link";
 import Image from "next/image";
 import {
   updateProject,
@@ -12,9 +12,15 @@ export const dynamic = "force-dynamic";
 
 export default async function ProjectOverviewPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
-  const supabase = await createClient();
+  const supabase = await (await import("@/lib/supabase/server")).createClient();
   const { data: project } = await supabase.from("projects").select("*").eq("id", id).single();
-  if (!project) notFound();
+  if (!project) redirect("/admin/projects");
+
+  const { data: clients } = await supabase
+    .from("profiles")
+    .select("id, email, first_name, last_name")
+    .eq("role", "client")
+    .order("email");
 
   const { data: images } = await supabase
     .from("project_images")
@@ -26,6 +32,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
     <div className="max-w-4xl">
       <form
         action={async (fd) => {
+          "use server";
           await updateProject(fd);
         }}
         className="bg-paper border border-ink/15 p-8 md:p-12 mb-10"
@@ -35,6 +42,67 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
         <div className="mt-6">
           <ProjectFormFields defaults={project} />
         </div>
+
+        <div className="mt-8 pt-8 border-t border-ink/15 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="field-label">Street address</label>
+            <input
+              name="street_address"
+              defaultValue={project.street_address ?? ""}
+              className="field-input"
+              placeholder="608 Macon Ave"
+            />
+          </div>
+          <div>
+            <label className="field-label">Jurisdiction (permits & inspections)</label>
+            <input
+              name="jurisdiction"
+              defaultValue={project.jurisdiction ?? ""}
+              className="field-input"
+              placeholder="City of Augusta, Richmond County, GA"
+            />
+          </div>
+          <div>
+            <label className="field-label">Start date</label>
+            <input
+              type="date"
+              name="start_date"
+              defaultValue={project.start_date?.slice(0, 10) ?? ""}
+              className="field-input"
+            />
+          </div>
+          <div>
+            <label className="field-label">Target completion</label>
+            <input
+              type="date"
+              name="target_completion_date"
+              defaultValue={project.target_completion_date?.slice(0, 10) ?? ""}
+              className="field-input"
+            />
+          </div>
+          <div>
+            <label className="field-label">Client</label>
+            <select name="client_id" className="field-input" defaultValue={project.client_id ?? ""}>
+              <option value="">— None —</option>
+              {(clients ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {[c.first_name, c.last_name].filter(Boolean).join(" ") || c.email}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="field-label">Contract value (internal)</label>
+            <input
+              type="number"
+              step="0.01"
+              name="contract_value"
+              defaultValue={project.contract_value ?? ""}
+              className="field-input"
+            />
+          </div>
+        </div>
+
         <div className="mt-10 pt-6 border-t border-ink/15">
           <button
             type="submit"
@@ -47,15 +115,10 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
 
       <div className="bg-paper border border-ink/15 p-8 md:p-12">
         <h2 className="font-display text-2xl text-ink mb-2">Gallery Images</h2>
-        <p className="text-sm text-stone-300 mb-8">
-          Upload to the <code className="font-mono text-xs">project-images</code> bucket, then
-          paste the public URL — or use the uploader on a future pass.
-        </p>
-
         {images && images.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
             {images.map((img) => (
-              <div key={img.id} className="relative group">
+              <div key={img.id} className="relative">
                 <div className="aspect-[4/5] bg-bone relative overflow-hidden">
                   <Image
                     src={img.public_url}
@@ -64,62 +127,34 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
                     className="object-cover"
                     sizes="200px"
                   />
-                  {img.is_hero && (
-                    <div className="absolute top-2 left-2 bg-copper text-bone text-[9px] font-mono tracking-[0.15em] uppercase px-2 py-1">
-                      Hero
-                    </div>
-                  )}
                 </div>
                 <form
                   action={async (fd) => {
+                    "use server";
                     await deleteProjectImage(fd);
                   }}
                   className="mt-2"
                 >
                   <input type="hidden" name="image_id" value={img.id} />
                   <input type="hidden" name="project_id" value={project.id} />
-                  <button
-                    type="submit"
-                    className="text-[10px] font-mono tracking-[0.15em] uppercase text-stone-300 hover:text-copper"
-                  >
-                    Remove ×
+                  <button type="submit" className="text-[10px] font-mono uppercase text-stone-300">
+                    Remove
                   </button>
                 </form>
               </div>
             ))}
           </div>
         )}
-
         <form
           action={async (fd) => {
+            "use server";
             await addProjectImage(fd);
           }}
           className="border-t border-ink/15 pt-8 flex flex-col gap-5"
         >
           <input type="hidden" name="project_id" value={project.id} />
-          <h3 className="eyebrow">Add Image</h3>
-          <div>
-            <label className="field-label">Public URL *</label>
-            <input name="public_url" required className="field-input" placeholder="https://..." />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="field-label">Caption</label>
-              <input name="caption" className="field-input" />
-            </div>
-            <div>
-              <label className="field-label">Alt Text</label>
-              <input name="alt_text" className="field-input" />
-            </div>
-          </div>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input type="checkbox" name="is_hero" className="w-5 h-5 accent-copper" />
-            <span className="text-sm text-ink">Use as hero image</span>
-          </label>
-          <button
-            type="submit"
-            className="self-start inline-flex h-11 items-center px-5 bg-ink text-bone hover:bg-copper font-mono text-[11px] tracking-[0.2em] uppercase transition-colors"
-          >
+          <input name="public_url" required className="field-input" placeholder="Image public URL" />
+          <button type="submit" className="self-start h-11 px-5 bg-ink text-bone font-mono text-[10px] uppercase">
             + Add Image
           </button>
         </form>
