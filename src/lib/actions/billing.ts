@@ -26,11 +26,31 @@ export async function updateContractValue(formData: FormData) {
   const { supabase } = await requireAdmin();
   const projectId = String(formData.get("project_id"));
   const contractValue = Number(formData.get("contract_value"));
+  const autoSeed = formData.get("auto_seed_draws") !== "off";
 
   await supabase
     .from("projects")
     .update({ contract_value: contractValue })
     .eq("id", projectId);
+
+  if (autoSeed && contractValue > 0) {
+    const { count } = await supabase
+      .from("payment_draws")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", projectId);
+
+    if ((count ?? 0) === 0) {
+      const rows = DEFAULT_DRAWS.map((d) => ({
+        project_id: projectId,
+        draw_number: d.draw_number,
+        title: d.title,
+        percent_of_contract: d.percent,
+        amount: Math.round((contractValue * d.percent) / 100),
+        status: "scheduled" as const,
+      }));
+      await supabase.from("payment_draws").insert(rows);
+    }
+  }
 
   revalidate(projectId);
 }

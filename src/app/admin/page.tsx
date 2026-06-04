@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminDashboard() {
   const supabase = await createClient();
 
-  const [{ count: newLeads }, { count: totalLeads }, { count: activeProjects }, { count: pendingConsults }, { data: recentLeads }, complianceAlerts] =
+  const [{ count: newLeads }, { count: totalLeads }, { count: activeProjects }, { count: pendingConsults }, { data: recentLeads }, complianceAlerts, { data: activeJobs }] =
     await Promise.all([
       supabase.from("leads").select("*", { count: "exact", head: true }).eq("status", "new"),
       supabase.from("leads").select("*", { count: "exact", head: true }),
@@ -21,6 +21,12 @@ export default async function AdminDashboard() {
         .order("created_at", { ascending: false })
         .limit(5),
       getComplianceDashboardAlerts(),
+      supabase
+        .from("projects")
+        .select("id, title, status, playbook_applied_at")
+        .in("status", ["pre_construction", "in_progress"])
+        .order("updated_at", { ascending: false })
+        .limit(6),
     ]);
 
   return (
@@ -92,6 +98,32 @@ export default async function AdminDashboard() {
                       ? "Today"
                       : `${item.days}d left`}
                 </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {(activeJobs ?? []).length > 0 && (
+        <div className="mb-12 hub-panel p-8">
+          <div className="flex items-baseline justify-between mb-6">
+            <h2 className="font-display text-xl text-ink">Active jobs</h2>
+            <Link href="/admin/projects" className="font-mono text-[11px] tracking-[0.18em] uppercase text-copper hover:text-copper-400">
+              All projects →
+            </Link>
+          </div>
+          <ul className="divide-y divide-ink/8">
+            {activeJobs!.map((job) => (
+              <li key={job.id}>
+                <Link
+                  href={`/admin/projects/${job.id}`}
+                  className="flex items-center justify-between py-4 hover:bg-bone/50 -mx-4 px-4 transition-colors group"
+                >
+                  <span className="font-medium text-ink group-hover:text-copper transition-colors">{job.title}</span>
+                  <span className="text-[10px] font-mono uppercase text-stone-300">
+                    {job.playbook_applied_at ? "Command →" : "Setup needed →"}
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>

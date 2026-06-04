@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { PayInvoiceButton } from "@/components/billing/PayInvoiceButton";
 import { stripeConfigured } from "@/lib/stripe/config";
 
@@ -31,14 +30,8 @@ export default async function ClientBillingPage(props: {
   ]);
 
   return (
-    <div className="px-6 md:px-10 lg:px-14 py-12 max-w-3xl mx-auto">
-      <Link
-        href={`/client/projects/${id}`}
-        className="text-xs font-mono tracking-[0.18em] uppercase text-stone-300 hover:text-ink"
-      >
-        ← {project.title}
-      </Link>
-      <h1 className="mt-6 font-display text-2xl text-ink">Billing</h1>
+    <div className="px-6 md:px-10 lg:px-14 py-10 max-w-3xl">
+      <h2 className="font-display text-xl text-ink mb-2">Billing</h2>
       <p className="mt-2 text-sm text-ink/60">Draw schedule and invoices for your project.</p>
 
       {paid === "1" && (

@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -19,14 +18,8 @@ export default async function ClientPunchListPage(props: { params: Promise<{ id:
     .order("created_at", { ascending: false });
 
   return (
-    <div className="px-6 md:px-10 lg:px-14 py-12 max-w-3xl mx-auto">
-      <Link
-        href={`/client/projects/${id}`}
-        className="text-xs font-mono tracking-[0.18em] uppercase text-stone-300 hover:text-ink"
-      >
-        ← {project.title}
-      </Link>
-      <h1 className="mt-6 font-display text-2xl text-ink">Punch List</h1>
+    <div className="px-6 md:px-10 lg:px-14 py-10 max-w-3xl">
+      <h2 className="font-display text-xl text-ink mb-2">Punch List</h2>
       <p className="mt-2 text-sm text-ink/60">Closeout items we are tracking for your walkthrough.</p>
 
       <ul className="mt-10 space-y-3">

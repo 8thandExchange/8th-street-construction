@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { clientApproveSelection } from "@/lib/actions/selections";
 
 export const dynamic = "force-dynamic";
@@ -20,14 +19,8 @@ export default async function ClientSelectionsPage(props: { params: Promise<{ id
     .order("due_date", { ascending: true, nullsFirst: false });
 
   return (
-    <div className="px-6 md:px-10 lg:px-14 py-12 max-w-3xl mx-auto">
-      <Link
-        href={`/client/projects/${id}`}
-        className="text-xs font-mono tracking-[0.18em] uppercase text-stone-300 hover:text-ink"
-      >
-        ← {project.title}
-      </Link>
-      <h1 className="mt-6 font-display text-2xl text-ink">Selections</h1>
+    <div className="px-6 md:px-10 lg:px-14 py-10 max-w-3xl">
+      <h2 className="font-display text-xl text-ink mb-2">Selections</h2>
       <p className="mt-2 text-sm text-ink/60">Finish selections and allowances for your home.</p>
 
       <ul className="mt-10 space-y-4">

@@ -311,3 +311,77 @@ body {
   }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* =====================================================================
+   Project hub — operational UI
+   ===================================================================== */
+.hub-panel {
+  background: rgb(var(--color-paper));
+  border: 1px solid rgba(10, 15, 20, 0.1);
+}
+
+.hub-metric {
+  padding: 1.5rem;
+  border: 1px solid rgba(10, 15, 20, 0.1);
+  background: rgb(var(--color-paper));
+  transition: border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+a:has(.hub-metric):hover .hub-metric {
+  border-color: rgba(184, 111, 62, 0.45);
+}
+
+.hub-metric-accent {
+  border-color: rgba(184, 111, 62, 0.35);
+  background: rgba(184, 111, 62, 0.06);
+}
+
+.hub-nav-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.875rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(10, 15, 20, 0.55);
+  border: 1px solid rgba(10, 15, 20, 0.1);
+  background: rgb(var(--color-bone));
+  white-space: nowrap;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hub-nav-pill:hover {
+  color: rgb(var(--color-ink));
+  border-color: rgba(10, 15, 20, 0.25);
+}
+
+.hub-nav-pill-active {
+  color: rgb(var(--color-bone));
+  background: rgb(var(--color-ink));
+  border-color: rgb(var(--color-ink));
+}
+
+.client-nav-pill {
+  display: inline-flex;
+  padding: 0.625rem 1rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border: 1px solid rgba(10, 15, 20, 0.12);
+  color: rgba(10, 15, 20, 0.6);
+  transition: all 0.25s ease;
+}
+
+.client-nav-pill:hover {
+  border-color: rgba(184, 111, 62, 0.4);
+  color: rgb(var(--color-ink));
+}
+
+.client-nav-pill-active {
+  background: rgb(var(--color-ink));
+  color: rgb(var(--color-bone));
+  border-color: rgb(var(--color-ink));
+}

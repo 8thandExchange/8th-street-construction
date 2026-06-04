@@ -47,10 +47,13 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
   return (
     <div className="max-w-3xl">
       <h2 className="font-display text-2xl text-ink mb-2">Billing & Draws</h2>
-      <p className="text-sm text-ink/60 mb-6">
-        Draw schedule tied to construction progress. Generate invoices and collect via Stripe
-        {stripeConfigured() ? " (connected)" : " (add STRIPE_SECRET_KEY to enable payments)"}.
+      <p className="text-sm text-ink/60 mb-2">
+        Draw schedule tied to construction progress. Saving contract value auto-creates a 5-draw schedule when none exists.
       </p>
+      {!stripeConfigured() && (
+        <p className="text-xs text-ink/45 mb-6">Add STRIPE_SECRET_KEY in Vercel to enable client Pay Now.</p>
+      )}
+      {stripeConfigured() && <div className="mb-6" />}
 
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="p-5 border border-ink/15 bg-paper">
