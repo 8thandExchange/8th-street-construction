@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { applyGeorgiaPlaybook } from "@/lib/actions/playbook";
+import { applyResidentialPlaybook } from "@/lib/actions/playbook";
 import { getPlaybookProgress } from "@/lib/build/apply-playbook";
-import { GEORGIA_RESIDENTIAL_PLAYBOOK } from "@/lib/build/georgia-residential-playbook";
+import { getPlaybookById, listPlaybooks, DEFAULT_PLAYBOOK_ID } from "@/lib/build/playbook-registry";
+import { PlaybookSelect } from "@/components/admin/PlaybookSelect";
 
 export const dynamic = "force-dynamic";
 
@@ -24,52 +25,52 @@ export default async function ProjectBuildSystemPage(props: {
   if (!project) notFound();
 
   const [{ data: milestones }, { data: tasks }] = await Promise.all([
-    supabase
-      .from("project_milestones")
-      .select("phase_key, status")
-      .eq("project_id", id),
-    supabase
-      .from("project_tasks")
-      .select("phase_key, status")
-      .eq("project_id", id),
+    supabase.from("project_milestones").select("phase_key, status").eq("project_id", id),
+    supabase.from("project_tasks").select("phase_key, status").eq("project_id", id),
   ]);
 
   const applied = Boolean(project.playbook_applied_at);
+  const activePlaybook =
+    getPlaybookById(project.playbook_id ?? DEFAULT_PLAYBOOK_ID) ??
+    getPlaybookById(DEFAULT_PLAYBOOK_ID)!;
+
   const progress = applied
-    ? getPlaybookProgress(milestones ?? [], tasks ?? [])
+    ? getPlaybookProgress(milestones ?? [], tasks ?? [], activePlaybook)
     : [];
 
   const totalTasks = (tasks ?? []).length;
   const doneTasks = (tasks ?? []).filter((t) => t.status === "done").length;
   const overallPct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
+  const playbooks = listPlaybooks();
 
   return (
     <div className="max-w-4xl">
       <div className="mb-8">
         <h2 className="font-display text-2xl text-ink">Build System</h2>
         <p className="mt-3 text-ink/65 leading-relaxed max-w-2xl">
-          {GEORGIA_RESIDENTIAL_PLAYBOOK.description}
+          {activePlaybook.description}
         </p>
       </div>
 
       {!applied ? (
         <div className="bg-navy text-bone p-8 md:p-10 mb-10">
           <span className="eyebrow-copper">— Get started</span>
-          <h3 className="mt-4 font-display text-xl">Apply the Georgia residential playbook</h3>
+          <h3 className="mt-4 font-display text-xl">Apply a state residential playbook</h3>
           <p className="mt-3 text-bone/70 text-sm leading-relaxed max-w-xl">
-            Seeds {GEORGIA_RESIDENTIAL_PLAYBOOK.milestones.length} client timeline phases and{" "}
-            {GEORGIA_RESIDENTIAL_PLAYBOOK.milestones.reduce((n, m) => n + m.tasks.length, 0)}{" "}
-            internal checklist items — permits, inspections, termite pretreat, lien waivers, and
-            closeout — so every home runs the same proven sequence.
+            Georgia and South Carolina each have a full pre-con → warranty sequence — permits,
+            inspections, lien waivers, CO, and closeout — so every home runs the same proven
+            process for that state.
           </p>
-          <form
-            action={async (fd) => {
-              "use server";
-              await applyGeorgiaPlaybook(fd);
-            }}
-            className="mt-8"
-          >
+          <form action={applyResidentialPlaybook} className="mt-8 space-y-6 max-w-md">
             <input type="hidden" name="project_id" value={id} />
+            <div>
+              <label className="block text-xs font-mono tracking-[0.15em] uppercase text-bone/50 mb-2">
+                Playbook
+              </label>
+              <PlaybookSelect
+                className="w-full bg-bone/10 border border-bone/20 text-bone px-3 py-2.5 text-sm"
+              />
+            </div>
             <button
               type="submit"
               className="inline-flex h-12 items-center px-6 bg-copper text-bone hover:bg-copper-400 font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
@@ -77,6 +78,14 @@ export default async function ProjectBuildSystemPage(props: {
               Apply Playbook to This Project
             </button>
           </form>
+          <ul className="mt-8 space-y-2 text-xs text-bone/55">
+            {playbooks.map((p) => (
+              <li key={p.id}>
+                <span className="text-copper-100">{p.state}</span> — {p.phaseCount} phases,{" "}
+                {p.taskCount} checklist items
+              </li>
+            ))}
+          </ul>
         </div>
       ) : (
         <>
@@ -90,7 +99,8 @@ export default async function ProjectBuildSystemPage(props: {
             </div>
             <div className="p-6 border border-ink/15 bg-paper">
               <div className="eyebrow">Playbook</div>
-              <div className="text-sm text-ink mt-2 font-medium">{GEORGIA_RESIDENTIAL_PLAYBOOK.name}</div>
+              <div className="text-sm text-ink mt-2 font-medium">{activePlaybook.name}</div>
+              <div className="text-xs font-mono text-stone-300 mt-1">{activePlaybook.state}</div>
             </div>
             <div className="p-6 border border-ink/15 bg-paper md:col-span-2">
               <div className="eyebrow">Site</div>
@@ -109,6 +119,12 @@ export default async function ProjectBuildSystemPage(props: {
               className="inline-flex h-11 items-center px-5 bg-ink text-bone font-mono text-[10px] tracking-[0.2em] uppercase"
             >
               Open Checklists →
+            </Link>
+            <Link
+              href={`/admin/projects/${id}/daily-logs`}
+              className="inline-flex h-11 items-center px-5 border border-ink/25 font-mono text-[10px] tracking-[0.2em] uppercase"
+            >
+              Daily Logs
             </Link>
             <Link
               href={`/admin/projects/${id}/milestones`}
@@ -150,18 +166,13 @@ export default async function ProjectBuildSystemPage(props: {
             <summary className="cursor-pointer font-mono text-[10px] tracking-[0.15em] uppercase text-stone-300">
               Re-apply playbook (replaces milestones & tasks)
             </summary>
-            <form
-              action={async (fd) => {
-                "use server";
-                await applyGeorgiaPlaybook(fd);
-              }}
-              className="mt-6"
-            >
+            <form action={applyResidentialPlaybook} className="mt-6 space-y-4 max-w-md">
               <input type="hidden" name="project_id" value={id} />
               <input type="hidden" name="replace" value="on" />
-              <p className="text-ink/60 mb-4">
+              <PlaybookSelect defaultValue={project.playbook_id ?? DEFAULT_PLAYBOOK_ID} />
+              <p className="text-ink/60">
                 Warning: this deletes existing milestones and tasks for this project and re-seeds
-                from the template.
+                from the selected template.
               </p>
               <button
                 type="submit"

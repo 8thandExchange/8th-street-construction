@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ProjectFormFields } from "@/components/admin/ProjectFormFields";
+import { PlaybookSelect } from "@/components/admin/PlaybookSelect";
 import { createProjectWithPlaybook } from "@/lib/actions/project-create";
 
 export default function NewProjectPage() {
@@ -17,8 +18,8 @@ export default function NewProjectPage() {
         <span className="eyebrow">— New Job</span>
         <h1 className="mt-2 font-display text-display-md text-ink">Start a Build</h1>
         <p className="mt-3 text-ink/65 max-w-xl">
-          Creates the project and optionally seeds the Georgia residential playbook — 11 phases,
-          70+ checklist items from pre-construction through warranty.
+          Creates the project and optionally seeds a state residential playbook — Georgia or South
+          Carolina — with 11 phases and 70+ checklist items from pre-construction through warranty.
         </p>
       </div>
 
@@ -51,23 +52,29 @@ export default function NewProjectPage() {
           </div>
         </div>
 
-        <label className="flex items-start gap-3 cursor-pointer border border-copper/30 bg-copper/5 p-5">
-          <input
-            type="checkbox"
-            name="apply_playbook"
-            defaultChecked
-            className="w-5 h-5 accent-copper mt-0.5"
-          />
-          <span>
-            <span className="text-sm font-medium text-ink block">
-              Apply Georgia Custom Residential playbook
+        <div className="border border-copper/30 bg-copper/5 p-5 space-y-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="apply_playbook"
+              defaultChecked
+              className="w-5 h-5 accent-copper mt-0.5"
+            />
+            <span>
+              <span className="text-sm font-medium text-ink block">
+                Apply residential build playbook
+              </span>
+              <span className="text-xs text-ink/60 mt-1 block leading-relaxed">
+                Seeds milestones + internal checklists (permits, inspections, lien waivers, CO,
+                warranty walks).
+              </span>
             </span>
-            <span className="text-xs text-ink/60 mt-1 block leading-relaxed">
-              Seeds milestones + internal checklists (permits, inspections, termite pretreat,
-              lien waivers, CO, warranty walks).
-            </span>
-          </span>
-        </label>
+          </label>
+          <div>
+            <label className="field-label">Playbook</label>
+            <PlaybookSelect />
+          </div>
+        </div>
 
         <div className="pt-6 border-t border-ink/15 flex gap-3">
           <button

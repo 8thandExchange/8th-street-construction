@@ -4,6 +4,7 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import { applyPlaybookToProject } from "../src/lib/build/apply-playbook";
+import { DEFAULT_PLAYBOOK_ID } from "../src/lib/build/playbook-registry";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -72,7 +73,7 @@ async function main() {
   }
 
   if (!project.playbook_applied_at) {
-    const result = await applyPlaybookToProject(project.id);
+    const result = await applyPlaybookToProject(project.id, DEFAULT_PLAYBOOK_ID);
     console.log("Playbook:", result);
   } else {
     console.log("Playbook already applied.");

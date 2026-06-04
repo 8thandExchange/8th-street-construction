@@ -8,6 +8,7 @@ const TABS = [
   { href: "/overview", label: "Overview", icon: "◇" },
   { href: "/build", label: "Build System", icon: "⬡" },
   { href: "/tasks", label: "Checklists", icon: "☑" },
+  { href: "/daily-logs", label: "Daily Logs", icon: "▦" },
   { href: "/milestones", label: "Timeline", icon: "◎" },
   { href: "/updates", label: "Updates", icon: "▣" },
   { href: "/documents", label: "Documents", icon: "▤" },

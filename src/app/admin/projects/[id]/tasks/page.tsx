@@ -1,10 +1,67 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { TaskChecklist, type PhaseGroup } from "@/components/project-hub/TaskChecklist";
-import { GEORGIA_RESIDENTIAL_PLAYBOOK } from "@/lib/build/georgia-residential-playbook";
+import { TaskChecklist, type PhaseGroup, type TaskRow } from "@/components/project-hub/TaskChecklist";
+import { getPlaybookById, DEFAULT_PLAYBOOK_ID } from "@/lib/build/playbook-registry";
+import { CUSTOM_PHASE_KEY, CUSTOM_PHASE_TITLE } from "@/lib/build/task-phases";
 
 export const dynamic = "force-dynamic";
+
+function buildPhases(
+  playbookApplied: boolean,
+  playbookId: string | null,
+  milestones: { id: string; phase_key: string | null; title: string }[],
+  tasks: TaskRow[]
+): PhaseGroup[] {
+  const customTasks = tasks.filter(
+    (t) =>
+      t.is_custom &&
+      (t.phase_key === CUSTOM_PHASE_KEY || t.phase_key === null || t.phase_key === "")
+  );
+
+  if (!playbookApplied) {
+    return [
+      {
+        phaseKey: CUSTOM_PHASE_KEY,
+        title: CUSTOM_PHASE_TITLE,
+        milestoneId: null,
+        hint: "Add tasks unique to this job. Apply a GA or SC playbook anytime from Build System to seed the standard checklist too.",
+        tasks: tasks.filter(
+          (t) =>
+            t.phase_key === CUSTOM_PHASE_KEY ||
+            t.phase_key === null ||
+            t.phase_key === ""
+        ),
+      },
+    ];
+  }
+
+  const playbook =
+    getPlaybookById(playbookId ?? DEFAULT_PLAYBOOK_ID) ??
+    getPlaybookById(DEFAULT_PLAYBOOK_ID)!;
+
+  const phaseOrder = playbook.milestones.map((m) => m.phaseKey);
+  const phases: PhaseGroup[] = phaseOrder.map((phaseKey) => {
+    const template = playbook.milestones.find((m) => m.phaseKey === phaseKey);
+    const milestone = milestones.find((m) => m.phase_key === phaseKey);
+    return {
+      phaseKey,
+      title: milestone?.title ?? template?.title ?? phaseKey,
+      milestoneId: milestone?.id ?? null,
+      tasks: tasks.filter((t) => t.phase_key === phaseKey),
+    };
+  });
+
+  phases.push({
+    phaseKey: CUSTOM_PHASE_KEY,
+    title: CUSTOM_PHASE_TITLE,
+    milestoneId: null,
+    hint: "One-off items for this address — easements, neighbor coordination, special inspections, owner requests.",
+    tasks: customTasks,
+  });
+
+  return phases;
+}
 
 export default async function ProjectTasksPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
@@ -12,7 +69,7 @@ export default async function ProjectTasksPage(props: { params: Promise<{ id: st
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title, playbook_applied_at")
+    .select("id, title, playbook_applied_at, playbook_id")
     .eq("id", id)
     .single();
 
@@ -27,43 +84,23 @@ export default async function ProjectTasksPage(props: { params: Promise<{ id: st
     supabase
       .from("project_tasks")
       .select(
-        "id, title, description, status, priority, phase_key, milestone_id, display_order"
+        "id, title, description, status, priority, phase_key, milestone_id, display_order, is_custom, due_date"
       )
       .eq("project_id", id)
       .order("display_order", { ascending: true }),
   ]);
 
-  if (!project.playbook_applied_at) {
-    return (
-      <div className="max-w-2xl">
-        <h2 className="font-display text-2xl text-ink">Checklists</h2>
-        <p className="mt-4 text-ink/65">
-          Apply the Georgia residential playbook first to seed phase checklists.
-        </p>
-        <Link
-          href={`/admin/projects/${id}/build`}
-          className="inline-flex mt-6 h-11 items-center px-5 bg-ink text-bone font-mono text-[10px] tracking-[0.2em] uppercase"
-        >
-          Go to Build System →
-        </Link>
-      </div>
-    );
-  }
+  const taskRows = (tasks ?? []) as TaskRow[];
+  const phases = buildPhases(
+    Boolean(project.playbook_applied_at),
+    project.playbook_id,
+    milestones ?? [],
+    taskRows
+  );
 
-  const phaseOrder = GEORGIA_RESIDENTIAL_PLAYBOOK.milestones.map((m) => m.phaseKey);
-  const phases: PhaseGroup[] = phaseOrder.map((phaseKey) => {
-    const template = GEORGIA_RESIDENTIAL_PLAYBOOK.milestones.find((m) => m.phaseKey === phaseKey);
-    const milestone = (milestones ?? []).find((m) => m.phase_key === phaseKey);
-    return {
-      phaseKey,
-      title: milestone?.title ?? template?.title ?? phaseKey,
-      milestoneId: milestone?.id ?? null,
-      tasks: (tasks ?? []).filter((t) => t.phase_key === phaseKey),
-    };
-  });
-
-  const done = (tasks ?? []).filter((t) => t.status === "done").length;
-  const total = (tasks ?? []).length;
+  const done = taskRows.filter((t) => t.status === "done").length;
+  const total = taskRows.length;
+  const customCount = taskRows.filter((t) => t.is_custom).length;
 
   return (
     <div className="max-w-3xl">
@@ -71,7 +108,11 @@ export default async function ProjectTasksPage(props: { params: Promise<{ id: st
         <div>
           <h2 className="font-display text-2xl text-ink">Phase Checklists</h2>
           <p className="text-sm text-ink/60 mt-2">
-            {done}/{total} complete — work top to bottom. Client sees milestones on Timeline.
+            {done}/{total} complete
+            {customCount > 0 && ` · ${customCount} custom`}
+            {project.playbook_applied_at
+              ? " — playbook tasks + your site-specific additions."
+              : " — add custom tasks now, or apply a playbook from Build System."}
           </p>
         </div>
         <Link
@@ -81,6 +122,17 @@ export default async function ProjectTasksPage(props: { params: Promise<{ id: st
           Build System overview
         </Link>
       </div>
+
+      {!project.playbook_applied_at && (
+        <div className="mb-8 p-5 border border-copper/30 bg-copper/5 text-sm text-ink/70">
+          No playbook applied yet. You can still track{" "}
+          <strong className="text-ink font-medium">project-specific tasks</strong> below, or{" "}
+          <Link href={`/admin/projects/${id}/build`} className="text-copper hover:underline">
+            apply the GA or SC playbook
+          </Link>{" "}
+          to seed the full residential checklist.
+        </div>
+      )}
 
       <TaskChecklist projectId={id} phases={phases} />
     </div>

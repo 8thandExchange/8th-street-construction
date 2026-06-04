@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { StatCard } from "@/components/admin/StatCard";
 import { LEAD_STATUS_LABELS, LEAD_STATUS_COLORS } from "@/lib/utils";
+import { getComplianceDashboardAlerts } from "@/lib/compliance/compliance-reminders";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminDashboard() {
   const supabase = await createClient();
 
-  const [{ count: newLeads }, { count: totalLeads }, { count: activeProjects }, { count: pendingConsults }, { data: recentLeads }] =
+  const [{ count: newLeads }, { count: totalLeads }, { count: activeProjects }, { count: pendingConsults }, { data: recentLeads }, complianceAlerts] =
     await Promise.all([
       supabase.from("leads").select("*", { count: "exact", head: true }).eq("status", "new"),
       supabase.from("leads").select("*", { count: "exact", head: true }),
@@ -19,6 +20,7 @@ export default async function AdminDashboard() {
         .select("id, first_name, last_name, email, status, project_type, created_at")
         .order("created_at", { ascending: false })
         .limit(5),
+      getComplianceDashboardAlerts(),
     ]);
 
   return (
@@ -55,7 +57,46 @@ export default async function AdminDashboard() {
           hint="All time"
           href="/admin/leads"
         />
+        <StatCard
+          label="Compliance Alerts"
+          value={complianceAlerts.length}
+          hint="Licenses & insurance"
+          href="/admin/compliance"
+          accent={complianceAlerts.length > 0}
+        />
       </div>
+
+      {complianceAlerts.length > 0 && (
+        <div className="mb-12 bg-paper border border-amber-200/80 p-8">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="font-display text-xl text-ink">Renewals & Compliance</h2>
+            <Link
+              href="/admin/compliance"
+              className="font-mono text-[11px] tracking-[0.18em] uppercase text-copper hover:text-copper-400"
+            >
+              Manage →
+            </Link>
+          </div>
+          <ul className="divide-y divide-ink/10">
+            {complianceAlerts.slice(0, 5).map((item) => (
+              <li key={item.id} className="py-3 flex justify-between gap-4 text-sm">
+                <span className="text-ink">{item.title}</span>
+                <span
+                  className={`shrink-0 font-mono text-[10px] uppercase tracking-wider ${
+                    item.status === "expired" ? "text-red-700" : "text-amber-800"
+                  }`}
+                >
+                  {item.status === "expired"
+                    ? "Expired"
+                    : item.days === 0
+                      ? "Today"
+                      : `${item.days}d left`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="bg-paper border border-ink/15 p-8">
         <div className="flex items-baseline justify-between mb-6">

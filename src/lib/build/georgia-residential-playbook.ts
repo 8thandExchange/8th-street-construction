@@ -1,30 +1,16 @@
 /**
  * Georgia Custom Residential Build Playbook
- *
- * Reproducible phase-gate system for high-end custom homes in the CSRA
- * (Augusta, Evans, Martinez, Grovetown, North Augusta).
- *
- * Milestones = client-visible timeline phases.
- * Tasks = internal checklist (inspections, GA code items, lien/warranty closeout).
+ * CSRA: Augusta, Evans, Martinez, Grovetown (GA side).
  */
 
-export type PlaybookTaskTemplate = {
-  title: string;
-  description?: string;
-  priority?: "low" | "normal" | "high" | "urgent";
-};
+import type { BuildPlaybook, PlaybookMilestoneTemplate } from "./playbook-types";
 
-export type PlaybookMilestoneTemplate = {
-  phaseKey: string;
-  title: string;
-  description: string;
-  clientSummary: string;
-  tasks: PlaybookTaskTemplate[];
-};
+export type { PlaybookTaskTemplate, PlaybookMilestoneTemplate } from "./playbook-types";
 
-export const GEORGIA_RESIDENTIAL_PLAYBOOK = {
+export const GEORGIA_RESIDENTIAL_PLAYBOOK: BuildPlaybook = {
   id: "ga-residential-v1",
   name: "Georgia Custom Residential",
+  state: "GA",
   version: "1.0.0",
   description:
     "End-to-end playbook for custom residential new construction in Georgia — pre-construction through warranty closeout, aligned with typical CSRA inspection sequences and state requirements (termite pretreat, erosion control, energy code, lien waivers).",
@@ -470,11 +456,4 @@ export const GEORGIA_RESIDENTIAL_PLAYBOOK = {
       ],
     },
   ] satisfies PlaybookMilestoneTemplate[],
-} as const;
-
-export type GeorgiaPlaybook = typeof GEORGIA_RESIDENTIAL_PLAYBOOK;
-
-export function getPlaybookById(id: string) {
-  if (id === GEORGIA_RESIDENTIAL_PLAYBOOK.id) return GEORGIA_RESIDENTIAL_PLAYBOOK;
-  return null;
-}
+};

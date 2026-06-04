@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { applyPlaybookToProject } from "@/lib/build/apply-playbook";
-import { GEORGIA_RESIDENTIAL_PLAYBOOK } from "@/lib/build/georgia-residential-playbook";
+import { DEFAULT_PLAYBOOK_ID } from "@/lib/build/playbook-registry";
 
 export async function createProjectWithPlaybook(formData: FormData) {
   const { supabase, user } = await requireAdmin();
@@ -46,7 +46,9 @@ export async function createProjectWithPlaybook(formData: FormData) {
   }
 
   if (applyPlaybook) {
-    await applyPlaybookToProject(data.id, GEORGIA_RESIDENTIAL_PLAYBOOK.id, {
+    const playbookId =
+      String(formData.get("playbook_id") || "").trim() || DEFAULT_PLAYBOOK_ID;
+    await applyPlaybookToProject(data.id, playbookId, {
       createdBy: user.id,
     });
   }

@@ -1,9 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  GEORGIA_RESIDENTIAL_PLAYBOOK,
-  getPlaybookById,
-  type GeorgiaPlaybook,
-} from "@/lib/build/georgia-residential-playbook";
+import { DEFAULT_PLAYBOOK_ID, getPlaybookById } from "@/lib/build/playbook-registry";
+import { CUSTOM_PHASE_KEY } from "@/lib/build/task-phases";
+import type { BuildPlaybook } from "@/lib/build/playbook-types";
 
 export type ApplyPlaybookResult = {
   ok: true;
@@ -13,7 +11,7 @@ export type ApplyPlaybookResult = {
 
 export async function applyPlaybookToProject(
   projectId: string,
-  playbookId: string = GEORGIA_RESIDENTIAL_PLAYBOOK.id,
+  playbookId: string,
   options: { replaceExisting?: boolean; createdBy?: string } = {}
 ): Promise<ApplyPlaybookResult> {
   const playbook = getPlaybookById(playbookId);
@@ -34,7 +32,11 @@ export async function applyPlaybookToProject(
   }
 
   if (options.replaceExisting) {
-    await admin.from("project_tasks").delete().eq("project_id", projectId);
+    await admin
+      .from("project_tasks")
+      .delete()
+      .eq("project_id", projectId)
+      .eq("is_custom", false);
     await admin.from("project_milestones").delete().eq("project_id", projectId);
   }
 
@@ -71,6 +73,7 @@ export async function applyPlaybookToProject(
       priority: t.priority ?? "normal",
       status: "todo" as const,
       display_order: ti,
+      is_custom: false,
       created_by: options.createdBy ?? null,
     }));
 
@@ -88,13 +91,33 @@ export async function applyPlaybookToProject(
     })
     .eq("id", projectId);
 
+  if (options.replaceExisting) {
+    const [{ data: customTasks }, { data: newMilestones }] = await Promise.all([
+      admin
+        .from("project_tasks")
+        .select("id, phase_key")
+        .eq("project_id", projectId)
+        .eq("is_custom", true),
+      admin.from("project_milestones").select("id, phase_key").eq("project_id", projectId),
+    ]);
+
+    for (const task of customTasks ?? []) {
+      if (!task.phase_key || task.phase_key === CUSTOM_PHASE_KEY) continue;
+      const milestone = newMilestones?.find((m) => m.phase_key === task.phase_key);
+      await admin
+        .from("project_tasks")
+        .update({ milestone_id: milestone?.id ?? null })
+        .eq("id", task.id);
+    }
+  }
+
   return { ok: true, milestonesCreated, tasksCreated };
 }
 
 export function getPlaybookProgress(
   milestones: { phase_key: string | null; status: string }[],
   tasks: { phase_key: string | null; status: string }[],
-  playbook: GeorgiaPlaybook = GEORGIA_RESIDENTIAL_PLAYBOOK
+  playbook: BuildPlaybook = getPlaybookById(DEFAULT_PLAYBOOK_ID)!
 ) {
   return playbook.milestones.map((phase) => {
     const ms = milestones.filter((m) => m.phase_key === phase.phaseKey);
