@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { BidSubmitForm } from "@/components/subs/BidSubmitForm";
 
 export const dynamic = "force-dynamic";
 
@@ -28,19 +29,17 @@ export default async function SubsHome() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Find subcontractor record
   const { data: sub } = await supabase
     .from("subcontractors")
     .select("id, company_name, trade")
     .eq("profile_id", user!.id)
     .single();
 
-  // Bids for this sub
   const { data: bids } = sub
     ? await supabase
         .from("bids")
         .select(
-          "id, amount, status, submitted_at, created_at, bid_requests(id, title, trade, scope_of_work, bid_deadline, projects(id, title, location))"
+          "id, amount, status, submitted_at, notes, created_at, bid_requests(id, title, trade, scope_of_work, bid_deadline, status, projects(id, title, location))"
         )
         .eq("subcontractor_id", sub.id)
         .order("created_at", { ascending: false })
@@ -53,73 +52,85 @@ export default async function SubsHome() {
         {sub?.company_name || "Subcontractor Portal"}
       </h1>
       {sub?.trade && (
-        <p className="mt-2 text-sm text-stone-300 font-mono tracking-wider uppercase">
-          {sub.trade}
-        </p>
+        <p className="mt-2 text-sm text-stone-300 font-mono tracking-wider uppercase">{sub.trade}</p>
       )}
 
       <div className="mt-12">
-        <h2 className="font-display text-2xl text-ink mb-6">Bid Requests &amp; Active Jobs</h2>
+        <h2 className="font-display text-2xl text-ink mb-6">Bid Requests</h2>
 
         {bids && bids.length > 0 ? (
           <div className="space-y-4">
-            {bids.map((b: any) => (
-              <div key={b.id} className="bg-paper border border-ink/15 p-6">
-                <div className="flex items-start justify-between gap-6">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-display text-xl text-ink">
-                        {b.bid_requests?.title}
-                      </h3>
-                      <span
-                        className={`text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border ${BID_STATUS_COLORS[b.status]}`}
-                      >
-                        {BID_STATUS_LABELS[b.status]}
-                      </span>
-                    </div>
-                    <div className="text-sm text-ink/65">
-                      Project: <strong>{b.bid_requests?.projects?.title || "—"}</strong>
-                      {b.bid_requests?.projects?.location && (
-                        <span> · {b.bid_requests.projects.location}</span>
+            {bids.map((b) => {
+              const rawRfq = b.bid_requests;
+              const rfq = (Array.isArray(rawRfq) ? rawRfq[0] : rawRfq) as {
+                id: string;
+                title: string;
+                trade: string;
+                scope_of_work: string;
+                bid_deadline: string | null;
+                status: string;
+                projects: { title: string; location: string | null } | { title: string; location: string | null }[] | null;
+              } | null;
+              const project = rfq?.projects
+                ? Array.isArray(rfq.projects)
+                  ? rfq.projects[0]
+                  : rfq.projects
+                : null;
+              const canSubmit =
+                rfq?.status === "open" &&
+                (b.status === "invited" || b.status === "viewed" || b.status === "submitted");
+
+              return (
+                <div key={b.id} className="bg-paper border border-ink/15 p-6">
+                  <div className="flex items-start justify-between gap-6">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-display text-xl text-ink">{rfq?.title}</h3>
+                        <span
+                          className={`text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border ${BID_STATUS_COLORS[b.status]}`}
+                        >
+                          {BID_STATUS_LABELS[b.status]}
+                        </span>
+                      </div>
+                      <div className="text-sm text-ink/65">
+                        Project: <strong>{project?.title || "—"}</strong>
+                        {project?.location && <span> · {project.location}</span>}
+                      </div>
+                      <p className="mt-3 text-sm text-ink/80 leading-relaxed">{rfq?.scope_of_work}</p>
+                      {rfq?.bid_deadline && (
+                        <div className="mt-3 text-xs text-stone-300 font-mono">
+                          Deadline: {new Date(rfq.bid_deadline).toLocaleDateString()}
+                        </div>
                       )}
+                      {b.notes && (
+                        <p className="mt-3 text-xs text-ink/55 border-t border-ink/10 pt-3">
+                          Your notes: {b.notes}
+                        </p>
+                      )}
+                      <BidSubmitForm bidId={b.id} canSubmit={Boolean(canSubmit)} />
                     </div>
-                    <p className="mt-3 text-sm text-ink/80 leading-relaxed line-clamp-3">
-                      {b.bid_requests?.scope_of_work}
-                    </p>
-                    {b.bid_requests?.bid_deadline && (
-                      <div className="mt-3 text-xs text-stone-300 font-mono">
-                        Deadline: {new Date(b.bid_requests.bid_deadline).toLocaleDateString()}
+                    {b.amount != null && (
+                      <div className="text-right shrink-0">
+                        <div className="eyebrow text-stone-300 mb-1">Your Bid</div>
+                        <div className="font-display text-2xl text-ink">
+                          ${Number(b.amount).toLocaleString()}
+                        </div>
                       </div>
                     )}
                   </div>
-                  {b.amount != null && (
-                    <div className="text-right">
-                      <div className="eyebrow text-stone-300 mb-1">Your Bid</div>
-                      <div className="font-display text-2xl text-ink">
-                        ${Number(b.amount).toLocaleString()}
-                      </div>
-                    </div>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="border border-ink/15 p-12 text-center bg-paper">
             <p className="text-ink/50 italic">
               {sub
-                ? "No active bid requests. We'll notify you when there's a relevant opportunity."
-                : "Your subcontractor profile isn't set up yet. Reach out to your project manager to get configured."}
+                ? "No active bid requests. We'll email you when there's a relevant opportunity."
+                : "Your subcontractor profile isn't linked yet. Ask your project manager to connect your account in Admin → Subcontractors."}
             </p>
           </div>
         )}
-      </div>
-
-      <div className="mt-12 bg-navy text-bone p-8 grain-overlay">
-        <h2 className="eyebrow-copper mb-3">— Phase 2 Preview</h2>
-        <p className="text-bone/80 leading-relaxed">
-          Coming soon: live bid submission, document attachments, schedule visibility, and direct messaging with the 8th Street project team — all from this portal.
-        </p>
       </div>
     </div>
   );

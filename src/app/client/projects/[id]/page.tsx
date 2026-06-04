@@ -70,6 +70,9 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
       <nav className="flex gap-2 overflow-x-auto mb-10 pb-1">
         {[
           { href: `/client/projects/${project.id}`, label: "Overview", active: true },
+          { href: `/client/projects/${project.id}/selections`, label: "Selections" },
+          { href: `/client/projects/${project.id}/billing`, label: "Billing" },
+          { href: `/client/projects/${project.id}/punch-list`, label: "Punch List" },
           { href: `/client/projects/${project.id}/messages`, label: "Messages" },
           { href: `/client/projects/${project.id}/change-orders`, label: "Change Orders" },
         ].map((tab) => (
