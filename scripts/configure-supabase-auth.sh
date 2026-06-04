@@ -1,17 +1,30 @@
 #!/usr/bin/env bash
 # Configure Supabase Auth URL settings via Management API.
-# Get a personal access token: https://supabase.com/dashboard/account/tokens
+# Uses Supabase CLI login token from macOS keychain, or SUPABASE_ACCESS_TOKEN.
 set -euo pipefail
 
 PROJECT_REF="rqmrqndjbkpkewfpyegv"
-TOKEN="${SUPABASE_ACCESS_TOKEN:?Set SUPABASE_ACCESS_TOKEN from https://supabase.com/dashboard/account/tokens}"
 
-curl -s -X PATCH "https://api.supabase.com/v1/projects/${PROJECT_REF}/config/auth" \
+if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
+  SUPABASE_ACCESS_TOKEN="$(security find-generic-password -s "Supabase CLI" -w 2>/dev/null | sed 's/go-keyring-base64://' | base64 -d || true)"
+fi
+TOKEN="${SUPABASE_ACCESS_TOKEN:?Log in with supabase login or set SUPABASE_ACCESS_TOKEN}"
+
+python3 - <<'PY' | curl -sf -X PATCH "https://api.supabase.com/v1/projects/${PROJECT_REF}/config/auth" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "site_url": "https://www.8thstreetconstruction.com",
-    "uri_allow_list": "https://www.8thstreetconstruction.com/auth/callback\nhttps://8thstreetconstruction.com/auth/callback\nhttp://localhost:3000/auth/callback\nhttps://8th-street-construction.vercel.app/auth/callback\nhttps://8th-street-construction-*.vercel.app/auth/callback"
-  }' | python3 -m json.tool
+  -d @- | python3 -m json.tool
+import json
+print(json.dumps({
+  "site_url": "https://www.8thstreetconstruction.com",
+  "uri_allow_list": ",".join([
+    "https://www.8thstreetconstruction.com/auth/callback",
+    "https://8thstreetconstruction.com/auth/callback",
+    "http://localhost:3000/auth/callback",
+    "https://8th-street-construction.vercel.app/auth/callback",
+    "https://8th-street-construction-*.vercel.app/auth/callback",
+  ]),
+}))
+PY
 
 echo "Supabase auth URLs updated."

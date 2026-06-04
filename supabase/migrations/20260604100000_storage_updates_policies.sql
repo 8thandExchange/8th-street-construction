@@ -1,5 +1,7 @@
 -- Storage policies for project-updates bucket (used in Phase 2A)
 
+set search_path = public, extensions;
+
 create policy "Public reads project update files" on storage.objects
   for select using (bucket_id = 'project-updates');
 

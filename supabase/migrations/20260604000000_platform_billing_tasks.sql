@@ -1,6 +1,8 @@
 -- Phase 2B + 4 foundation: tasks, invoices, draws, Stripe bookkeeping
 -- Run after 20260515000000_initial_schema.sql
 
+set search_path = public, extensions;
+
 -- =====================================================================
 -- ENUMS
 -- =====================================================================
