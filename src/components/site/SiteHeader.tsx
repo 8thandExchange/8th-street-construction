@@ -35,6 +35,7 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
   }, [pathname]);
 
   const onDarkHero = dark && !scrolled && !open;
+  const headerOnImage = dark && !open;
 
   return (
     <>
@@ -45,24 +46,26 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
             ? dark
               ? "bg-navy/95 backdrop-blur-md border-b border-bone/10 shadow-[0_1px_0_rgba(245,241,234,0.06)]"
               : "bg-bone/95 backdrop-blur-md border-b border-ink/10"
-            : "bg-transparent"
+            : headerOnImage
+              ? "bg-navy/88 backdrop-blur-md border-b border-bone/10 shadow-[0_8px_32px_rgba(11,22,32,0.35)]"
+              : "bg-transparent"
         )}
       >
         <div className="mx-auto max-w-8xl px-5 sm:px-6 md:px-10 lg:px-14">
           <div className="flex h-[4.5rem] md:h-24 items-center justify-between">
             <Link href="/" className="group flex flex-col leading-none min-w-0" aria-label="8th Street Construction home">
-              <span
-                className={cn(
-                  "font-display text-[1.35rem] sm:text-2xl md:text-[26px] tracking-tight transition-colors truncate",
-                  onDarkHero ? "text-bone" : "text-ink"
-                )}
-              >
+            <span
+              className={cn(
+                "font-display text-[1.35rem] sm:text-2xl md:text-[26px] tracking-tight transition-colors truncate",
+                onDarkHero || headerOnImage ? "text-bone" : "text-ink"
+              )}
+            >
                 8<span className="italic">th</span> Street
               </span>
               <span
                 className={cn(
                   "eyebrow mt-0.5 transition-colors",
-                  onDarkHero ? "text-bone/50" : "text-stone-300"
+                  onDarkHero || headerOnImage ? "text-bone/60" : "text-stone-300"
                 )}
               >
                 Construction
@@ -76,8 +79,9 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
                   href={item.href}
                   className={cn(
                     "editorial-link text-sm tracking-wide transition-colors",
-                    onDarkHero ? "text-bone hover:text-copper-100" : "text-ink hover:text-copper",
-                    pathname === item.href && (onDarkHero ? "text-copper-100" : "text-copper")
+                    onDarkHero || headerOnImage ? "text-bone hover:text-copper-100" : "text-ink hover:text-copper",
+                    pathname === item.href &&
+                      (onDarkHero || headerOnImage ? "text-copper-100" : "text-copper")
                   )}
                 >
                   {item.label}
@@ -87,7 +91,7 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
                 href="/book"
                 className={cn(
                   "ml-1 inline-flex h-11 items-center px-5 lg:px-6 font-mono text-[11px] tracking-[0.2em] uppercase transition-all duration-500 ease-editorial",
-                  onDarkHero
+                  onDarkHero || headerOnImage
                     ? "bg-copper text-bone hover:bg-copper-400"
                     : "bg-ink text-bone hover:bg-copper"
                 )}
@@ -101,7 +105,7 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
               onClick={() => setOpen((o) => !o)}
               className={cn(
                 "md:hidden flex items-center justify-center w-11 h-11 -mr-1 rounded-full transition-colors",
-                onDarkHero ? "text-bone hover:bg-bone/10" : "text-ink hover:bg-ink/5"
+                onDarkHero || headerOnImage ? "text-bone hover:bg-bone/10" : "text-ink hover:bg-ink/5"
               )}
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}

@@ -88,7 +88,7 @@ export default async function HomePage() {
           image={SITE_IMAGES.hero}
           imageAlt={SITE_IMAGES.heroAlt}
           className="min-h-[100svh] flex flex-col"
-          imagePosition="center"
+          imagePosition="top"
         >
           <Container size="wide" className="flex flex-col flex-1 pt-[calc(5.5rem+env(safe-area-inset-top))] md:pt-[calc(7rem+env(safe-area-inset-top))] pb-12 md:pb-20">
             <div className="flex-1 flex flex-col justify-end max-w-5xl">

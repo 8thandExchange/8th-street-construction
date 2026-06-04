@@ -1,7 +1,7 @@
 /** Curated editorial photography — Unsplash, production-safe URLs */
 export const SITE_IMAGES = {
-  hero: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2400&q=85",
-  heroAlt: "Modern custom home with clean architectural lines at dusk",
+  hero: "https://images.unsplash.com/photo-1568605114967-a6c5aadba986?auto=format&fit=crop&w=2400&q=85",
+  heroAlt: "Elegant two-story Southern home with front porch and landscaped grounds",
   craft: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1600&q=85",
   craftAlt: "Craftsman hands measuring timber on a jobsite",
   interior: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1600&q=85",
