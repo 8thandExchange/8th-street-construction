@@ -40,8 +40,9 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
       .limit(20),
     supabase
       .from("project_documents")
-      .select("id, title, description, public_url:storage_path, category, file_size_bytes, created_at")
+      .select("id, title, description, category, file_size_bytes, created_at")
       .eq("project_id", project.id)
+      .eq("visibility", "client")
       .order("created_at", { ascending: false }),
   ]);
 
@@ -56,7 +57,7 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
         </Link>
       </div>
 
-      <div className="mb-12">
+      <div className="mb-8">
         <span className="eyebrow">— Project</span>
         <h1 className="mt-2 font-display text-display-md text-ink leading-tight">
           {project.title}
@@ -65,6 +66,26 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
           <p className="mt-3 text-lg text-ink/65">{project.subtitle}</p>
         )}
       </div>
+
+      <nav className="flex gap-2 overflow-x-auto mb-10 pb-1">
+        {[
+          { href: `/client/projects/${project.id}`, label: "Overview", active: true },
+          { href: `/client/projects/${project.id}/messages`, label: "Messages" },
+          { href: `/client/projects/${project.id}/change-orders`, label: "Change Orders" },
+        ].map((tab) => (
+          <Link
+            key={tab.href}
+            href={tab.href}
+            className={`shrink-0 px-4 py-2 font-mono text-[10px] tracking-[0.18em] uppercase border ${
+              tab.active
+                ? "bg-ink text-bone border-ink"
+                : "border-ink/15 text-ink/70 hover:border-ink/40"
+            }`}
+          >
+            {tab.label}
+          </Link>
+        ))}
+      </nav>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: timeline + updates */}
@@ -206,6 +227,12 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
                         {d.category}
                       </div>
                     )}
+                    <a
+                      href={`/api/documents/${d.id}/download`}
+                      className="inline-block mt-2 text-[10px] font-mono uppercase tracking-wider text-copper hover:underline"
+                    >
+                      Download
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -216,18 +243,25 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
             )}
           </div>
 
-          {/* Messages CTA */}
           <div className="bg-navy text-bone p-6">
-            <h2 className="eyebrow-copper mb-3">— Questions?</h2>
+            <h2 className="eyebrow-copper mb-3">— Portal</h2>
             <p className="text-sm text-bone/75 mb-4">
-              Reach your project manager directly.
+              Message your team or review change orders.
             </p>
-            <a
-              href="mailto:construction@8thandexchange.com"
-              className="block w-full text-center h-11 leading-[44px] bg-copper text-bone hover:bg-copper-400 font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
-            >
-              Email Project Manager
-            </a>
+            <div className="flex flex-col gap-2">
+              <Link
+                href={`/client/projects/${project.id}/messages`}
+                className="block w-full text-center h-11 leading-[44px] bg-copper text-bone hover:bg-copper-400 font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
+              >
+                Messages
+              </Link>
+              <Link
+                href={`/client/projects/${project.id}/change-orders`}
+                className="block w-full text-center h-11 leading-[44px] border border-bone/30 font-mono text-[10px] tracking-[0.2em] uppercase hover:border-copper transition-colors"
+              >
+                Change Orders
+              </Link>
+            </div>
           </div>
         </div>
       </div>
