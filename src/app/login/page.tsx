@@ -3,7 +3,7 @@
 import { Suspense, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { requestMagicLink } from "@/lib/actions/auth-login";
 import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 
@@ -16,22 +16,12 @@ function LoginForm() {
 
   function handleSubmit(formData: FormData) {
     setError(null);
-    const email = String(formData.get("email") || "").trim();
-    if (!email) {
-      setError("Enter your email");
-      return;
-    }
+    formData.set("redirect", redirect);
 
     startTransition(async () => {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirect)}`,
-        },
-      });
-      if (error) {
-        setError(error.message);
+      const result = await requestMagicLink(formData);
+      if ("error" in result && result.error) {
+        setError(result.error);
         return;
       }
       setSent(true);
@@ -42,7 +32,9 @@ function LoginForm() {
     <main className="min-h-screen bg-navy text-bone grain-overlay flex flex-col">
       <header className="px-6 md:px-10 lg:px-14 py-8">
         <Link href="/" className="flex flex-col leading-none">
-          <span className="font-display text-2xl text-bone">8<span className="italic">th</span> Street</span>
+          <span className="font-display text-2xl text-bone">
+            8<span className="italic">th</span> Street
+          </span>
           <span className="eyebrow text-bone/50 mt-0.5">Construction</span>
         </Link>
       </header>
@@ -53,10 +45,11 @@ function LoginForm() {
             <>
               <span className="eyebrow-copper">— Sign in</span>
               <h1 className="mt-4 font-display text-display-md leading-[1.05] text-bone">
-                Welcome back.
+                Client & team portal
               </h1>
               <p className="mt-4 text-bone/65 leading-relaxed">
-                Enter your email and we'll send a one-time sign-in link.
+                Access is by invitation only. If your project manager has approved you,
+                enter your email and we&apos;ll send a one-time sign-in link.
               </p>
 
               <form action={handleSubmit} className="mt-10 flex flex-col gap-6">
@@ -79,15 +72,14 @@ function LoginForm() {
 
               <div className="mt-12 pt-8 border-t border-bone/15 text-xs font-mono tracking-[0.15em] uppercase text-bone/40">
                 <p>
-                  Don't have an account?<br/>
-                  Reach out to{" "}
+                  Need access?<br />
+                  Contact{" "}
                   <a
-                    href="mailto:construction@8thandexchange.com"
+                    href="mailto:hello@8thstreetconstruction.com"
                     className="text-copper-100 hover:text-copper"
                   >
-                    construction@8thandexchange.com
-                  </a>{" "}
-                  to get set up.
+                    hello@8thstreetconstruction.com
+                  </a>
                 </p>
               </div>
             </>
@@ -98,10 +90,11 @@ function LoginForm() {
                 Sign-in link sent.
               </h1>
               <p className="mt-6 text-bone/65 leading-relaxed">
-                We've sent a one-time sign-in link to your email. Click it to access your account.
+                If your email is on our approved list, you&apos;ll receive a one-time link
+                shortly. Click it to open your portal.
               </p>
               <p className="mt-4 text-sm text-bone/50">
-                The link expires in one hour. If you don't see it, check your spam folder.
+                The link expires in one hour. Check spam if you don&apos;t see it.
               </p>
             </>
           )}

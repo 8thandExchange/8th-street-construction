@@ -17,6 +17,7 @@ python3 - <<'PY' | curl -sf -X PATCH "https://api.supabase.com/v1/projects/${PRO
 import json
 print(json.dumps({
   "site_url": "https://www.8thstreetconstruction.com",
+  "disable_signup": True,
   "uri_allow_list": ",".join([
     "https://www.8thstreetconstruction.com/auth/callback",
     "https://8thstreetconstruction.com/auth/callback",
