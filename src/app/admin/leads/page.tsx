@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { deleteLead } from "@/lib/actions/leads";
+import { DeleteLeadButton } from "@/components/admin/DeleteLeadButton";
 import { LEAD_STATUS_LABELS, LEAD_STATUS_COLORS, PROJECT_CATEGORY_LABELS } from "@/lib/utils";
 import Link from "next/link";
 
@@ -75,6 +77,7 @@ export default async function AdminLeads(
                 <th className="px-6 py-4 eyebrow hidden lg:table-cell">Project</th>
                 <th className="px-6 py-4 eyebrow">Status</th>
                 <th className="px-6 py-4 eyebrow text-right">Received</th>
+                <th className="px-6 py-4 eyebrow text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink/10">
@@ -110,6 +113,14 @@ export default async function AdminLeads(
                   </td>
                   <td className="px-6 py-4 text-right text-xs text-stone-300 font-mono">
                     {new Date(lead.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <form action={deleteLead} className="inline-block">
+                      <input type="hidden" name="id" value={lead.id} />
+                      <DeleteLeadButton
+                        leadName={`${lead.first_name} ${lead.last_name}`}
+                      />
+                    </form>
                   </td>
                 </tr>
               ))}

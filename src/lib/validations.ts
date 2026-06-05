@@ -29,6 +29,40 @@ export const leadSchema = z.object({
 
 export type LeadInput = z.infer<typeof leadSchema>;
 
+export const LEAD_STATUSES = [
+  "new",
+  "contacted",
+  "qualified",
+  "proposal_sent",
+  "won",
+  "lost",
+  "archived",
+] as const;
+
+export const leadAdminUpdateSchema = z.object({
+  first_name: z.string().min(1, "First name is required").max(100),
+  last_name: z.string().min(1, "Last name is required").max(100),
+  email: z.string().email("Enter a valid email").max(255),
+  phone: z
+    .string()
+    .max(50)
+    .optional()
+    .transform((v) => (v?.trim() ? v : null)),
+  project_type: z
+    .union([z.enum(PROJECT_CATEGORIES), z.literal("")])
+    .optional()
+    .transform((v) => (v ? v : null)),
+  message: z.string().min(1, "Message is required").max(5000),
+  status: z.enum(LEAD_STATUSES),
+  notes: z
+    .string()
+    .max(10000)
+    .optional()
+    .transform((v) => (v?.trim() ? v : null)),
+});
+
+export type LeadAdminUpdateInput = z.infer<typeof leadAdminUpdateSchema>;
+
 export const bookingSchema = z.object({
   first_name: z.string().min(1).max(100),
   last_name: z.string().min(1).max(100),
