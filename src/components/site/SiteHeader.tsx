@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { PORTAL_LOGIN_LINKS } from "@/lib/portal-links";
 
 const NAV = [
   { href: "/projects", label: "Work" },
@@ -186,13 +187,16 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
               >
                 Book Consultation
               </Link>
-              <Link
-                href="/login"
-                onClick={() => setOpen(false)}
-                className="inline-flex h-12 items-center justify-center border border-bone/20 text-bone/70 hover:text-bone font-mono text-[11px] tracking-[0.18em] uppercase transition-colors"
-              >
-                Client Portal
-              </Link>
+              {PORTAL_LOGIN_LINKS.map((link) => (
+                <Link
+                  key={link.kind}
+                  href={link.href}
+                  onClick={() => setOpen(false)}
+                  className="inline-flex h-12 items-center justify-center border border-bone/20 text-bone/70 hover:text-bone font-mono text-[11px] tracking-[0.18em] uppercase transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>

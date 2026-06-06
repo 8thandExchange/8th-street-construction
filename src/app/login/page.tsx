@@ -4,12 +4,14 @@ import { Suspense, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { requestMagicLink } from "@/lib/actions/auth-login";
+import { getPortalKind, getPortalLoginCopy } from "@/lib/portal-links";
 import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 
 function LoginForm() {
   const params = useSearchParams();
   const redirect = params.get("redirect") || "/";
+  const portalCopy = getPortalLoginCopy(getPortalKind(redirect));
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -43,14 +45,11 @@ function LoginForm() {
         <div className="w-full max-w-md">
           {!sent ? (
             <>
-              <span className="eyebrow-copper">— Sign in</span>
+              <span className="eyebrow-copper">{portalCopy.eyebrow}</span>
               <h1 className="mt-4 font-display text-display-md leading-[1.05] text-bone">
-                Client & team portal
+                {portalCopy.title}
               </h1>
-              <p className="mt-4 text-bone/65 leading-relaxed">
-                Access is by invitation only. If your project manager has approved you,
-                enter your email and we&apos;ll send a one-time sign-in link.
-              </p>
+              <p className="mt-4 text-bone/65 leading-relaxed">{portalCopy.description}</p>
 
               <form action={handleSubmit} className="mt-10 flex flex-col gap-6">
                 <Input

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PORTAL_LOGIN_LINKS } from "@/lib/portal-links";
 
 const COLUMNS = [
   {
@@ -102,12 +103,15 @@ export function SiteFooter() {
               © {new Date().getFullYear()} 8th Street Construction · A division of 8th &amp; Exchange Capital
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 font-mono text-[10px] sm:text-[11px] tracking-[0.16em] uppercase text-bone/40">
-              <Link href="/login" className="hover:text-copper-100 transition-colors py-1">
-                Client Portal
-              </Link>
-              <Link href="/login" className="hover:text-copper-100 transition-colors py-1">
-                Subcontractors
-              </Link>
+              {PORTAL_LOGIN_LINKS.map((link) => (
+                <Link
+                  key={link.kind}
+                  href={link.href}
+                  className="hover:text-copper-100 transition-colors py-1"
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>
