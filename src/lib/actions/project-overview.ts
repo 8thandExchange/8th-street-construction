@@ -37,6 +37,12 @@ export async function updateProject(formData: FormData) {
     location: String(formData.get("location") || "").trim() || null,
     street_address: String(formData.get("street_address") || "").trim() || null,
     jurisdiction: String(formData.get("jurisdiction") || "").trim() || null,
+    base_plan_id: (() => {
+      const v = String(formData.get("base_plan_id") || "").trim();
+      return v || null;
+    })(),
+    lot_number: String(formData.get("lot_number") || "").trim() || null,
+    subdivision: String(formData.get("subdivision") || "").trim() || null,
     client_id: (() => {
       const v = String(formData.get("client_id") || "").trim();
       return v || null;

@@ -232,6 +232,42 @@ export interface ProjectPlanFile {
   created_at: string;
 }
 
+export type LotFitReviewStatus = "pending" | "in_review" | "revisions_needed" | "approved";
+
+export interface HouseBasePlan {
+  id: string;
+  plan_number: string;
+  name: string;
+  designer: string;
+  variant: string | null;
+  sheet_count: number | null;
+  storage_path: string;
+  file_type: string;
+  file_size_bytes: number | null;
+  square_footage: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  stories: number | null;
+  notes: string | null;
+  active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectLotFitReview {
+  id: string;
+  project_id: string;
+  base_plan_id: string | null;
+  plat_storage_path: string | null;
+  status: LotFitReviewStatus;
+  critique_summary: string | null;
+  critique_items: Json;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Service {
   id: string;
   slug: string;

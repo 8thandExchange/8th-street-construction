@@ -10,6 +10,7 @@ const NAV = [
   { href: "/admin/leads", label: "Leads" },
   { href: "/admin/consultations", label: "Consultations" },
   { href: "/admin/projects", label: "Projects" },
+  { href: "/admin/base-plans", label: "Base Plans" },
   { href: "/admin/compliance", label: "Compliance" },
   { href: "/admin/subcontractors", label: "Subcontractors" },
   { href: "/admin/users", label: "Portal Users" },

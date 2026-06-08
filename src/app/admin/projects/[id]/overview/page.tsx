@@ -31,6 +31,12 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
 
   const jurisdictions = listJurisdictions();
 
+  const { data: basePlans } = await supabase
+    .from("house_base_plans")
+    .select("id, plan_number, name, variant")
+    .eq("active", true)
+    .order("display_order");
+
   return (
     <div className="max-w-4xl">
       <form
@@ -71,6 +77,43 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
             </select>
             <p className="text-xs text-ink/50 mt-2">
               Drives local building regulations shown on Plans & Renderings.
+            </p>
+          </div>
+          <div>
+            <label className="field-label">Subdivision</label>
+            <input
+              name="subdivision"
+              defaultValue={project.subdivision ?? ""}
+              className="field-input"
+              placeholder="e.g. West Lake"
+            />
+          </div>
+          <div>
+            <label className="field-label">Lot number</label>
+            <input
+              name="lot_number"
+              defaultValue={project.lot_number ?? ""}
+              className="field-input"
+              placeholder="e.g. 12"
+            />
+          </div>
+          <div>
+            <label className="field-label">Base house plan</label>
+            <select
+              name="base_plan_id"
+              className="field-input"
+              defaultValue={project.base_plan_id ?? ""}
+            >
+              <option value="">— Select Craig Peel plan —</option>
+              {(basePlans ?? []).map((p) => (
+                <option key={p.id} value={p.id}>
+                  #{p.plan_number} — {p.name}
+                  {p.variant ? ` (${p.variant})` : ""}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-ink/50 mt-2">
+              Each lot needs revisions from this base plan against its plat.
             </p>
           </div>
           <div>
