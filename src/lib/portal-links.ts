@@ -20,28 +20,28 @@ export function getPortalLoginCopy(kind: PortalKind) {
         eyebrow: "— Admin sign in",
         title: "Admin portal",
         description:
-          "For 8th Street team members with admin access. Enter your approved email and we'll send a one-time sign-in link.",
+          "For 8th Street team members with admin access. Sign in with your email and password. No account? Request access below.",
       };
     case "client":
       return {
         eyebrow: "— Client sign in",
         title: "Client portal",
         description:
-          "Access is by invitation only. If your project manager has approved you, enter your email and we'll send a one-time sign-in link.",
+          "Access is by invitation only. Sign in with the email and temporary password your project manager sent you, then set your own password.",
       };
     case "subcontractor":
       return {
         eyebrow: "— Sub sign in",
         title: "Subcontractor portal",
         description:
-          "For invited trade partners. Enter your approved email and we'll send a one-time sign-in link to view bid requests and submit proposals.",
+          "For invited trade partners. Sign in with your email and password to view bid requests and submit proposals.",
       };
     default:
       return {
         eyebrow: "— Sign in",
         title: "Client & team portal",
         description:
-          "Access is by invitation only. Enter your approved email and we'll send a one-time sign-in link to the right portal for your role.",
+          "Sign in with your email and password. Don't have access yet? Submit a request and an admin will review it.",
       };
   }
 }

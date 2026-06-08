@@ -63,9 +63,15 @@ export function AdminSidebar({ userEmail }: { userEmail: string }) {
         <div className="text-sm text-bone/80 truncate" title={userEmail}>
           {userEmail}
         </div>
+        <Link
+          href="/account/password"
+          className="mt-4 block text-xs font-mono tracking-[0.15em] uppercase text-bone/50 hover:text-copper-100 transition-colors"
+        >
+          Change Password
+        </Link>
         <button
           onClick={signOut}
-          className="mt-4 w-full text-left text-xs font-mono tracking-[0.15em] uppercase text-bone/50 hover:text-copper-100 transition-colors"
+          className="mt-3 w-full text-left text-xs font-mono tracking-[0.15em] uppercase text-bone/50 hover:text-copper-100 transition-colors"
         >
           Sign Out →
         </button>

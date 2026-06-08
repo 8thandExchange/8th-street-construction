@@ -7,6 +7,7 @@ import {
   deleteProjectImage,
   addProjectImage,
 } from "@/lib/actions/project-overview";
+import { listJurisdictions } from "@/lib/building-regulations/registry";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,8 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
     .select("*")
     .eq("project_id", project.id)
     .order("display_order", { ascending: true });
+
+  const jurisdictions = listJurisdictions();
 
   return (
     <div className="max-w-4xl">
@@ -55,12 +58,20 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
           </div>
           <div>
             <label className="field-label">Jurisdiction (permits & inspections)</label>
-            <input
+            <select
               name="jurisdiction"
-              defaultValue={project.jurisdiction ?? ""}
               className="field-input"
-              placeholder="City of Augusta, Richmond County, GA"
-            />
+              defaultValue={project.jurisdiction ?? jurisdictions[0]?.name ?? ""}
+            >
+              {jurisdictions.map((j) => (
+                <option key={j.key} value={j.name}>
+                  {j.name}, {j.state}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-ink/50 mt-2">
+              Drives local building regulations shown on Plans & Renderings.
+            </p>
           </div>
           <div>
             <label className="field-label">Start date</label>

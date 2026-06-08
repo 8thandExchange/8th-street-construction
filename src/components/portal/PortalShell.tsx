@@ -60,6 +60,12 @@ export function PortalShell({ email, role, children }: PortalShellProps) {
             <div className="text-xs text-stone-300 font-mono truncate max-w-[200px]" title={email}>
               {email}
             </div>
+            <Link
+              href="/account/password"
+              className="text-xs font-mono tracking-[0.15em] uppercase text-stone-300 hover:text-copper"
+            >
+              Password
+            </Link>
             <button
               onClick={signOut}
               className="text-xs font-mono tracking-[0.15em] uppercase text-stone-300 hover:text-copper"

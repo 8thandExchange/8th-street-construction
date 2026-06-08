@@ -35,6 +35,28 @@ export const PROJECT_STATUS_LABELS: Record<string, string> = {
   archived: "Archived",
 };
 
+export const PLAN_SET_STATUS_LABELS: Record<string, string> = {
+  draft: "Draft",
+  pending_client: "Awaiting Sign-Off",
+  approved: "Signed Off",
+  revision_requested: "Revisions Requested",
+};
+
+export const PLAN_SET_STATUS_STYLES: Record<string, string> = {
+  draft: "bg-stone-100 text-stone-500 border-stone-200",
+  pending_client: "bg-violet-50 text-violet-700 border-violet-200",
+  approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  revision_requested: "bg-amber-50 text-amber-800 border-amber-200",
+};
+
+export const PLAN_FILE_KINDS = [
+  { value: "plan", label: "Architectural Plan" },
+  { value: "rendering", label: "Rendering" },
+  { value: "elevation", label: "Elevation" },
+  { value: "site_plan", label: "Site Plan" },
+  { value: "other", label: "Other" },
+] as const;
+
 export const DOCUMENT_CATEGORIES = [
   { value: "contract", label: "Contract" },
   { value: "permit", label: "Permit" },

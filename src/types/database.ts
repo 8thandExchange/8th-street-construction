@@ -50,6 +50,8 @@ export type ConsultationStatus =
   | "cancelled"
   | "no_show";
 
+export type AccessRequestStatus = "pending" | "approved" | "denied";
+
 export interface Profile {
   id: string;
   role: UserRole;
@@ -59,8 +61,23 @@ export interface Profile {
   phone: string | null;
   company: string | null;
   avatar_url: string | null;
+  must_change_password: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface PortalAccessRequest {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  requested_role: UserRole;
+  portal_path: string | null;
+  message: string | null;
+  status: AccessRequestStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
 }
 
 export interface Lead {
@@ -176,6 +193,43 @@ export interface Consultation {
   assigned_to: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export type PlanSetStatus = "draft" | "pending_client" | "approved" | "revision_requested";
+
+export type PlanFileKind = "plan" | "rendering" | "elevation" | "site_plan" | "other";
+
+export interface ProjectPlanSet {
+  id: string;
+  project_id: string;
+  version: number;
+  title: string;
+  description: string | null;
+  status: PlanSetStatus;
+  jurisdiction_key: string | null;
+  regulations_snapshot: Json | null;
+  created_by: string | null;
+  sent_to_client_at: string | null;
+  client_signed_at: string | null;
+  client_signed_by: string | null;
+  client_signature_text: string | null;
+  client_acknowledgment: string | null;
+  revision_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectPlanFile {
+  id: string;
+  plan_set_id: string;
+  title: string;
+  description: string | null;
+  kind: PlanFileKind;
+  storage_path: string;
+  file_type: string | null;
+  file_size_bytes: number | null;
+  display_order: number;
+  created_at: string;
 }
 
 export interface Service {

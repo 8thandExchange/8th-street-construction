@@ -13,6 +13,7 @@ export type ProjectHubSummary = {
   documentCount: number;
   messageCount: number;
   pendingChangeOrders: number;
+  pendingPlanSignOffs: number;
   clientEmail: string | null;
   clientName: string | null;
   contractValue: number;
@@ -53,6 +54,7 @@ export async function loadProjectForHub(projectId: string) {
     documentsRes,
     messagesRes,
     changeOrdersRes,
+    planSetsRes,
     tasksRes,
     clientRes,
     drawsRes,
@@ -66,6 +68,7 @@ export async function loadProjectForHub(projectId: string) {
     supabase.from("project_documents").select("id", { count: "exact", head: true }).eq("project_id", projectId),
     supabase.from("project_messages").select("id", { count: "exact", head: true }).eq("project_id", projectId),
     supabase.from("change_orders").select("id, status, cost_impact").eq("project_id", projectId),
+    supabase.from("project_plan_sets").select("id, status").eq("project_id", projectId),
     supabase.from("project_tasks").select("id, status").eq("project_id", projectId),
     project.client_id
       ? supabase.from("profiles").select("email, first_name, last_name").eq("id", project.client_id).single()
@@ -80,6 +83,7 @@ export async function loadProjectForHub(projectId: string) {
   const milestones = milestonesRes.data ?? [];
   const tasks = tasksRes.data ?? [];
   const changeOrders = changeOrdersRes.data ?? [];
+  const planSets = planSetsRes.data ?? [];
   const draws = drawsRes.data ?? [];
   const invoices = invoicesRes.data ?? [];
   const punch = punchRes.data ?? [];
@@ -169,6 +173,26 @@ export async function loadProjectForHub(projectId: string) {
     });
   }
 
+  if (planSets.some((p) => p.status === "pending_client")) {
+    alerts.push({
+      id: "plans",
+      severity: "warning",
+      title: "Plan set awaiting client sign-off",
+      href: `${base}/plans`,
+      actionLabel: "View plans",
+    });
+  }
+
+  if (planSets.some((p) => p.status === "revision_requested")) {
+    alerts.push({
+      id: "plan-revision",
+      severity: "critical",
+      title: "Client requested plan revisions",
+      href: `${base}/plans`,
+      actionLabel: "Review",
+    });
+  }
+
   if (unpaidInvoices > 0) {
     alerts.push({
       id: "invoice",
@@ -206,6 +230,7 @@ export async function loadProjectForHub(projectId: string) {
     documentCount: documentsRes.count ?? 0,
     messageCount: messagesRes.count ?? 0,
     pendingChangeOrders: changeOrders.filter((c) => c.status === "pending_client").length,
+    pendingPlanSignOffs: planSets.filter((p) => p.status === "pending_client").length,
     clientEmail: clientRes.data?.email ?? null,
     clientName: clientRes.data
       ? [clientRes.data.first_name, clientRes.data.last_name].filter(Boolean).join(" ") ||

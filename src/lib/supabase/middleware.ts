@@ -42,14 +42,21 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Role-based gating for /admin
-  if (pathname.startsWith("/admin") && user) {
+  if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, must_change_password")
       .eq("id", user.id)
       .single();
-    if (profile?.role !== "admin") {
+
+    if (profile?.must_change_password && !pathname.startsWith("/account/password")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/account/password";
+      return NextResponse.redirect(url);
+    }
+
+    // Role-based gating for /admin
+    if (pathname.startsWith("/admin") && profile?.role !== "admin") {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       return NextResponse.redirect(url);

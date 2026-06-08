@@ -3,8 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { provisionPortalUser } from "@/lib/auth/portal-access";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://www.8thstreetconstruction.com";
+function revalidate() {
+  revalidatePath("/admin/users");
+}
 
 export async function invitePortalUser(formData: FormData) {
   await requireAdmin();
@@ -21,59 +24,16 @@ export async function invitePortalUser(formData: FormData) {
     return { error: "Invalid role." };
   }
 
-  const redirectPath =
-    role === "admin" ? "/admin" : role === "client" ? "/client" : "/subs";
+  const result = await provisionPortalUser({
+    email,
+    role: role as "admin" | "client" | "subcontractor",
+    firstName,
+    lastName,
+  });
 
-  const admin = createAdminClient();
-
-  const { data: existingProfile } = await admin
-    .from("profiles")
-    .select("id, email, role")
-    .ilike("email", email)
-    .maybeSingle();
-
-  let userId = existingProfile?.id;
-
-  if (!userId) {
-    const { data: invited, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(
-      email,
-      {
-        redirectTo: `${SITE}/auth/callback?redirect=${encodeURIComponent(redirectPath)}`,
-      }
-    );
-
-    if (inviteErr) {
-      const msg = inviteErr.message.toLowerCase();
-      if (msg.includes("already") || msg.includes("registered")) {
-        const { data: listed } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-        const found = listed?.users?.find((u) => u.email?.toLowerCase() === email);
-        if (!found) return { error: inviteErr.message };
-        userId = found.id;
-      } else {
-        return { error: inviteErr.message };
-      }
-    } else {
-      userId = invited.user?.id;
-    }
-  }
-
-  if (!userId) return { error: "Could not create or find user." };
-
-  const { error: profileErr } = await admin.from("profiles").upsert(
-    {
-      id: userId,
-      email,
-      role,
-      first_name: firstName,
-      last_name: lastName,
-    },
-    { onConflict: "id" }
-  );
-
-  if (profileErr) return { error: profileErr.message };
-
-  revalidatePath("/admin/users");
-  return { ok: true };
+  if ("error" in result && result.error) return { error: result.error };
+  revalidate();
+  return { ok: true, tempPassword: result.tempPassword };
 }
 
 export async function removePortalUser(formData: FormData) {
@@ -101,34 +61,36 @@ export async function removePortalUser(formData: FormData) {
   await admin.from("profiles").delete().eq("id", id);
   await admin.auth.admin.deleteUser(id);
 
-  revalidatePath("/admin/users");
+  revalidate();
   return { ok: true };
 }
 
-export async function resendPortalInvite(formData: FormData) {
+export async function resetPortalPassword(formData: FormData) {
   await requireAdmin();
   const id = String(formData.get("id"));
   const admin = createAdminClient();
 
   const { data: profile } = await admin
     .from("profiles")
-    .select("email, role")
+    .select("email, role, first_name")
     .eq("id", id)
     .single();
 
   if (!profile?.email) return { error: "User not found." };
 
-  const redirectPath =
-    profile.role === "admin"
-      ? "/admin"
-      : profile.role === "client"
-        ? "/client"
-        : "/subs";
-
-  const { error } = await admin.auth.admin.inviteUserByEmail(profile.email, {
-    redirectTo: `${SITE}/auth/callback?redirect=${encodeURIComponent(redirectPath)}`,
+  const result = await provisionPortalUser({
+    email: profile.email,
+    role: profile.role as "admin" | "client" | "subcontractor",
+    firstName: profile.first_name,
+    sendEmail: true,
   });
 
-  if (error) return { error: error.message };
-  return { ok: true };
+  if ("error" in result && result.error) return { error: result.error };
+  revalidate();
+  return { ok: true, tempPassword: result.tempPassword };
+}
+
+/** @deprecated Use resetPortalPassword — kept for any stale forms */
+export async function resendPortalInvite(formData: FormData) {
+  return resetPortalPassword(formData);
 }

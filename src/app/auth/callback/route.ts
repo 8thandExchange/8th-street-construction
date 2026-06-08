@@ -30,9 +30,13 @@ export async function GET(request: Request) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, must_change_password")
     .eq("id", user.id)
     .single();
+
+  if (profile?.must_change_password) {
+    return NextResponse.redirect(new URL("/account/password", request.url));
+  }
 
   // If explicit redirect provided and user can access it, honor it
   if (redirect && redirect !== "/") {

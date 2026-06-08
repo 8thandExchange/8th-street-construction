@@ -58,6 +58,31 @@ export async function sendChangeOrderEmail(payload: {
   });
 }
 
+export async function sendPlanSetEmail(payload: {
+  to: string;
+  firstName: string;
+  projectTitle: string;
+  planTitle: string;
+  version: number;
+  projectId: string;
+}) {
+  const client = resend();
+  if (!client) return { skipped: true };
+  const url = `${SITE}/client/projects/${payload.projectId}/plans`;
+  return client.emails.send({
+    from: FROM,
+    to: payload.to,
+    subject: `Plans v${payload.version} ready for sign-off — ${payload.projectTitle}`,
+    html: `
+      <p>Hi ${payload.firstName},</p>
+      <p>Plan set <strong>v${payload.version}: ${payload.planTitle}</strong> for <strong>${payload.projectTitle}</strong> is ready for your review and sign-off.</p>
+      <p>Local building regulations for your jurisdiction are included in the portal.</p>
+      <p><a href="${url}">Review plans and sign off →</a></p>
+    `,
+    text: `Plans v${payload.version} ready for sign-off: ${url}`,
+  });
+}
+
 export async function sendNewMessageEmail(payload: {
   to: string;
   projectTitle: string;

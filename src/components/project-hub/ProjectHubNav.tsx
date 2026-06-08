@@ -25,6 +25,7 @@ const GROUPS = [
     items: [
       { href: "/milestones", label: "Timeline" },
       { href: "/updates", label: "Updates" },
+      { href: "/plans", label: "Plans" },
       { href: "/documents", label: "Documents" },
       { href: "/messages", label: "Messages" },
       { href: "/selections", label: "Selections" },
