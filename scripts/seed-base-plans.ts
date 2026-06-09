@@ -9,6 +9,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { existsSync, readFileSync, statSync } from "fs";
 import { basename, join, resolve } from "path";
+import { basePlanStoragePath } from "../src/lib/base-plans/paths";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -59,11 +60,6 @@ const PLANS: PlanSeed[] = [
   },
 ];
 
-function storagePath(planNumber: string, fileName: string) {
-  const slug = planNumber.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-  return `base-plans/${planNumber}/${slug}/${fileName}`;
-}
-
 function resolveFilePath(fileName: string) {
   const direct = join(PLANS_DIR, fileName);
   if (existsSync(direct)) return direct;
@@ -81,7 +77,7 @@ async function upsertPlan(plan: PlanSeed) {
   const fileName = basename(filePath);
   const bytes = readFileSync(filePath);
   const size = statSync(filePath).size;
-  const path = storagePath(plan.planNumber, fileName);
+  const path = basePlanStoragePath(plan.planNumber, null, fileName);
 
   const { error: uploadErr } = await sb.storage
     .from("project-documents")

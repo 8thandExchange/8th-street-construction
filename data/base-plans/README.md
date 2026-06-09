@@ -24,6 +24,10 @@ BASE_PLANS_DIR="/Users/akershousehold/Library/CloudStorage/GoogleDrive-troy.w.ak
 
 ## Upload to Supabase
 
+**Recommended:** use the admin UI at `/admin/base-plans` → **Add Standard Plan** to drop in PDFs directly.
+
+Or bulk-import via the seed script:
+
 ```bash
 # from project root, with .env.local configured
 npx tsx scripts/seed-base-plans.ts
