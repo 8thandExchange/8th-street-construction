@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 function resend() {
   const key = process.env.RESEND_API_KEY;
@@ -55,6 +56,64 @@ export async function sendChangeOrderEmail(payload: {
       <p><a href="${url}">Review and respond →</a></p>
     `,
     text: `Change order #${payload.coNumber} ready for review: ${url}`,
+  });
+}
+
+async function adminNotifyEmails() {
+  const admin = createAdminClient();
+  const { data } = await admin.from("profiles").select("email").eq("role", "admin");
+  const emails = (data ?? []).map((p) => p.email).filter(Boolean) as string[];
+  return emails.length ? emails : [process.env.EMAIL_TO_LEADS || "construction@8thandexchange.com"];
+}
+
+export async function sendPlanSignedAdminEmail(payload: {
+  projectTitle: string;
+  planTitle: string;
+  version: number;
+  signatureText: string;
+  projectId: string;
+}) {
+  const client = resend();
+  if (!client) return { skipped: true };
+
+  const url = `${SITE}/admin/projects/${payload.projectId}/plans`;
+  const to = await adminNotifyEmails();
+  return client.emails.send({
+    from: FROM,
+    to,
+    subject: `Client signed off on plans v${payload.version} — ${payload.projectTitle}`,
+    html: `
+      <p><strong>${payload.signatureText}</strong> signed off on plan set <strong>v${payload.version}: ${payload.planTitle}</strong> for <strong>${payload.projectTitle}</strong>.</p>
+      <p>The sign-off record is stored in the portal.</p>
+      <p><a href="${url}">View sign-off record →</a></p>
+    `,
+    text: `Client signed off on plans v${payload.version} for ${payload.projectTitle}: ${url}`,
+  });
+}
+
+export async function sendPlanRevisionAdminEmail(payload: {
+  projectTitle: string;
+  planTitle: string;
+  version: number;
+  revisionNotes: string;
+  projectId: string;
+}) {
+  const client = resend();
+  if (!client) return { skipped: true };
+
+  const url = `${SITE}/admin/projects/${payload.projectId}/plans`;
+  const to = await adminNotifyEmails();
+  return client.emails.send({
+    from: FROM,
+    to,
+    subject: `Client requested plan revisions v${payload.version} — ${payload.projectTitle}`,
+    html: `
+      <p>The client requested revisions on plan set <strong>v${payload.version}: ${payload.planTitle}</strong> for <strong>${payload.projectTitle}</strong>.</p>
+      <blockquote style="border-left:3px solid #ccc;margin:12px 0;padding-left:12px;color:#444">${payload.revisionNotes.replace(/\n/g, "<br>")}</blockquote>
+      <p>Upload a revised plan set (new version) when ready.</p>
+      <p><a href="${url}">Open plans →</a></p>
+    `,
+    text: `Plan revision requested for ${payload.projectTitle}: ${payload.revisionNotes}\n${url}`,
   });
 }
 

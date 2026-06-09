@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveJurisdiction } from "@/lib/building-regulations/registry";
-import { sendPlanSetEmail } from "@/lib/email/project-notify";
+import {
+  sendPlanRevisionAdminEmail,
+  sendPlanSetEmail,
+  sendPlanSignedAdminEmail,
+} from "@/lib/email/project-notify";
 
 function revalidateProject(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/plans`);
@@ -212,7 +216,7 @@ export async function clientSignPlanSet(formData: FormData) {
 
   const { data: planSet } = await supabase
     .from("project_plan_sets")
-    .select("id, status")
+    .select("id, title, version, status")
     .eq("id", id)
     .single();
 
@@ -222,7 +226,7 @@ export async function clientSignPlanSet(formData: FormData) {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("client_id")
+    .select("client_id, title")
     .eq("id", projectId)
     .single();
 
@@ -242,6 +246,15 @@ export async function clientSignPlanSet(formData: FormData) {
     .eq("id", id);
 
   if (error) return { error: error.message };
+
+  await sendPlanSignedAdminEmail({
+    projectTitle: project.title,
+    planTitle: planSet.title,
+    version: planSet.version,
+    signatureText,
+    projectId,
+  });
+
   revalidateProject(projectId);
   return { ok: true };
 }
@@ -261,7 +274,7 @@ export async function clientRequestPlanRevision(formData: FormData) {
 
   const { data: planSet } = await supabase
     .from("project_plan_sets")
-    .select("id, status")
+    .select("id, title, version, status")
     .eq("id", id)
     .single();
 
@@ -271,7 +284,7 @@ export async function clientRequestPlanRevision(formData: FormData) {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("client_id")
+    .select("client_id, title")
     .eq("id", projectId)
     .single();
 
@@ -288,6 +301,15 @@ export async function clientRequestPlanRevision(formData: FormData) {
     .eq("id", id);
 
   if (error) return { error: error.message };
+
+  await sendPlanRevisionAdminEmail({
+    projectTitle: project.title,
+    planTitle: planSet.title,
+    version: planSet.version,
+    revisionNotes,
+    projectId,
+  });
+
   revalidateProject(projectId);
   return { ok: true };
 }

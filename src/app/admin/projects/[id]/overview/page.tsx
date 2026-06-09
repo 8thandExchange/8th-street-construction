@@ -104,7 +104,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
               className="field-input"
               defaultValue={project.base_plan_id ?? ""}
             >
-              <option value="">— Select Craig Peel plan —</option>
+              <option value="">— Select standard plan —</option>
               {(basePlans ?? []).map((p) => (
                 <option key={p.id} value={p.id}>
                   #{p.plan_number} — {p.name}

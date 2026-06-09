@@ -27,8 +27,14 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const [{ data: milestones }, { data: updates }, { data: documents }, { data: selections }, { data: invoices }] =
-    await Promise.all([
+  const [
+    { data: milestones },
+    { data: updates },
+    { data: documents },
+    { data: selections },
+    { data: invoices },
+    { data: pendingPlanSets },
+  ] = await Promise.all([
       supabase
         .from("project_milestones")
         .select("*")
@@ -57,6 +63,11 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
         .select("id, status")
         .eq("project_id", project.id)
         .neq("status", "paid"),
+      supabase
+        .from("project_plan_sets")
+        .select("id, title, version")
+        .eq("project_id", project.id)
+        .eq("status", "pending_client"),
     ]);
 
   const completed = (milestones ?? []).filter((m) => m.status === "completed").length;
@@ -65,11 +76,12 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
     (s) => s.status === "client_review" || (s.due_date && s.due_date <= today && s.status !== "approved")
   ).length;
   const invoicesDue = (invoices ?? []).length;
+  const plansAwaitingSignOff = (pendingPlanSets ?? []).length;
 
   return (
     <div className="px-6 md:px-10 lg:px-14 py-10 md:py-14">
-      {(selectionsDue > 0 || invoicesDue > 0) && (
-        <div className="grid md:grid-cols-2 gap-3 mb-10">
+      {(selectionsDue > 0 || invoicesDue > 0 || plansAwaitingSignOff > 0) && (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 mb-10">
           {selectionsDue > 0 && (
             <Link
               href={`/client/projects/${project.id}/selections`}
@@ -90,6 +102,18 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
                 {invoicesDue} invoice{invoicesDue > 1 ? "s" : ""} ready
               </span>
               <span className="text-copper font-mono text-xs">Pay →</span>
+            </Link>
+          )}
+          {plansAwaitingSignOff > 0 && (
+            <Link
+              href={`/client/projects/${project.id}/plans`}
+              className="hub-panel p-5 flex items-center justify-between hover:border-emerald-400/50 transition-colors border-emerald-200/60"
+            >
+              <span className="text-sm text-ink">
+                Plans ready for your sign-off
+                {plansAwaitingSignOff > 1 ? ` (${plansAwaitingSignOff})` : ""}
+              </span>
+              <span className="text-emerald-700 font-mono text-xs">Review →</span>
             </Link>
           )}
         </div>
