@@ -210,6 +210,59 @@ export async function runProjectAutomation() {
     sent++;
   }
 
+  // Plan sign-off pending (client reminder)
+  const { data: planSets } = await admin
+    .from("project_plan_sets")
+    .select("id, title, version, sent_to_client_at, project_id, projects(title, client_id)")
+    .eq("status", "pending_client")
+    .not("sent_to_client_at", "is", null);
+
+  for (const ps of planSets ?? []) {
+    if (!ps.sent_to_client_at) continue;
+    const sentAt = new Date(ps.sent_to_client_at);
+    const daysSince = Math.floor((today.getTime() - sentAt.getTime()) / 86400000);
+    const key =
+      daysSince >= 7 ? "plan_signoff_overdue" : daysSince >= 3 ? "plan_signoff_reminder" : null;
+    if (!key) continue;
+    if (await alreadySent(admin, key, ps.id)) {
+      skipped++;
+      continue;
+    }
+
+    const project = rel(
+      ps.projects as { title: string; client_id: string | null } | { title: string; client_id: string | null }[] | null
+    );
+    const recipients = [...admins];
+    if (project?.client_id) {
+      const { data: cp } = await admin.from("profiles").select("email").eq("id", project.client_id).single();
+      if (cp?.email) recipients.push(cp.email);
+    }
+
+    const subject =
+      daysSince >= 7
+        ? `Plans still awaiting sign-off — v${ps.version}`
+        : `Reminder: plans ready for sign-off — v${ps.version}`;
+
+    if (client) {
+      await client.emails.send({
+        from: FROM,
+        to: [...new Set(recipients)],
+        subject: `${project?.title ?? "Project"}: ${subject}`,
+        html: `<p>Plan set <strong>v${ps.version}: ${ps.title}</strong> on <strong>${project?.title}</strong> ${daysSince >= 7 ? "has been waiting over a week" : "is ready for your review"}.</p><p><a href="${SITE}/client/projects/${ps.project_id}/plans">Review and sign off →</a></p>`,
+        text: subject,
+      });
+    }
+
+    await admin.from("project_reminder_log").insert({
+      project_id: ps.project_id,
+      reminder_key: key,
+      entity_type: "plan_set",
+      entity_id: ps.id,
+      sent_to: recipients.join(", "),
+    });
+    sent++;
+  }
+
   // Punch items overdue
   const { data: punch } = await admin
     .from("punch_list_items")

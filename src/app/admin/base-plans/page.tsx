@@ -21,10 +21,12 @@ export default async function BasePlansPage() {
   return (
     <div className="max-w-5xl">
       <div className="mb-8">
-        <h1 className="font-display text-3xl text-ink">Base House Plans</h1>
+        <h1 className="font-display text-3xl text-ink">Standard House Plans</h1>
         <p className="text-sm text-ink/60 mt-2 max-w-2xl">
-          Craig Peel catalog selected for 8th Street Construction. Assign a base plan to each lot
-          project — every lot will need revisions against its plat before build.
+          Company catalog of base models — Augusta, Broad Street, Midtown, Riverwalk, Savannah, and
+          Summerville. Assign a base plan to each lot on the project overview. When lot-specific
+          revisions are ready, create a versioned plan set on the project Plans tab and send it to
+          the client for electronic sign-off.
         </p>
       </div>
 
@@ -69,9 +71,9 @@ export default async function BasePlansPage() {
 
       {!plans?.length && (
         <p className="text-ink/50 italic py-16 text-center border border-dashed border-ink/20">
-          No base plans in the catalog yet. Run{" "}
-          <code className="font-mono text-xs">npx tsx scripts/seed-base-plans.ts</code> to import
-          the Craig Peel PDFs.
+          No standard plans in the catalog yet. Copy your PDFs to{" "}
+          <code className="font-mono text-xs">data/base-plans/</code> then run{" "}
+          <code className="font-mono text-xs">npx tsx scripts/seed-base-plans.ts</code>.
         </p>
       )}
     </div>
