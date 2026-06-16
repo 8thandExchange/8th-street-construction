@@ -2,7 +2,9 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
+import { SITE_IMAGES } from "@/lib/site-images";
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -52,6 +54,18 @@ export default function AboutPage() {
               </h1>
             </Reveal>
           </Container>
+        </section>
+
+        <section className="relative h-[42vh] min-h-[18rem] max-h-[28rem] overflow-hidden bg-navy">
+          <Image
+            src={SITE_IMAGES.aerialAugusta}
+            alt={SITE_IMAGES.aerialAugustaAlt}
+            fill
+            sizes="100vw"
+            className="object-cover object-center brand-photo"
+            priority={false}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/35 to-navy/10" />
         </section>
 
         {/* The story */}

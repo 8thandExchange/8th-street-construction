@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
+import { BrandTexture } from "@/components/site/BrandTexture";
 
 type PageHeroProps = {
   children: ReactNode;
@@ -9,6 +10,7 @@ type PageHeroProps = {
   dark?: boolean;
   className?: string;
   imagePosition?: "center" | "top";
+  texture?: "blueprint" | "linen";
 };
 
 export function PageHero({
@@ -18,6 +20,7 @@ export function PageHero({
   dark = true,
   className,
   imagePosition = "center",
+  texture,
 }: PageHeroProps) {
   return (
     <section
@@ -36,10 +39,11 @@ export function PageHero({
             priority
             sizes="100vw"
             className={cn(
-              "object-cover scale-105",
+              "object-cover scale-105 brand-photo",
               imagePosition === "top" ? "object-top" : "object-center"
             )}
           />
+          {texture && <BrandTexture kind={texture} opacity={dark ? 0.18 : 0.1} />}
           <div
             className={cn(
               "absolute inset-0",

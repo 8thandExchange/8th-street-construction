@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SITE_IMAGES } from "@/lib/site-images";
 import Link from "next/link";
 import Image from "next/image";
+import { BrandTexture } from "@/components/site/BrandTexture";
 
 export const revalidate = 3600;
 
@@ -89,6 +90,7 @@ export default async function HomePage() {
           imageAlt={SITE_IMAGES.heroAlt}
           className="min-h-[100svh] flex flex-col"
           imagePosition="top"
+          texture="blueprint"
         >
           <Container size="wide" className="flex flex-col flex-1 pt-[calc(5.5rem+env(safe-area-inset-top))] md:pt-[calc(7rem+env(safe-area-inset-top))] pb-12 md:pb-20">
             <div className="flex-1 flex flex-col justify-end max-w-5xl">
@@ -173,7 +175,7 @@ export default async function HomePage() {
                       alt={SITE_IMAGES.craftAlt}
                       fill
                       sizes="(min-width: 1024px) 42vw, 100vw"
-                      className="object-cover"
+                      className="object-cover brand-photo"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-navy/50 via-transparent to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
@@ -296,13 +298,14 @@ export default async function HomePage() {
 
         {/* SELECTED WORK */}
         <section className="bg-navy text-bone section-pad grain-overlay relative overflow-hidden">
+          <BrandTexture kind="blueprint" opacity={0.22} />
           <div className="absolute inset-0 opacity-30 pointer-events-none">
             <Image
               src={SITE_IMAGES.interior}
               alt=""
               fill
               sizes="100vw"
-              className="object-cover"
+              className="object-cover brand-photo"
               aria-hidden
             />
             <div className="absolute inset-0 bg-navy/85" />

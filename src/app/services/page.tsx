@@ -2,8 +2,12 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
+import { PageHero } from "@/components/site/PageHero";
+import { BrandTexture } from "@/components/site/BrandTexture";
+import { SITE_IMAGES } from "@/lib/site-images";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 
 export const revalidate = 3600;
@@ -22,29 +26,43 @@ export default async function ServicesPage() {
     .eq("published", true)
     .order("display_order", { ascending: true });
 
+  const SERVICE_IMAGES = [
+    SITE_IMAGES.heroConstruction,
+    SITE_IMAGES.craft,
+    SITE_IMAGES.commercial,
+    SITE_IMAGES.interior,
+  ] as const;
+
   return (
     <>
-      <SiteHeader />
+      <SiteHeader dark />
       <main className="bg-bone text-ink">
-        {/* Header */}
-        <section className="pt-[calc(5.5rem+env(safe-area-inset-top))] pb-12 md:pt-[calc(7rem+env(safe-area-inset-top))] md:pb-24">
-          <Container size="wide">
-            <Reveal>
-              <span className="section-num">— Services</span>
-            </Reveal>
-            <Reveal delay={100}>
-              <h1 className="mt-6 font-display text-display-2xl leading-[0.95]">
-                What we<br/>
-                <span className="italic-display text-copper">build.</span>
-              </h1>
-            </Reveal>
-            <Reveal delay={200}>
-              <p className="mt-10 max-w-2xl text-lg text-ink/70 leading-relaxed">
-                Full-service construction across residential and commercial — from feasibility studies through final walkthrough. One team, one standard, accountable end-to-end.
-              </p>
-            </Reveal>
-          </Container>
-        </section>
+        <PageHero
+          image={SITE_IMAGES.heroConstruction}
+          imageAlt={SITE_IMAGES.heroConstructionAlt}
+          className="pb-12 md:pb-20"
+          texture="blueprint"
+        >
+          <section className="pt-[calc(5.5rem+env(safe-area-inset-top))] md:pt-[calc(7rem+env(safe-area-inset-top))]">
+            <Container size="wide">
+              <Reveal>
+                <span className="eyebrow-copper">— Services</span>
+              </Reveal>
+              <Reveal delay={100}>
+                <h1 className="mt-6 font-display text-display-2xl leading-[0.95] text-bone max-w-3xl">
+                  What we
+                  <br />
+                  <span className="italic-display text-copper-100">build.</span>
+                </h1>
+              </Reveal>
+              <Reveal delay={200}>
+                <p className="mt-10 max-w-2xl text-lg text-bone/75 leading-relaxed">
+                  Full-service construction across residential and commercial — from feasibility studies through final walkthrough. One team, one standard, accountable end-to-end.
+                </p>
+              </Reveal>
+            </Container>
+          </section>
+        </PageHero>
 
         {/* Service sections */}
         <section className="border-t border-ink/10">
@@ -64,6 +82,16 @@ export default async function ServicesPage() {
                     </div>
                   </div>
                   <div className="col-span-12 lg:col-span-9 lg:max-w-2xl">
+                    <div className="relative aspect-[16/10] overflow-hidden mb-8 md:mb-10 bg-paper">
+                      <Image
+                        src={SERVICE_IMAGES[i % SERVICE_IMAGES.length]}
+                        alt=""
+                        fill
+                        sizes="(min-width: 1024px) 50vw, 100vw"
+                        className="object-cover brand-photo"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-navy/40 via-transparent to-transparent" />
+                    </div>
                     <p className="text-lg text-ink/85 leading-relaxed">
                       {service.short_description}
                     </p>
@@ -88,7 +116,8 @@ export default async function ServicesPage() {
         </section>
 
         {/* CTA */}
-        <section className="bg-navy text-bone py-24 md:py-32 grain-overlay">
+        <section className="bg-navy text-bone py-24 md:py-32 grain-overlay relative overflow-hidden">
+          <BrandTexture kind="blueprint" opacity={0.2} />
           <Container size="wide">
             <div className="grid grid-cols-12 gap-6 items-end">
               <div className="col-span-12 md:col-span-8">

@@ -19,7 +19,7 @@ export default function ContactPage() {
     <>
       <SiteHeader dark />
       <main className="bg-navy text-bone min-h-screen">
-        <PageHero image={SITE_IMAGES.commercial} imageAlt={SITE_IMAGES.commercialAlt} className="pb-16 md:pb-24">
+        <PageHero image={SITE_IMAGES.commercial} imageAlt={SITE_IMAGES.commercialAlt} className="pb-16 md:pb-24" texture="linen">
           <section className="pt-[calc(5.5rem+env(safe-area-inset-top))] md:pt-[calc(7rem+env(safe-area-inset-top))]">
             <Container size="wide">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
