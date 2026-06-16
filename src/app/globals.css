@@ -300,6 +300,112 @@ body {
 }
 
 /* =====================================================================
+   Elevation mark — draw-in animation (Phase C)
+   ===================================================================== */
+.mark-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: markStrokeDraw 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.mark-draw-baseline { animation-delay: 0ms; }
+.mark-draw-ellipse-bottom { animation-delay: 280ms; }
+.mark-draw-ellipse-top { animation-delay: 560ms; }
+.mark-draw-t-stem { animation-delay: 1100ms; }
+.mark-draw-t-bar { animation-delay: 1250ms; }
+
+.mark-fade-fulcrum {
+  opacity: 0;
+  transform: translateY(6px);
+  transform-origin: center;
+  animation: markFulcrumSettle 0.5s cubic-bezier(0.16, 1, 0.3, 1) 900ms forwards;
+}
+
+@keyframes markStrokeDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes markFulcrumSettle {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Logo intro overlay */
+.logo-intro-wordmark {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: logoIntroFadeUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 1400ms forwards;
+}
+
+.logo-intro-underline {
+  transform: scaleX(0);
+  transform-origin: center;
+  animation: logoIntroUnderline 0.7s cubic-bezier(0.16, 1, 0.3, 1) 1900ms forwards;
+}
+
+.logo-intro-tagline {
+  opacity: 0;
+  animation: logoIntroFadeIn 0.8s ease-out 2200ms forwards;
+}
+
+.logo-intro-exit {
+  animation: logoIntroExit 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes logoIntroFadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes logoIntroFadeIn {
+  to { opacity: 1; }
+}
+
+@keyframes logoIntroUnderline {
+  to { transform: scaleX(1); }
+}
+
+@keyframes logoIntroExit {
+  to { opacity: 0; visibility: hidden; }
+}
+
+/* Hero Ken Burns */
+.hero-ken-burns {
+  animation: heroKenBurns 24s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes heroKenBurns {
+  from { transform: scale(1.03); }
+  to { transform: scale(1.1); }
+}
+
+/* Process section line draw */
+.process-line {
+  transform: scaleY(0);
+  transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.process-line.process-line-in {
+  transform: scaleY(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark-draw {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+  .mark-fade-fulcrum,
+  .logo-intro-wordmark,
+  .logo-intro-underline,
+  .logo-intro-tagline {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  .logo-intro-exit { animation: none; opacity: 0; }
+  .hero-ken-burns { animation: none; transform: none; }
+  .process-line { transform: scaleY(1); }
+}
+
+/* =====================================================================
    Reveal on scroll utility
    ===================================================================== */
 .reveal {

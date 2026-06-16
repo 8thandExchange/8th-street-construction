@@ -1,7 +1,8 @@
 /** Owned brand photography — local assets in /public/img */
 export const SITE_IMAGES = {
-  hero: "/img/hero.jpg",
-  heroAlt: "Custom home exterior at dusk in the Augusta area",
+  hero: "/img/hero-lowcountry.png",
+  heroFallback: "/img/hero.jpg",
+  heroAlt: "Low Country home exterior at dusk — Augusta vernacular with deep porch and classic Southern proportions",
   craft: "/img/craft.jpg",
   craftAlt: "Timber and steel structural detail on a jobsite",
   interior: "/img/interior.jpg",

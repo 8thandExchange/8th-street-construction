@@ -85,7 +85,7 @@ export default function AboutPage() {
                 </Reveal>
                 <Reveal delay={150}>
                   <p className="text-lg leading-relaxed text-ink/75">
-                    The Augusta market deserves a builder who treats every project — regardless of scale — with the same planning, transparency, and accountability that institutional investors demand from their construction partners. That's what we built 8th Street Construction to be.
+                    We build in the tradition of Augusta and the Low Country — raised porches, honest materials, classical proportion — with the planning discipline institutional clients expect.
                   </p>
                 </Reveal>
                 <Reveal delay={250}>

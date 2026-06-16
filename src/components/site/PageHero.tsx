@@ -32,17 +32,19 @@ export function PageHero({
     >
       {image && (
         <>
-          <Image
-            src={image}
-            alt={imageAlt}
-            fill
-            priority
-            sizes="100vw"
-            className={cn(
-              "object-cover scale-105 brand-photo",
-              imagePosition === "top" ? "object-top" : "object-center"
-            )}
-          />
+          <div className="absolute inset-0 overflow-hidden">
+            <Image
+              src={image}
+              alt={imageAlt}
+              fill
+              priority
+              sizes="100vw"
+              className={cn(
+                "object-cover brand-photo hero-ken-burns",
+                imagePosition === "top" ? "object-top" : "object-center"
+              )}
+            />
+          </div>
           {texture && <BrandTexture kind={texture} opacity={dark ? 0.18 : 0.1} />}
           <div
             className={cn(

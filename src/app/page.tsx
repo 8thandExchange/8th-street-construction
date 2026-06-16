@@ -8,6 +8,9 @@ import { SITE_IMAGES } from "@/lib/site-images";
 import Link from "next/link";
 import Image from "next/image";
 import { BrandTexture } from "@/components/site/BrandTexture";
+import { LogoIntro } from "@/components/brand/LogoIntro";
+import { HeroArchitecture } from "@/components/site/HeroArchitecture";
+import { StatCounter } from "@/components/site/StatCounter";
 
 export const revalidate = 3600;
 
@@ -82,6 +85,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <LogoIntro />
       <SiteHeader dark />
       <main className="bg-bone text-ink">
         {/* HERO */}
@@ -92,6 +96,7 @@ export default async function HomePage() {
           imagePosition="top"
           texture="blueprint"
         >
+          <HeroArchitecture />
           <Container size="wide" className="flex flex-col flex-1 pt-[calc(5.5rem+env(safe-area-inset-top))] md:pt-[calc(7rem+env(safe-area-inset-top))] pb-12 md:pb-20">
             <div className="flex-1 flex flex-col justify-end max-w-5xl">
               <Reveal>
@@ -112,7 +117,7 @@ export default async function HomePage() {
 
               <Reveal delay={180} className="mt-8 md:mt-10 max-w-lg">
                 <p className="text-base sm:text-lg md:text-xl text-bone/80 leading-relaxed">
-                  Custom homes and commercial construction rooted in craft, precision, and structures that stand the test of time.
+                  Custom homes and commercial construction across the CSRA — rooted in Low Country craft, Augusta vernacular, and structures built to endure.
                 </p>
               </Reveal>
 
@@ -154,7 +159,9 @@ export default async function HomePage() {
               {STATS.map((stat, i) => (
                 <Reveal key={stat.label} delay={i * 80}>
                   <div className="border-t border-ink/12 pt-5 md:pt-6">
-                    <div className="font-display text-display-lg text-ink leading-none">{stat.value}</div>
+                    <div className="font-display text-display-lg text-ink leading-none">
+                      <StatCounter value={stat.value} />
+                    </div>
                     <div className="eyebrow mt-3 md:mt-4 text-stone-300 leading-snug pr-2">{stat.label}</div>
                   </div>
                 </Reveal>
@@ -282,7 +289,7 @@ export default async function HomePage() {
               </h2>
             </Reveal>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-px md:bg-ink/10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-px md:bg-ink/10 relative">
               {PROCESS.map((step, i) => (
                 <Reveal key={step.n} delay={i * 80} className="md:bg-bone">
                   <div className="surface-card md:border-0 md:shadow-none md:rounded-none rounded-sm p-6 md:p-8 lg:p-10 h-full bg-bone">
