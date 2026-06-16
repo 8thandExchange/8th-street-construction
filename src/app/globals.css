@@ -7,12 +7,15 @@
    Editorial-luxury meets industrial craft.
    ===================================================================== */
 :root {
-  --color-bone: 245 241 234;
-  --color-paper: 232 226 213;
-  --color-ink: 10 15 20;
-  --color-navy: 11 22 32;
-  --color-copper: 184 111 62;
-  --color-stone: 168 162 154;
+  --color-bone: 242 236 224;
+  --color-parchment: 242 236 224;
+  --color-paper: 232 223 208;
+  --color-ink: 26 26 24;
+  --color-navy: 16 28 42;
+  --color-rust: 181 69 27;
+  --color-copper: 181 69 27;
+  --color-pencil: 107 100 90;
+  --color-stone: 107 100 90;
 
   --rule: 1px;
   --max: 88rem;
@@ -91,13 +94,13 @@ body {
 }
 
 .surface-card:hover {
-  border-color: rgba(184, 111, 62, 0.35);
-  box-shadow: 0 24px 48px -24px rgba(10, 15, 20, 0.18);
+  border-color: rgba(181, 69, 27, 0.35);
+  box-shadow: 0 24px 48px -24px rgba(26, 26, 24, 0.18);
 }
 
 .surface-card-dark {
-  background: rgba(11, 22, 32, 0.6);
-  border: 1px solid rgba(245, 241, 234, 0.12);
+  background: rgba(16, 28, 42, 0.6);
+  border: 1px solid rgba(242, 236, 224, 0.12);
   backdrop-filter: blur(8px);
 }
 
@@ -125,11 +128,11 @@ body {
 }
 
 .eyebrow-copper {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), sans-serif;
   font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgb(var(--color-copper));
+  color: rgb(var(--color-rust));
 }
 
 /* =====================================================================
@@ -170,10 +173,10 @@ body {
    Number marker — used in "01" style section labels
    ===================================================================== */
 .section-num {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), sans-serif;
   font-size: 13px;
   letter-spacing: 0.15em;
-  color: rgb(var(--color-copper));
+  color: rgb(var(--color-rust));
 }
 
 /* =====================================================================
@@ -246,7 +249,7 @@ body {
 
 .field-input:focus {
   outline: none;
-  border-bottom-color: rgb(var(--color-copper));
+  border-bottom-color: rgb(var(--color-rust));
 }
 
 .field-input::placeholder {
@@ -260,15 +263,15 @@ body {
 }
 
 .field-input-dark:focus {
-  border-bottom-color: rgb(var(--color-copper));
+  border-bottom-color: rgb(var(--color-rust));
 }
 
 /* =====================================================================
    Selection
    ===================================================================== */
 ::selection {
-  background: rgb(var(--color-copper));
-  color: rgb(var(--color-bone));
+  background: rgb(var(--color-rust));
+  color: rgb(var(--color-parchment));
 }
 
 /* =====================================================================
@@ -286,7 +289,7 @@ body {
   border-radius: 0;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--color-copper));
+  background: rgb(var(--color-rust));
 }
 
 /* =====================================================================
@@ -329,12 +332,12 @@ body {
 }
 
 a:has(.hub-metric):hover .hub-metric {
-  border-color: rgba(184, 111, 62, 0.45);
+  border-color: rgba(181, 69, 27, 0.45);
 }
 
 .hub-metric-accent {
-  border-color: rgba(184, 111, 62, 0.35);
-  background: rgba(184, 111, 62, 0.06);
+  border-color: rgba(181, 69, 27, 0.35);
+  background: rgba(181, 69, 27, 0.06);
 }
 
 .hub-nav-pill {
@@ -376,7 +379,7 @@ a:has(.hub-metric):hover .hub-metric {
 }
 
 .client-nav-pill:hover {
-  border-color: rgba(184, 111, 62, 0.4);
+  border-color: rgba(181, 69, 27, 0.4);
   color: rgb(var(--color-ink));
 }
 

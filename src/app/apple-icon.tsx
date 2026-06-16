@@ -1,9 +1,9 @@
 import { ImageResponse } from "next/og";
 
-export const size = { width: 32, height: 32 };
+export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
-export default function Icon() {
+export default function AppleIcon() {
   return new ImageResponse(
     (
       <div
@@ -16,7 +16,7 @@ export default function Icon() {
           background: "#101c2a",
         }}
       >
-        <svg viewBox="-36 -44 72 92" width="26" height="30" fill="none">
+        <svg viewBox="-36 -44 72 92" width="110" height="128" fill="none">
           <ellipse cx="0" cy="-14" rx="16" ry="17" stroke="#f2ece0" strokeWidth="2.5" />
           <ellipse cx="0" cy="16" rx="19" ry="20" stroke="#f2ece0" strokeWidth="2.5" />
           <line x1="-30" y1="38" x2="30" y2="38" stroke="#f2ece0" strokeWidth="1" />

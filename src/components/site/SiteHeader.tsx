@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { PORTAL_LOGIN_LINKS } from "@/lib/portal-links";
+import { LogoLockup } from "@/components/brand/LogoLockup";
 
 const NAV = [
   { href: "/projects", label: "Work" },
@@ -54,24 +55,9 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
       >
         <div className="mx-auto max-w-8xl px-5 sm:px-6 md:px-10 lg:px-14">
           <div className="flex h-[4.5rem] md:h-24 items-center justify-between">
-            <Link href="/" className="group flex flex-col leading-none min-w-0" aria-label="8th Street Construction home">
-            <span
-              className={cn(
-                "font-display text-[1.35rem] sm:text-2xl md:text-[26px] tracking-tight transition-colors truncate",
-                onDarkHero || headerOnImage ? "text-bone" : "text-ink"
-              )}
-            >
-                8<span className="italic">th</span> Street
-              </span>
-              <span
-                className={cn(
-                  "eyebrow mt-0.5 transition-colors",
-                  onDarkHero || headerOnImage ? "text-bone/60" : "text-stone-300"
-                )}
-              >
-                Construction
-              </span>
-            </Link>
+            <LogoLockup
+              variant={onDarkHero || headerOnImage ? "light" : "dark"}
+            />
 
             <nav className="hidden md:flex items-center gap-8 lg:gap-10">
               {NAV.map((item) => (

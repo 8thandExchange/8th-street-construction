@@ -55,7 +55,7 @@ export function PageHero({
               aria-hidden
             />
           )}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(184,111,62,0.08),transparent_55%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(181,69,27,0.08),transparent_55%)]" />
         </>
       )}
       {!image && dark && <div className="absolute inset-0 grain-overlay pointer-events-none" />}

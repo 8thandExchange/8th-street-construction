@@ -1,18 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, Manrope, JetBrains_Mono } from "next/font/google";
+import { Cormorant_Garamond, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const display = Instrument_Serif({
+const display = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["400"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
   variable: "--font-display",
   display: "swap",
 });
 
-const sans = Manrope({
+const sans = DM_Sans({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600"],
   variable: "--font-sans",
   display: "swap",
 });
@@ -66,8 +66,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F5F1EA" },
-    { media: "(prefers-color-scheme: dark)", color: "#0B1620" },
+    { media: "(prefers-color-scheme: light)", color: "#f2ece0" },
+    { media: "(prefers-color-scheme: dark)", color: "#101c2a" },
   ],
 };
 
@@ -79,7 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     alternateName: "8th Street Construction, a division of 8th and Exchange Capital",
     url: SITE_URL,
     email: "construction@8thandexchange.com",
-    image: `${SITE_URL}/img/og-default.jpg`,
+    image: `${SITE_URL}/opengraph-image`,
     description:
       "Custom homes, residential renovations, and commercial construction in Augusta, Georgia and the CSRA.",
     address: {
