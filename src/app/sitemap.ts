@@ -9,6 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .from("projects")
     .select("slug, updated_at")
     .neq("status", "draft")
+    .neq("status", "archived")
     .order("updated_at", { ascending: false })
     .limit(500);
 

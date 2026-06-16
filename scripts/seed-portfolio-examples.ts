@@ -1,9 +1,9 @@
 /**
- * Seed representative portfolio examples — one per project category.
- * Run: npx tsx scripts/seed-portfolio-examples.ts
+ * Seed category illustration portfolio — one image per project type, no fictional names.
+ * Run: npm run seed:portfolio
  */
 import { createClient } from "@supabase/supabase-js";
-import { PORTFOLIO_EXAMPLES } from "../src/lib/portfolio-examples";
+import { PORTFOLIO_EXAMPLES, RETIRED_PORTFOLIO_SLUGS } from "../src/lib/portfolio-examples";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -18,6 +18,15 @@ const sb = createClient(url, key, {
 });
 
 async function main() {
+  for (const slug of RETIRED_PORTFOLIO_SLUGS) {
+    const { error } = await sb
+      .from("projects")
+      .update({ status: "archived", featured: false })
+      .eq("slug", slug);
+    if (error) throw error;
+    console.log(`Archived fictional entry: ${slug}`);
+  }
+
   for (const example of PORTFOLIO_EXAMPLES) {
     const row = {
       slug: example.slug,
@@ -47,15 +56,16 @@ async function main() {
     if (existing) {
       const { error } = await sb.from("projects").update(row).eq("id", existing.id);
       if (error) throw error;
-      console.log(`Updated: ${example.title} (${example.category})`);
+      console.log(`Updated: ${example.title}`);
     } else {
       const { error } = await sb.from("projects").insert(row);
       if (error) throw error;
-      console.log(`Created: ${example.title} (${example.category})`);
+      console.log(`Created: ${example.title}`);
     }
   }
 
-  console.log("\nPortfolio examples seeded. View at /projects");
+  console.log("\nCategory illustrations seeded. Real projects (e.g. 608 Macon Ave) are unchanged.");
+  console.log("View at /projects");
 }
 
 main().catch((e) => {

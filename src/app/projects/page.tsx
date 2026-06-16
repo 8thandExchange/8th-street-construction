@@ -29,6 +29,7 @@ export default async function ProjectsIndex(
     .from("projects")
     .select("id, slug, title, subtitle, category, location, year_completed, hero_image_url, excerpt")
     .neq("status", "draft")
+    .neq("status", "archived")
     .order("display_order", { ascending: true })
     .order("year_completed", { ascending: false, nullsFirst: false });
 
@@ -58,7 +59,7 @@ export default async function ProjectsIndex(
             </Reveal>
             <Reveal delay={200}>
               <p className="mt-10 max-w-2xl text-lg text-ink/70 leading-relaxed">
-                Residential and commercial work across the CSRA — Low Country homes, historic renovations, and commercial builds rooted in Augusta craft.
+                Illustrative examples of each project type we build across the CSRA — real case studies are added as work is completed and photographed.
               </p>
             </Reveal>
           </Container>
@@ -117,8 +118,8 @@ export default async function ProjectsIndex(
                         )}
                       </div>
                       <div className="flex items-baseline justify-between text-xs font-mono tracking-[0.15em] uppercase text-stone-300 mb-3">
-                        <span>{p.location || "Augusta"}</span>
-                        <span>{p.year_completed ?? "—"}</span>
+                        <span>{p.location || "Augusta · CSRA"}</span>
+                        {p.year_completed != null && <span>{p.year_completed}</span>}
                       </div>
                       <h2 className="font-display text-3xl text-ink group-hover:text-copper transition-colors duration-500 leading-tight">
                         {p.title}

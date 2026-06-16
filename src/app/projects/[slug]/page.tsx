@@ -4,6 +4,7 @@ import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { createAnonymousClient } from "@/lib/supabase/anonymous";
 import { PROJECT_CATEGORY_LABELS } from "@/lib/utils";
+import { isPortfolioIllustration } from "@/lib/portfolio-examples";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -18,6 +19,7 @@ export async function generateStaticParams() {
     .from("projects")
     .select("slug")
     .neq("status", "draft")
+    .neq("status", "archived")
     .limit(50);
   return (data ?? []).map((p) => ({ slug: p.slug }));
 }
@@ -34,6 +36,7 @@ export async function generateMetadata(
     .select("title, subtitle, meta_description, hero_image_url, excerpt")
     .eq("slug", params.slug)
     .neq("status", "draft")
+    .neq("status", "archived")
     .single();
   if (!project) return { title: "Project Not Found" };
   return {
@@ -56,6 +59,7 @@ export default async function ProjectDetail(props: { params: Promise<{ slug: str
     .select("*")
     .eq("slug", params.slug)
     .neq("status", "draft")
+    .neq("status", "archived")
     .single();
 
   if (!project) notFound();
@@ -71,6 +75,7 @@ export default async function ProjectDetail(props: { params: Promise<{ slug: str
   const galleryImages = (images ?? []).filter((i) => i.id !== heroImage?.id);
 
   const categoryLabel = PROJECT_CATEGORY_LABELS[project.category] ?? project.category;
+  const illustration = isPortfolioIllustration(project.slug);
 
   return (
     <>
@@ -93,7 +98,9 @@ export default async function ProjectDetail(props: { params: Promise<{ slug: str
           <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-transparent to-transparent" />
           <Container size="wide" className="absolute bottom-0 left-0 right-0 pb-12 md:pb-20 z-10">
             <Reveal>
-              <span className="eyebrow-copper">— {categoryLabel}</span>
+              <span className="eyebrow-copper">
+                — {illustration ? "Illustrative example" : categoryLabel}
+              </span>
             </Reveal>
             <Reveal delay={150}>
               <h1 className="mt-4 font-display text-display-xl text-bone leading-[0.95]">
@@ -115,9 +122,18 @@ export default async function ProjectDetail(props: { params: Promise<{ slug: str
           <Container size="wide">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {[
-                ["Location", project.location || "Augusta, GA"],
-                ["Year", project.year_completed?.toString() || "—"],
-                ["Scope", project.square_footage ? `${project.square_footage.toLocaleString()} sq ft` : "—"],
+                ["Location", project.location || "Augusta · CSRA"],
+                ...(illustration
+                  ? []
+                  : [
+                      ["Year", project.year_completed?.toString() || "—"],
+                      [
+                        "Scope",
+                        project.square_footage
+                          ? `${project.square_footage.toLocaleString()} sq ft`
+                          : "—",
+                      ],
+                    ]),
                 ["Category", categoryLabel],
               ].map(([label, value]) => (
                 <div key={label}>

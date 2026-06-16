@@ -66,6 +66,7 @@ export default async function HomePage() {
     .from("projects")
     .select("id, slug, title, subtitle, category, location, year_completed, hero_image_url, excerpt")
     .neq("status", "draft")
+    .neq("status", "archived")
     .eq("featured", true)
     .order("display_order", { ascending: true })
     .limit(3);
