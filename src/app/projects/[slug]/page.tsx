@@ -84,7 +84,7 @@ export default async function ProjectDetail(props: { params: Promise<{ slug: str
               alt={heroImage?.alt_text || project.title}
               fill
               priority
-              className="object-cover"
+              className="object-cover brand-photo"
               sizes="100vw"
             />
           ) : (
@@ -170,7 +170,7 @@ export default async function ProjectDetail(props: { params: Promise<{ slug: str
                           alt={img.alt_text || project.title}
                           fill
                           sizes="(min-width: 768px) 50vw, 100vw"
-                          className="object-cover"
+                          className="object-cover brand-photo"
                         />
                       </div>
                       {img.caption && (

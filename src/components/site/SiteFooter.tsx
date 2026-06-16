@@ -39,7 +39,7 @@ export function SiteFooter() {
           <div className="border-b border-bone/15 pb-12 md:pb-20 mb-12 md:mb-16">
             <div className="grid grid-cols-1 lg:grid-cols-[2fr,1fr] gap-10 lg:gap-12 items-end">
               <div>
-                <div className="eyebrow-copper mb-4 md:mb-6">Augusta, Georgia · est. 8 &amp; Exchange</div>
+                <div className="eyebrow-copper mb-4 md:mb-6">A division of 8th and Exchange Capital</div>
                 <h2 className="font-display text-display-lg leading-[0.95]">
                   Building <span className="italic-display">what</span>
                   <br />

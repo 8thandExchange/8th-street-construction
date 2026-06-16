@@ -58,7 +58,7 @@ export default async function ProjectsIndex(
             </Reveal>
             <Reveal delay={200}>
               <p className="mt-10 max-w-2xl text-lg text-ink/70 leading-relaxed">
-                A selection of residential and commercial projects across the CSRA. Each one a study in craft, precision, and accountability.
+                Residential and commercial work across the CSRA — Low Country homes, historic renovations, and commercial builds rooted in Augusta craft.
               </p>
             </Reveal>
           </Container>
@@ -110,7 +110,7 @@ export default async function ProjectsIndex(
                             alt={p.title}
                             fill
                             sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                            className="object-cover transition-transform duration-1000 ease-editorial group-hover:scale-105"
+                            className="object-cover brand-photo transition-transform duration-1000 ease-editorial group-hover:scale-105"
                           />
                         ) : (
                           <div className="absolute inset-0 bg-gradient-to-br from-stone-50 to-paper" />
