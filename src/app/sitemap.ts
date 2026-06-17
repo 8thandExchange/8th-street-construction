@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { getAllCollectionSlugs } from "@/lib/collection-pages";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://8thstreetconstruction.com";
 
@@ -29,5 +30,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...projectRoutes];
+  const collectionRoutes: MetadataRoute.Sitemap = getAllCollectionSlugs().map((slug) => ({
+    url: `${SITE_URL}/collection/${slug}`,
+    changeFrequency: "monthly",
+    priority: 0.85,
+  }));
+
+  return [...staticRoutes, ...collectionRoutes, ...projectRoutes];
 }

@@ -7,10 +7,12 @@ import { PORTAL_LOGIN_LINKS } from "@/lib/portal-links";
 import { LogoLockup } from "@/components/brand/LogoLockup";
 
 const NAV = [
-  { href: "/projects", label: "Work" },
-  { href: "/services", label: "Services" },
-  { href: "/about", label: "Studio" },
-  { href: "/contact", label: "Contact" },
+  { href: "/", label: "Home", match: (p: string) => p === "/" },
+  { href: "/#featured-project", label: "Featured Project", match: (p: string) => p === "/" },
+  { href: "/#collection", label: "The Collection", match: (p: string) => p === "/" },
+  { href: "/#process", label: "Process", match: (p: string) => p === "/" },
+  { href: "/#about", label: "About", match: (p: string) => p === "/" || p === "/about" },
+  { href: "/#contact", label: "Contact", match: (p: string) => p === "/" || p === "/contact" },
 ];
 
 export function SiteHeader({ dark = false }: { dark?: boolean }) {
@@ -59,15 +61,15 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
               variant={onDarkHero || headerOnImage ? "light" : "dark"}
             />
 
-            <nav className="hidden md:flex items-center gap-8 lg:gap-10">
+            <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
               {NAV.map((item) => (
                 <Link
-                  key={item.href}
+                  key={item.label}
                   href={item.href}
                   className={cn(
-                    "editorial-link text-sm tracking-wide transition-colors",
+                    "editorial-link text-sm tracking-wide transition-colors whitespace-nowrap",
                     onDarkHero || headerOnImage ? "text-bone hover:text-copper-100" : "text-ink hover:text-copper",
-                    pathname === item.href &&
+                    item.match(pathname) &&
                       (onDarkHero || headerOnImage ? "text-copper-100" : "text-copper")
                   )}
                 >
@@ -77,7 +79,7 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
               <Link
                 href="/book"
                 className={cn(
-                  "ml-1 inline-flex h-11 items-center px-5 lg:px-6 font-mono text-[11px] tracking-[0.2em] uppercase transition-all duration-500 ease-editorial",
+                  "ml-1 inline-flex h-11 items-center px-5 font-mono text-[11px] tracking-[0.2em] uppercase transition-all duration-500 ease-editorial",
                   onDarkHero || headerOnImage
                     ? "bg-copper text-bone hover:bg-copper-400"
                     : "bg-ink text-bone hover:bg-copper"
@@ -91,7 +93,7 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
               type="button"
               onClick={() => setOpen((o) => !o)}
               className={cn(
-                "md:hidden flex items-center justify-center w-11 h-11 -mr-1 rounded-full transition-colors",
+                "lg:hidden flex items-center justify-center w-11 h-11 -mr-1 rounded-full transition-colors",
                 onDarkHero || headerOnImage ? "text-bone hover:bg-bone/10" : "text-ink hover:bg-ink/5"
               )}
               aria-label={open ? "Close menu" : "Open menu"}
@@ -122,10 +124,9 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
         </div>
       </header>
 
-      {/* Mobile menu — full-screen overlay */}
       <div
         className={cn(
-          "md:hidden fixed inset-0 z-40 transition-all duration-500 ease-editorial",
+          "lg:hidden fixed inset-0 z-40 transition-all duration-500 ease-editorial",
           open ? "visible" : "invisible pointer-events-none"
         )}
         aria-hidden={!open}
@@ -148,12 +149,12 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
             <nav className="flex flex-col gap-1">
               {NAV.map((item, i) => (
                 <Link
-                  key={item.href}
+                  key={item.label}
                   href={item.href}
                   onClick={() => setOpen(false)}
                   className={cn(
-                    "font-display text-[clamp(2rem,8vw,2.75rem)] leading-tight py-3 border-b border-bone/10 transition-colors",
-                    pathname === item.href ? "text-copper-100" : "text-bone hover:text-copper-100"
+                    "font-display text-[clamp(1.75rem,7vw,2.5rem)] leading-tight py-3 border-b border-bone/10 transition-colors",
+                    item.match(pathname) ? "text-copper-100" : "text-bone hover:text-copper-100"
                   )}
                   style={{
                     opacity: open ? 1 : 0,

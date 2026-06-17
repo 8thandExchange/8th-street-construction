@@ -56,8 +56,11 @@ export function LogoIntro() {
           </span>
         </div>
 
-        <p className="logo-intro-tagline mt-8 max-w-xs text-center font-sans text-[11px] tracking-[0.18em] uppercase text-pencil/80 leading-relaxed">
-          Low Country craft · Augusta vernacular
+        <p className="logo-intro-tagline mt-8 max-w-sm text-center font-display text-sm sm:text-base text-parchment/90 leading-snug">
+          Building What Endures.
+        </p>
+        <p className="logo-intro-tagline mt-2 font-sans text-[10px] tracking-[0.22em] uppercase text-pencil/70">
+          Crafted for Generations.
         </p>
       </div>
     </div>

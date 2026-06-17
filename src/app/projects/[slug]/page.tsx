@@ -9,6 +9,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
+import { FEATURED_PROJECT } from "@/lib/featured-project";
 
 export const revalidate = 1800;
 export const dynamicParams = true;
@@ -76,17 +77,21 @@ export default async function ProjectDetail(props: { params: Promise<{ slug: str
 
   const categoryLabel = PROJECT_CATEGORY_LABELS[project.category] ?? project.category;
   const illustration = isPortfolioIllustration(project.slug);
+  const localHero =
+    project.slug === FEATURED_PROJECT.slug ? FEATURED_PROJECT.rendering : null;
+  const heroSrc =
+    heroImage?.public_url || project.hero_image_url || localHero;
 
   return (
     <>
-      <SiteHeader dark={!!heroImage?.public_url || !!project.hero_image_url} />
+      <SiteHeader dark={!!heroSrc} />
       <main className="bg-bone text-ink">
         {/* Hero image full-bleed */}
         <section className="relative w-full h-[60vh] md:h-[85vh] bg-navy overflow-hidden">
-          {(heroImage?.public_url || project.hero_image_url) ? (
+          {heroSrc ? (
             <Image
-              src={heroImage?.public_url || project.hero_image_url!}
-              alt={heroImage?.alt_text || project.title}
+              src={heroSrc}
+              alt={heroImage?.alt_text || FEATURED_PROJECT.renderingAlt || project.title}
               fill
               priority
               className="object-cover brand-photo"

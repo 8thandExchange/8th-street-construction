@@ -71,6 +71,19 @@ const config: Config = {
           200: "#6b645a",
           300: "#524d45",
         },
+        gold: {
+          DEFAULT: "#b89b5e",
+          50: "#e8dcc4",
+          100: "#d4c49a",
+          200: "#b89b5e",
+          300: "#9a8250",
+        },
+        "warm-white": "#f8f5ee",
+        slate: {
+          DEFAULT: "#3a4a5c",
+          100: "#3a4a5c",
+          200: "#2e3d4d",
+        },
       },
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],

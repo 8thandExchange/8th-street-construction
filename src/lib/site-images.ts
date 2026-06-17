@@ -1,8 +1,10 @@
+import { FEATURED_PROJECT } from "./featured-project";
+
 /** Owned brand photography — local assets in /public/img */
 export const SITE_IMAGES = {
-  hero: "/img/hero-lowcountry.png",
-  heroFallback: "/img/hero.jpg",
-  heroAlt: "Low Country home exterior at dusk — Augusta vernacular with deep porch and classic Southern proportions",
+  hero: FEATURED_PROJECT.rendering,
+  heroFallback: FEATURED_PROJECT.rendering,
+  heroAlt: FEATURED_PROJECT.renderingAlt,
   craft: "/img/craft.jpg",
   craftAlt: "Timber and steel structural detail on a jobsite",
   interior: "/img/interior.jpg",

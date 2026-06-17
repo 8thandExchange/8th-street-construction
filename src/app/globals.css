@@ -104,6 +104,36 @@ body {
   backdrop-filter: blur(8px);
 }
 
+/* Luxury product cards — Collection */
+.luxury-card {
+  transition:
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 28px 56px -28px rgba(16, 28, 42, 0.14);
+  border-color: rgba(181, 69, 27, 0.2);
+}
+
+.luxury-frame {
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-frame:hover {
+  transform: translateY(-2px);
+}
+
+.process-step {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.process-step:hover {
+  transform: translateY(-2px);
+}
+
 /* =====================================================================
    Editorial type primitives
    ===================================================================== */
