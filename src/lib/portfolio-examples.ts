@@ -46,76 +46,64 @@ const categoryCopy: Record<
   { subtitle: string; excerpt: string; narrative: string; metaDescription: string }
 > = {
   custom_home: {
-    subtitle: "Low Country new construction — illustrative example",
+    subtitle: "Ground-up custom homes across the CSRA",
     excerpt:
-      "Ground-up custom homes across the CSRA — raised porches, classical proportion, and modern structural precision.",
-    narrative: `This image illustrates the custom homes we build across Augusta and the CSRA — not a specific completed project.
+      "Raised porches, classical proportion, and modern structural precision built for Augusta's climate.",
+    narrative: `Our custom residential work includes raised Low Country foundations, deep front porches, durable envelope assemblies, and floor plans shaped around how families live in this region.
 
-Our custom residential work typically includes raised Low Country foundations, deep front porches, durable envelope assemblies, and floor plans shaped around how families live in this climate. We self-perform critical path work where it matters and coordinate trades through a single accountable team.
-
-When you engage us for a custom home, you'll get detailed pre-construction planning, transparent milestone communication, and craft intended to endure for generations. Real project profiles will be added here as work is completed and photographed.`,
+We self-perform critical path work where it matters and coordinate trades through a single accountable team — with detailed pre-construction planning and clear communication from first conversation through closeout.`,
     metaDescription:
-      "Custom home construction in Augusta and the CSRA — illustrative example by 8th Street Construction.",
+      "Custom home construction in Augusta and the CSRA by 8th Street Construction.",
   },
   residential_renovation: {
-    subtitle: "Historic and established homes — illustrative example",
+    subtitle: "Renovations in Augusta's established neighborhoods",
     excerpt:
-      "Sensitive renovations that add modern livability while respecting Augusta neighborhood character.",
-    narrative: `This image illustrates the residential renovation work we perform throughout Augusta's established neighborhoods — not a specific completed project.
+      "Sensitive updates that add modern livability while respecting neighborhood character.",
+    narrative: `Typical renovation scopes include structural reinforcement, kitchen and primary suite reconfiguration, mechanical upgrades, porch restoration, and finish work that honors existing architecture.
 
-Typical scopes include structural reinforcement, kitchen and primary suite reconfiguration, mechanical upgrades, porch restoration, and finish work that honors existing architecture. We document conditions early, price honestly, and protect the details that make these homes worth saving.
-
-Renovation in the CSRA demands patience with existing conditions and familiarity with local permitting. Completed renovations will be published here as portfolio photography becomes available.`,
+We document conditions early, price honestly, and protect the details that make these homes worth saving.`,
     metaDescription:
-      "Residential renovation in Augusta GA — illustrative example by 8th Street Construction.",
+      "Residential renovation in Augusta GA by 8th Street Construction.",
   },
   commercial_new_build: {
-    subtitle: "Ground-up commercial shell — illustrative example",
+    subtitle: "Ground-up commercial construction",
     excerpt:
-      "New commercial construction built for durability, flexibility, and efficient certificate of occupancy.",
-    narrative: `This image illustrates our ground-up commercial construction capabilities — not a specific completed project.
+      "New commercial buildings built for durability, flexibility, and efficient certificate of occupancy.",
+    narrative: `We deliver sitework, structural shells, utility coordination, and inspection sequencing aligned with local engineering and county requirements.
 
-We deliver sitework, structural shells, utility coordination, and inspection sequencing aligned with local engineering and county requirements. Our commercial work is planned for tenant flexibility, ADA compliance, and long-term performance under daily use.
-
-When your project is ready to break ground, we bring local soils knowledge and the discipline institutional clients expect. Real commercial profiles will replace illustrative examples as projects are completed.`,
+Our commercial work is planned for tenant flexibility, ADA compliance, and long-term performance under daily use.`,
     metaDescription:
-      "Commercial new construction in Augusta GA — illustrative example by 8th Street Construction.",
+      "Commercial new construction in Augusta GA by 8th Street Construction.",
   },
   tenant_buildout: {
-    subtitle: "Commercial tenant finish-out — illustrative example",
+    subtitle: "Commercial tenant finish-out",
     excerpt:
-      "Interior buildouts from raw shell to move-in ready — retail, office, and hospitality spaces.",
-    narrative: `This image illustrates the tenant improvement and buildout work we perform — not a specific completed project.
+      "Interior buildouts from raw shell to move-in ready — retail, office, and hospitality.",
+    narrative: `Scopes include MEP coordination, drywall and ceiling assemblies, storefront adjustments, floor finishes, and branded interior details coordinated with your design team.
 
-Scopes often include MEP coordination, drywall and ceiling assemblies, storefront adjustments, floor finishes, and branded interior details coordinated with your design team. We plan around inspection milestones, landlord requirements, and opening schedules.
-
-Whether restaurant, retail, or professional office, our buildouts are executed with a single construction point of contact. Completed tenant projects will be added to this gallery over time.`,
+We plan around inspections, landlord requirements, and opening schedules — with a single construction point of contact.`,
     metaDescription:
-      "Commercial tenant buildout in Augusta GA — illustrative example by 8th Street Construction.",
+      "Commercial tenant buildout in Augusta GA by 8th Street Construction.",
   },
   design_build: {
-    subtitle: "Single-team design and construction — illustrative example",
+    subtitle: "Single-team design and construction",
     excerpt:
-      "Integrated design-build delivery — one contract, one team, from concept through certificate of occupancy.",
-    narrative: `This image illustrates our design-build approach — not a specific completed project.
+      "Integrated design-build — one contract, one team, from concept through certificate of occupancy.",
+    narrative: `Design-build keeps accountability in one place when owners do not want to translate between separate design and construction teams.
 
-Design-build is the right model when owners want accountability without translating between separate design and construction teams. We coordinate drawings, specifications, permitting, and field execution under one roof — reducing handoffs and keeping finish selections inside a realistic budget envelope.
-
-For CSRA owners comparing delivery methods, we bring integrated planning and field discipline from day one. Published design-build case studies will appear here as projects are documented.`,
+We coordinate drawings, specifications, permitting, and field execution under one roof — reducing handoffs and keeping finish selections inside a realistic budget.`,
     metaDescription:
-      "Design-build construction in Augusta and the CSRA — illustrative example by 8th Street Construction.",
+      "Design-build construction in Augusta and the CSRA by 8th Street Construction.",
   },
   historic_restoration: {
-    subtitle: "Historic preservation and restoration — illustrative example",
+    subtitle: "Historic preservation and restoration",
     excerpt:
-      "Restoration work that protects authentic fabric while making structures safe, dry, and livable.",
-    narrative: `This image illustrates the historic restoration work we undertake in Augusta and the CSRA — not a specific completed project.
+      "Restoration that protects authentic fabric while making structures safe, dry, and livable.",
+    narrative: `Restoration requires understanding lime mortar, soft-brick chemistry, period-appropriate profiles, and when to replicate rather than replace.
 
-Restoration requires understanding lime mortar, soft-brick chemistry, period-appropriate profiles, and when to replicate rather than replace. Typical scopes include repointing, structural sistering, porch reconstruction, and chimney repair that preserves original silhouettes.
-
-Historic work is a discipline of observation, documentation, and restraint. We partner with owners and reviewers to protect what is authentic. Documented restoration projects will be published here as they are completed.`,
+Typical scopes include repointing, structural sistering, porch reconstruction, and chimney repair that preserves original silhouettes.`,
     metaDescription:
-      "Historic restoration in Augusta GA — illustrative example by 8th Street Construction.",
+      "Historic restoration in Augusta GA by 8th Street Construction.",
   },
 };
 

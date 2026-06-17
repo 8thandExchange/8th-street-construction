@@ -14,7 +14,7 @@ export function CollectionGallerySection({ home }: CollectionGallerySectionProps
         <Reveal className="mb-8 md:mb-10">
           <span className="eyebrow-copper">Gallery</span>
           <h2 className="mt-4 font-display text-display-md sm:text-display-lg text-ink leading-[1.05]">
-            From rendering to residence.
+            Heritage rendering.
           </h2>
         </Reveal>
 

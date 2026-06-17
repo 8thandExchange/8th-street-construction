@@ -4,6 +4,12 @@ import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { createClient } from "@/lib/supabase/server";
 import { PROJECT_CATEGORY_LABELS } from "@/lib/utils";
+import { FEATURED_PROJECT } from "@/lib/featured-project";
+import {
+  isPortfolioIllustration,
+  PORTFOLIO_IMAGE_BY_CATEGORY,
+} from "@/lib/portfolio-examples";
+import type { ProjectCategory } from "@/types/database";
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
@@ -13,8 +19,21 @@ export const revalidate = 1800;
 export const metadata: Metadata = {
   title: "Selected Work — Custom Homes & Commercial Projects in Augusta",
   description:
-    "A selection of recent residential and commercial construction projects by 8th Street Construction in the Augusta, GA area.",
+    "Custom homes, renovations, and commercial construction by 8th Street Construction in Augusta and the CSRA.",
 };
+
+function projectCardImage(project: {
+  slug: string;
+  hero_image_url: string | null;
+  category: string;
+}): string | null {
+  if (project.hero_image_url) return project.hero_image_url;
+  if (project.slug === FEATURED_PROJECT.slug) return FEATURED_PROJECT.rendering;
+  if (isPortfolioIllustration(project.slug)) {
+    return PORTFOLIO_IMAGE_BY_CATEGORY[project.category as ProjectCategory] ?? null;
+  }
+  return null;
+}
 
 export default async function ProjectsIndex(
   props: {
@@ -39,13 +58,14 @@ export default async function ProjectsIndex(
 
   const { data: projects } = await query;
 
+  const visibleProjects = (projects ?? []).filter((p) => projectCardImage(p) != null);
+
   const categories = Object.entries(PROJECT_CATEGORY_LABELS);
 
   return (
     <>
       <SiteHeader />
       <main className="bg-bone text-ink">
-        {/* Header */}
         <section className="pt-[calc(5.5rem+env(safe-area-inset-top))] pb-12 md:pt-[calc(7rem+env(safe-area-inset-top))] md:pb-24">
           <Container size="wide">
             <Reveal>
@@ -59,13 +79,12 @@ export default async function ProjectsIndex(
             </Reveal>
             <Reveal delay={200}>
               <p className="mt-10 max-w-2xl text-lg text-ink/70 leading-relaxed">
-                Illustrative examples of each project type we build across the CSRA — real case studies are added as work is completed and photographed.
+                Active builds and the types of construction we deliver across Augusta and the CSRA.
               </p>
             </Reveal>
           </Container>
         </section>
 
-        {/* Filter pills */}
         <section className="border-y border-ink/10 py-6 sticky top-0 z-30 bg-bone/95 backdrop-blur-sm">
           <Container size="wide">
             <div className="flex flex-wrap gap-2 md:gap-3">
@@ -96,26 +115,23 @@ export default async function ProjectsIndex(
           </Container>
         </section>
 
-        {/* Grid */}
         <section className="py-16 md:py-24">
           <Container size="wide">
-            {projects && projects.length > 0 ? (
+            {visibleProjects.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
-                {projects.map((p, i) => (
+                {visibleProjects.map((p, i) => {
+                  const imageSrc = projectCardImage(p)!;
+                  return (
                   <Reveal key={p.id} delay={(i % 3) * 100}>
                     <Link href={`/projects/${p.slug}`} className="group block">
                       <div className="relative aspect-[4/5] overflow-hidden bg-paper mb-5">
-                        {p.hero_image_url ? (
-                          <Image
-                            src={p.hero_image_url}
-                            alt={p.title}
-                            fill
-                            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                            className="object-cover brand-photo transition-transform duration-1000 ease-editorial group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-gradient-to-br from-stone-50 to-paper" />
-                        )}
+                        <Image
+                          src={imageSrc}
+                          alt={p.title}
+                          fill
+                          sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                          className="object-cover brand-photo transition-transform duration-1000 ease-editorial group-hover:scale-105"
+                        />
                       </div>
                       <div className="flex items-baseline justify-between text-xs font-mono tracking-[0.15em] uppercase text-stone-300 mb-3">
                         <span>{p.location || "Augusta · CSRA"}</span>
@@ -133,19 +149,19 @@ export default async function ProjectsIndex(
                       </div>
                     </Link>
                   </Reveal>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <Reveal>
                 <div className="border border-ink/15 p-12 md:p-20 text-center max-w-3xl mx-auto">
-                  <span className="eyebrow-copper">— Coming soon</span>
-                  <h2 className="mt-6 font-display text-3xl md:text-5xl leading-snug text-ink">
-                    Our portfolio is being built.
+                  <h2 className="font-display text-3xl md:text-5xl leading-snug text-ink">
+                    No projects in this category yet.
                   </h2>
                   <p className="mt-6 max-w-xl mx-auto text-ink/65 leading-relaxed">
                     {category
-                      ? `We don't have published projects in this category yet. Check back soon, or get in touch to discuss your project.`
-                      : `We're documenting our recent work and adding it to this page. In the meantime, if you'd like to discuss a project, we'd love to hear from you.`}
+                      ? `We don't have published work in this category right now. Get in touch to discuss your project.`
+                      : `Get in touch to discuss a custom home, renovation, or commercial build.`}
                   </p>
                   <Link
                     href="/book"

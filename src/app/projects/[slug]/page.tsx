@@ -4,7 +4,8 @@ import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { createAnonymousClient } from "@/lib/supabase/anonymous";
 import { PROJECT_CATEGORY_LABELS } from "@/lib/utils";
-import { isPortfolioIllustration } from "@/lib/portfolio-examples";
+import { isPortfolioIllustration, PORTFOLIO_IMAGE_BY_CATEGORY } from "@/lib/portfolio-examples";
+import type { ProjectCategory } from "@/types/database";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -76,11 +77,13 @@ export default async function ProjectDetail(props: { params: Promise<{ slug: str
   const galleryImages = (images ?? []).filter((i) => i.id !== heroImage?.id);
 
   const categoryLabel = PROJECT_CATEGORY_LABELS[project.category] ?? project.category;
-  const illustration = isPortfolioIllustration(project.slug);
   const localHero =
-    project.slug === FEATURED_PROJECT.slug ? FEATURED_PROJECT.rendering : null;
-  const heroSrc =
-    heroImage?.public_url || project.hero_image_url || localHero;
+    project.slug === FEATURED_PROJECT.slug
+      ? FEATURED_PROJECT.rendering
+      : isPortfolioIllustration(project.slug)
+        ? PORTFOLIO_IMAGE_BY_CATEGORY[project.category as ProjectCategory]
+        : null;
+  const heroSrc = heroImage?.public_url || project.hero_image_url || localHero;
 
   return (
     <>
@@ -103,9 +106,7 @@ export default async function ProjectDetail(props: { params: Promise<{ slug: str
           <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-transparent to-transparent" />
           <Container size="wide" className="absolute bottom-0 left-0 right-0 pb-12 md:pb-20 z-10">
             <Reveal>
-              <span className="eyebrow-copper">
-                — {illustration ? "Illustrative example" : categoryLabel}
-              </span>
+              <span className="eyebrow-copper">— {categoryLabel}</span>
             </Reveal>
             <Reveal delay={150}>
               <h1 className="mt-4 font-display text-display-xl text-bone leading-[0.95]">
@@ -128,19 +129,17 @@ export default async function ProjectDetail(props: { params: Promise<{ slug: str
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {[
                 ["Location", project.location || "Augusta · CSRA"],
-                ...(illustration
-                  ? []
-                  : [
-                      ["Year", project.year_completed?.toString() || "—"],
-                      [
-                        "Scope",
-                        project.square_footage
-                          ? `${project.square_footage.toLocaleString()} sq ft`
-                          : "—",
-                      ],
-                    ]),
+                ["Year", project.year_completed?.toString() || null],
+                [
+                  "Scope",
+                  project.square_footage
+                    ? `${project.square_footage.toLocaleString()} sq ft`
+                    : null,
+                ],
                 ["Category", categoryLabel],
-              ].map(([label, value]) => (
+              ]
+                .filter((entry): entry is [string, string] => Boolean(entry[1]))
+                .map(([label, value]) => (
                 <div key={label}>
                   <div className="eyebrow mb-2">{label}</div>
                   <div className="font-display text-xl md:text-2xl">{value}</div>
