@@ -1,13 +1,10 @@
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
-import { ContourLines } from "./ContourLines";
 import { ContactForm } from "./ContactForm";
 
 export function ContactSection() {
   return (
     <section id="contact" className="relative bg-navy text-parchment section-pad overflow-hidden">
-      <ContourLines className="text-parchment" opacity={0.05} />
-
       <Container size="wide" className="relative">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-10 lg:gap-12">
           <div className="lg:col-span-5">
@@ -36,7 +33,7 @@ export function ContactSection() {
 
           <div className="lg:col-span-7">
             <Reveal delay={120}>
-              <div className="surface-card-dark rounded-sm p-6 sm:p-8 md:p-10 lg:p-12">
+              <div className="relative z-10 surface-card-dark rounded-sm p-6 sm:p-8 md:p-10 lg:p-12">
                 <ContactForm />
               </div>
             </Reveal>

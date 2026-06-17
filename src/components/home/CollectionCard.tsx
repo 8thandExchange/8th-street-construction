@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { Reveal } from "@/components/ui/Reveal";
-import { RenderingFrame, getRenderingAspect } from "@/components/ui/RenderingFrame";
+import { RenderingFrame } from "@/components/ui/RenderingFrame";
 import type { CollectionHome } from "@/lib/home-collection";
-import { getCollectionImage, getCollectionImageAlt } from "@/lib/collection-images";
+import {
+  getCollectionImage,
+  getCollectionImageAlt,
+  getCollectionDimensions,
+} from "@/lib/collection-images";
 
 type CollectionCardProps = {
   home: CollectionHome;
@@ -12,14 +16,13 @@ type CollectionCardProps = {
 export function CollectionCard({ home, index }: CollectionCardProps) {
   return (
     <Reveal delay={index * 70}>
-      <article className="group luxury-card h-full flex flex-col bg-warm-white border border-ink/8 overflow-hidden">
+      <article className="group luxury-card h-full flex flex-col bg-warm-white border border-ink/8">
         <RenderingFrame
           src={getCollectionImage(home.id)}
           alt={getCollectionImageAlt(home.name)}
-          aspect={getRenderingAspect(home.id)}
+          dimensions={getCollectionDimensions(home.id)}
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           className="border-0 border-b border-ink/8 rounded-none"
-          imageClassName="transition-transform duration-700 ease-editorial group-hover:scale-[1.01]"
         />
 
         <div className="flex flex-col flex-1 p-5 sm:p-6 md:p-8">

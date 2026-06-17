@@ -4,6 +4,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { RenderingFrame } from "@/components/ui/RenderingFrame";
 import { BrandTexture } from "@/components/site/BrandTexture";
 import { FEATURED_PROJECT } from "@/lib/featured-project";
+import { FEATURED_RENDERING_DIMENSIONS } from "@/lib/collection-images";
 import { ContourLines } from "./ContourLines";
 
 function PlaceholderPanel({
@@ -53,7 +54,7 @@ export function FeaturedProjectSection() {
             <RenderingFrame
               src={FEATURED_PROJECT.rendering}
               alt={FEATURED_PROJECT.renderingAlt}
-              aspect="5/4"
+              dimensions={FEATURED_RENDERING_DIMENSIONS}
               variant="dark"
               label={`Heritage Rendering · ${FEATURED_PROJECT.location}`}
               sizes="(min-width: 1024px) 58vw, 100vw"

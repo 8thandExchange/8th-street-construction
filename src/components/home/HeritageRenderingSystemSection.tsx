@@ -3,8 +3,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { RenderingFrame } from "@/components/ui/RenderingFrame";
 import { BrandTexture } from "@/components/site/BrandTexture";
 import { HERITAGE_PILLARS } from "@/lib/home-collection";
-import { getCollectionImage, getCollectionImageAlt } from "@/lib/collection-images";
-import { HeritageRendering } from "@/components/heritage-rendering/HeritageRendering";
+import { getCollectionImage, getCollectionImageAlt, getCollectionDimensions } from "@/lib/collection-images";
 import { ContourLines } from "./ContourLines";
 
 const DELIVERABLES = [
@@ -34,33 +33,24 @@ export function HeritageRenderingSystemSection() {
           </p>
         </Reveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 md:gap-6 lg:gap-8 mb-10 md:mb-14">
-          <Reveal delay={60} className="md:col-span-1 lg:col-span-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10 lg:gap-16 items-start mb-10 md:mb-14">
+          <Reveal delay={60}>
             <RenderingFrame
               src={getCollectionImage("augusta")}
               alt={getCollectionImageAlt("The Augusta")}
-              aspect="5/4"
-              label="Rendering Example"
-              sizes="(min-width: 1024px) 40vw, 100vw"
+              dimensions={getCollectionDimensions("augusta")}
+              label="Heritage Rendering · The Augusta"
+              sizes="(min-width: 1024px) 42vw, 100vw"
             />
           </Reveal>
 
-          <Reveal delay={120} className="md:col-span-1 lg:col-span-3">
-            <div className="relative aspect-square border border-ink/10 bg-parchment p-4 sm:p-5 flex items-center justify-center h-full min-h-0">
-              <HeritageRendering variant="hero" template="social-media-post" framed={false} />
-            </div>
-            <p className="mt-2 sm:mt-3 font-sans text-[10px] tracking-[0.18em] uppercase text-pencil">
-              Embossed Seal
-            </p>
-          </Reveal>
-
-          <Reveal delay={180} className="md:col-span-2 lg:col-span-4 flex flex-col gap-4 sm:gap-5">
+          <Reveal delay={120} className="flex flex-col gap-6 sm:gap-8 lg:pt-2">
             {HERITAGE_PILLARS.map((pillar) => (
-              <div key={pillar.title} className="border-t border-ink/12 pt-4 sm:pt-5">
+              <div key={pillar.title} className="border-t border-ink/12 pt-5 sm:pt-6">
                 <h3 className="font-sans text-[11px] tracking-[0.28em] uppercase text-rust">
                   {pillar.title}
                 </h3>
-                <p className="mt-2 text-sm text-ink/65 leading-relaxed">{pillar.body}</p>
+                <p className="mt-3 text-sm sm:text-[15px] text-ink/65 leading-relaxed">{pillar.body}</p>
               </div>
             ))}
           </Reveal>

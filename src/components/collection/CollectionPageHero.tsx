@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
-import { RenderingFrame, getRenderingAspect } from "@/components/ui/RenderingFrame";
+import { RenderingFrame } from "@/components/ui/RenderingFrame";
 import { BrandTexture } from "@/components/site/BrandTexture";
 import { ContourLines } from "@/components/home/ContourLines";
 import type { CollectionPageData } from "@/lib/collection-pages";
-import { getCollectionImage, getCollectionImageAlt } from "@/lib/collection-images";
+import { getCollectionImage, getCollectionImageAlt, getCollectionDimensions } from "@/lib/collection-images";
 
 type CollectionPageHeroProps = {
   home: CollectionPageData;
@@ -25,7 +25,7 @@ export function CollectionPageHero({ home }: CollectionPageHeroProps) {
           <RenderingFrame
             src={getCollectionImage(home.id)}
             alt={getCollectionImageAlt(home.name)}
-            aspect={getRenderingAspect(home.id)}
+            dimensions={getCollectionDimensions(home.id)}
             priority
             variant="dark"
             label="Heritage Rendering · The Collection"

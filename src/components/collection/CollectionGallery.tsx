@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { RenderingFrame, getRenderingAspect } from "@/components/ui/RenderingFrame";
+import { RenderingFrame } from "@/components/ui/RenderingFrame";
 import type { CollectionVariant } from "@/lib/home-collection";
-import { getCollectionImage, getCollectionImageAlt } from "@/lib/collection-images";
+import { getCollectionImage, getCollectionImageAlt, getCollectionDimensions } from "@/lib/collection-images";
 
 type GalleryTab = "rendering" | "construction" | "completed";
 
@@ -49,7 +49,7 @@ export function CollectionGallery({ variant, homeName }: CollectionGalleryProps)
               <RenderingFrame
                 src={getCollectionImage(variant)}
                 alt={getCollectionImageAlt(homeName)}
-                aspect={getRenderingAspect(variant)}
+                dimensions={getCollectionDimensions(variant)}
                 sizes="(min-width: 768px) 66vw, 100vw"
               />
             </div>

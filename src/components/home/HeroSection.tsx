@@ -3,6 +3,7 @@ import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { RenderingFrame } from "@/components/ui/RenderingFrame";
 import { BrandTexture } from "@/components/site/BrandTexture";
+import { FEATURED_RENDERING_DIMENSIONS } from "@/lib/collection-images";
 import { FEATURED_PROJECT } from "@/lib/featured-project";
 import { ContourLines } from "./ContourLines";
 
@@ -21,11 +22,10 @@ export function HeroSection() {
           <RenderingFrame
             src={FEATURED_PROJECT.rendering}
             alt={FEATURED_PROJECT.renderingAlt}
-            aspect="5/4"
+            dimensions={FEATURED_RENDERING_DIMENSIONS}
             priority
             variant="dark"
             label={`Flagship Project · ${FEATURED_PROJECT.title}`}
-            className="w-full max-w-none lg:max-w-none"
             sizes="(min-width: 1024px) 46vw, 100vw"
           />
         </Reveal>

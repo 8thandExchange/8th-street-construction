@@ -1,32 +1,14 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import type { CollectionVariant } from "@/lib/home-collection";
+import type { RenderingDimensions } from "@/lib/collection-images";
+import { FEATURED_RENDERING_DIMENSIONS } from "@/lib/collection-images";
 
-export type RenderingAspect = "5/4" | "4/5";
-
-/** Matches actual portrait asset dimensions */
-export const RENDERING_ASPECT: Partial<Record<CollectionVariant, RenderingAspect>> = {
-  savannah: "4/5",
-  riverwalk: "4/5",
-  summerville: "4/5",
-};
-
-export const DEFAULT_RENDERING_ASPECT: RenderingAspect = "5/4";
-
-export function getRenderingAspect(id?: CollectionVariant): RenderingAspect {
-  if (!id) return DEFAULT_RENDERING_ASPECT;
-  return RENDERING_ASPECT[id] ?? DEFAULT_RENDERING_ASPECT;
-}
-
-const ASPECT_CLASS: Record<RenderingAspect, string> = {
-  "5/4": "aspect-[5/4]",
-  "4/5": "aspect-[4/5]",
-};
+export type { RenderingDimensions };
 
 type RenderingFrameProps = {
   src: string;
   alt: string;
-  aspect?: RenderingAspect;
+  dimensions?: RenderingDimensions;
   priority?: boolean;
   sizes?: string;
   label?: string;
@@ -36,13 +18,13 @@ type RenderingFrameProps = {
 };
 
 /**
- * Displays Heritage Rendering portraits without cropping —
- * object-contain on parchment, matched to native aspect ratio.
+ * Displays Heritage Rendering portraits at native proportions —
+ * full artwork visible including title, badge, and border.
  */
 export function RenderingFrame({
   src,
   alt,
-  aspect = DEFAULT_RENDERING_ASPECT,
+  dimensions = FEATURED_RENDERING_DIMENSIONS,
   priority = false,
   sizes = "(min-width: 1024px) 50vw, 100vw",
   label,
@@ -53,44 +35,40 @@ export function RenderingFrame({
   const isDark = variant === "dark";
 
   return (
-    <div
+    <figure
       className={cn(
-        "relative w-full overflow-hidden",
-        ASPECT_CLASS[aspect],
+        "relative w-full",
         isDark
           ? "border border-parchment/15 bg-navy-100"
           : "border border-ink/10 bg-parchment",
         className
       )}
     >
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        priority={priority}
-        sizes={sizes}
-        className={cn(
-          "object-contain object-center p-2 sm:p-3",
-          imageClassName
-        )}
-      />
-      <div
-        className={cn(
-          "absolute inset-0 ring-1 ring-inset pointer-events-none",
-          isDark ? "ring-parchment/10" : "ring-ink/5"
-        )}
-        aria-hidden
-      />
+      <div className="p-1.5 sm:p-2">
+        <div
+          className="relative w-full"
+          style={{ aspectRatio: `${dimensions.width} / ${dimensions.height}` }}
+        >
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            priority={priority}
+            sizes={sizes}
+            className={cn("object-contain object-center", imageClassName)}
+          />
+        </div>
+      </div>
       {label && (
-        <p
+        <figcaption
           className={cn(
-            "absolute bottom-3 left-3 sm:bottom-4 sm:left-4 font-sans text-[8px] sm:text-[9px] tracking-[0.24em] uppercase max-w-[85%] leading-relaxed",
+            "px-3 pb-3 sm:px-4 sm:pb-4 font-sans text-[8px] sm:text-[9px] tracking-[0.24em] uppercase leading-relaxed",
             isDark ? "text-parchment/50" : "text-pencil/70"
           )}
         >
           {label}
-        </p>
+        </figcaption>
       )}
-    </div>
+    </figure>
   );
 }

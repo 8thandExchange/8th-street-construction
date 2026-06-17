@@ -113,9 +113,8 @@ body {
 }
 
 .surface-card-dark {
-  background: rgba(16, 28, 42, 0.6);
+  background: rgb(var(--color-navy));
   border: 1px solid rgba(242, 236, 224, 0.12);
-  backdrop-filter: blur(8px);
 }
 
 /* Luxury product cards — Collection */
@@ -311,10 +310,32 @@ body {
 .field-input-dark {
   border-bottom-color: rgba(245, 241, 234, 0.25);
   color: rgb(var(--color-bone));
+  background-color: rgb(var(--color-navy));
 }
 
 .field-input-dark:focus {
+  outline: none;
   border-bottom-color: rgb(var(--color-rust));
+}
+
+.field-select-dark {
+  appearance: none;
+  padding-right: 1.5rem;
+  cursor: pointer;
+  background-color: rgb(var(--color-navy));
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23F5F1EA' stroke-opacity='0.6' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right center;
+}
+
+.field-select-light {
+  appearance: none;
+  padding-right: 1.5rem;
+  cursor: pointer;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%230A0F14' stroke-opacity='0.6' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right center;
 }
 
 /* =====================================================================
