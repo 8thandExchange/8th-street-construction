@@ -44,10 +44,15 @@ body {
   padding-right: env(safe-area-inset-right);
 }
 
-/* Mobile section rhythm */
+/* Mobile section rhythm — tighter on small screens */
 .section-pad {
-  padding-top: clamp(4rem, 11vw, 10rem);
-  padding-bottom: clamp(4rem, 11vw, 10rem);
+  padding-top: clamp(3rem, 8vw, 10rem);
+  padding-bottom: clamp(3rem, 8vw, 10rem);
+}
+
+.section-pad-tight {
+  padding-top: clamp(2.5rem, 6vw, 6rem);
+  padding-bottom: clamp(2.5rem, 6vw, 6rem);
 }
 
 /* Horizontal scroll — Apple-style card rail */
@@ -64,6 +69,15 @@ body {
 }
 
 .scroll-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
   display: none;
 }
 

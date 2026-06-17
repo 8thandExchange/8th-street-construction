@@ -9,7 +9,7 @@ export function ContactSection() {
       <ContourLines className="text-parchment" opacity={0.05} />
 
       <Container size="wide" className="relative">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-10 lg:gap-12">
           <div className="lg:col-span-5">
             <Reveal>
               <span className="font-sans text-[11px] tracking-[0.28em] uppercase text-gold">Contact</span>

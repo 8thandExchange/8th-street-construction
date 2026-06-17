@@ -12,7 +12,7 @@ export function CollectionSection() {
       <ContourLines className="text-ink" opacity={0.04} />
 
       <Container size="wide" className="relative">
-        <Reveal className="max-w-2xl mb-12 md:mb-16">
+        <Reveal className="max-w-2xl mb-8 md:mb-12 lg:mb-16">
           <span className="eyebrow-copper">The 8th Street Collection</span>
           <h2 className="mt-4 font-display text-display-xl text-ink leading-[1.02]">
             Inspired Homes. Timeless Design.
@@ -22,7 +22,7 @@ export function CollectionSection() {
           </p>
         </Reveal>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 md:gap-8">
           {getCollectionHomes().map((home, i) => (
             <CollectionCard key={home.id} home={home} index={i} />
           ))}
