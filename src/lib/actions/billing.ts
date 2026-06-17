@@ -5,21 +5,40 @@ import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe/client";
 import { Resend } from "resend";
+import {
+  getDrawTemplateForProject,
+  HABITAT_608_MACON,
+  isHabitat608Project,
+  type DrawTemplateLine,
+} from "@/lib/billing/constants";
 
 const FROM = process.env.EMAIL_FROM || "8th Street Construction <hello@8thstreetconstruction.com>";
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://www.8thstreetconstruction.com";
 
-const DEFAULT_DRAWS = [
-  { draw_number: 1, title: "Foundation / Slab", percent: 10 },
-  { draw_number: 2, title: "Framing & Dry-In", percent: 25 },
-  { draw_number: 3, title: "Mechanicals Rough-In", percent: 20 },
-  { draw_number: 4, title: "Drywall & Interior Prep", percent: 15 },
-  { draw_number: 5, title: "Finishes & Closeout", percent: 30 },
-];
-
 function revalidate(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/billing`);
+  revalidatePath(`/admin/projects/${projectId}`);
   revalidatePath(`/client/projects/${projectId}/billing`);
+}
+
+async function insertDrawSchedule(
+  supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
+  projectId: string,
+  contractValue: number,
+  template: DrawTemplateLine[]
+) {
+  const rows = template.map((d) => ({
+    project_id: projectId,
+    draw_number: d.draw_number,
+    title: d.title,
+    description: d.description,
+    percent_of_contract: d.percent,
+    amount: Math.round((contractValue * d.percent) / 100),
+    status: "scheduled" as const,
+  }));
+
+  const { error } = await supabase.from("payment_draws").insert(rows);
+  if (error) throw new Error(error.message);
 }
 
 export async function updateContractValue(formData: FormData) {
@@ -27,6 +46,12 @@ export async function updateContractValue(formData: FormData) {
   const projectId = String(formData.get("project_id"));
   const contractValue = Number(formData.get("contract_value"));
   const autoSeed = formData.get("auto_seed_draws") !== "off";
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("slug")
+    .eq("id", projectId)
+    .single();
 
   await supabase
     .from("projects")
@@ -40,19 +65,63 @@ export async function updateContractValue(formData: FormData) {
       .eq("project_id", projectId);
 
     if ((count ?? 0) === 0) {
-      const rows = DEFAULT_DRAWS.map((d) => ({
-        project_id: projectId,
-        draw_number: d.draw_number,
-        title: d.title,
-        percent_of_contract: d.percent,
-        amount: Math.round((contractValue * d.percent) / 100),
-        status: "scheduled" as const,
-      }));
-      await supabase.from("payment_draws").insert(rows);
+      const template = getDrawTemplateForProject(project?.slug ?? "");
+      await insertDrawSchedule(supabase, projectId, contractValue, template);
     }
   }
 
   revalidate(projectId);
+}
+
+/** One-click: Habitat payment schedule only — client billing amount entered separately */
+export async function setupHabitat608DrawSchedule(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const projectId = String(formData.get("project_id"));
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("slug, title, contract_value")
+    .eq("id", projectId)
+    .single();
+
+  if (!project) throw new Error("Project not found");
+  if (!isHabitat608Project(project.slug)) {
+    throw new Error("This preset is for 608 Macon Ave only.");
+  }
+
+  const contractValue = Number(project.contract_value ?? 0);
+  if (!contractValue) {
+    throw new Error("Enter what Habitat will pay you first — then create the payment schedule.");
+  }
+
+  await supabase
+    .from("projects")
+    .update({
+      square_footage: HABITAT_608_MACON.heatedSquareFeet,
+      internal_notes: `Habitat for Humanity build. Cost plan: ${HABITAT_608_MACON.estimateFile}. Architect: ${HABITAT_608_MACON.architect}.`,
+    })
+    .eq("id", projectId);
+
+  const { count } = await supabase
+    .from("payment_draws")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", projectId);
+
+  if ((count ?? 0) === 0) {
+    await insertDrawSchedule(
+      supabase,
+      projectId,
+      contractValue,
+      getDrawTemplateForProject(project.slug)
+    );
+  }
+
+  revalidate(projectId);
+}
+
+/** @deprecated use setupHabitat608DrawSchedule — kept for backwards compatibility */
+export async function setupHabitat608Billing(formData: FormData) {
+  return setupHabitat608DrawSchedule(formData);
 }
 
 export async function seedDrawSchedule(formData: FormData) {
@@ -64,28 +133,19 @@ export async function seedDrawSchedule(formData: FormData) {
     .select("id", { count: "exact", head: true })
     .eq("project_id", projectId);
 
-  if ((count ?? 0) > 0) throw new Error("Draws already exist for this project");
+  if ((count ?? 0) > 0) throw new Error("A payment schedule already exists for this job.");
 
   const { data: project } = await supabase
     .from("projects")
-    .select("contract_value")
+    .select("contract_value, slug")
     .eq("id", projectId)
     .single();
 
   const contract = Number(project?.contract_value ?? 0);
-  if (!contract) throw new Error("Set contract value first");
+  if (!contract) throw new Error("Set the contract amount first.");
 
-  const rows = DEFAULT_DRAWS.map((d) => ({
-    project_id: projectId,
-    draw_number: d.draw_number,
-    title: d.title,
-    percent_of_contract: d.percent,
-    amount: Math.round((contract * d.percent) / 100),
-    status: "scheduled" as const,
-  }));
-
-  const { error } = await supabase.from("payment_draws").insert(rows);
-  if (error) throw new Error(error.message);
+  const template = getDrawTemplateForProject(project?.slug ?? "");
+  await insertDrawSchedule(supabase, projectId, contract, template);
   revalidate(projectId);
 }
 
@@ -131,11 +191,11 @@ export async function createInvoiceFromDraw(formData: FormData) {
     .single();
 
   if (!draw) throw new Error("Draw not found");
-  if (draw.invoice_id) throw new Error("Draw already has an invoice");
+  if (draw.invoice_id) throw new Error("This draw already has an invoice.");
 
   const { data: project } = await supabase
     .from("projects")
-    .select("title, client_id")
+    .select("title, client_id, slug")
     .eq("id", projectId)
     .single();
 
@@ -174,7 +234,7 @@ export async function createInvoiceFromDraw(formData: FormData) {
 
   await supabase.from("invoice_line_items").insert({
     invoice_id: invoice.id,
-    description: draw.title,
+    description: draw.description || draw.title,
     quantity: 1,
     unit_amount: amount,
     amount,
@@ -194,11 +254,14 @@ export async function createInvoiceFromDraw(formData: FormData) {
       .single();
     if (client?.email && process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
+      const payNote = isHabitat608Project(project.slug ?? "")
+        ? "Habitat or the homeowner can pay online or by check — see the client portal for details."
+        : "You can pay online through your client portal.";
       await resend.emails.send({
         from: FROM,
         to: client.email,
         subject: `Invoice ${invoiceNumber} — ${project.title}`,
-        html: `<p>Hi ${client.first_name || "there"},</p><p>Draw invoice <strong>${invoiceNumber}</strong> for <strong>$${amount.toLocaleString()}</strong> is ready.</p><p><a href="${SITE}/client/projects/${projectId}/billing">Pay in client portal →</a></p>`,
+        html: `<p>Hi ${client.first_name || "there"},</p><p>Draw invoice <strong>${invoiceNumber}</strong> for <strong>$${amount.toLocaleString()}</strong> is ready.</p><p>${payNote}</p><p><a href="${SITE}/client/projects/${projectId}/billing">Open billing →</a></p>`,
         text: `Invoice ${invoiceNumber} ready: ${SITE}/client/projects/${projectId}/billing`,
       });
     }

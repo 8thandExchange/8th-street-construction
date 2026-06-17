@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { createBidRequest, awardBid, closeBidRequest } from "@/lib/actions/bids";
+import { ManualSubQuoteForm } from "@/components/costs/ManualSubQuoteForm";
+import { formatMoney } from "@/lib/billing/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +13,7 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
   const { data: project } = await supabase.from("projects").select("id, title").eq("id", id).single();
   if (!project) notFound();
 
-  const [{ data: rfqs }, { data: subs }] = await Promise.all([
+  const [{ data: rfqs }, { data: subs }, { data: estimateLines }] = await Promise.all([
     supabase
       .from("bid_requests")
       .select(
@@ -23,14 +26,30 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
       .select("id, company_name, trade, preferred, active")
       .eq("active", true)
       .order("company_name"),
+    supabase
+      .from("project_estimate_lines")
+      .select("id, trade_label, division_code")
+      .eq("project_id", id)
+      .order("display_order"),
   ]);
 
   return (
     <div className="max-w-4xl">
-      <h2 className="font-display text-2xl text-ink mb-2">Bid Requests</h2>
-      <p className="text-sm text-ink/60 mb-8">
-        Create RFQs, invite subs, compare bids, and award work for {project.title}.
+      <h2 className="font-display text-2xl text-ink mb-2">Sub quotes</h2>
+      <p className="text-sm text-ink/60 mb-6 max-w-2xl leading-relaxed">
+        Quotes from subcontractors for {project.title}. Subs don&apos;t need to log in — enter quotes
+        from email or scan the PDF. Compare against our cost plan on{" "}
+        <Link href={`/admin/projects/${id}/costs`} className="text-copper hover:underline">
+          Our Cost Plan
+        </Link>
+        .
       </p>
+
+      <ManualSubQuoteForm
+        projectId={id}
+        estimateLines={estimateLines ?? []}
+        subcontractors={subs ?? []}
+      />
 
       <form
         action={async (fd) => {
@@ -40,7 +59,10 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
         className="p-6 border border-ink/15 bg-paper space-y-4 mb-10"
       >
         <input type="hidden" name="project_id" value={id} />
-        <h3 className="eyebrow">New RFQ</h3>
+        <h3 className="eyebrow">Ask subs to bid (optional)</h3>
+        <p className="text-xs text-ink/50 mb-4">
+          Only if you want subs to log into the portal. Otherwise use the form above.
+        </p>
         <div>
           <label className="field-label">Title *</label>
           <input name="title" required className="field-input" placeholder="Electrical rough-in" />

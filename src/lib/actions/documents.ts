@@ -34,7 +34,17 @@ export async function createProjectDocument(formData: FormData) {
 
   if (error) return { error: error.message };
   revalidateProject(projectId);
-  return { ok: true };
+
+  const { data: doc } = await supabase
+    .from("project_documents")
+    .select("id")
+    .eq("project_id", projectId)
+    .eq("storage_path", storagePath)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return { ok: true, id: doc?.id ?? null };
 }
 
 export async function deleteProjectDocument(formData: FormData) {

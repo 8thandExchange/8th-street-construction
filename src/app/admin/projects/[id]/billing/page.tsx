@@ -1,12 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { HubPageHeader } from "@/components/hub/HubUI";
+import { HabitatProjectBanner } from "@/components/billing/HabitatProjectBanner";
+import { BillingSetupWizard } from "@/components/billing/BillingSetupWizard";
+import { BillingMetricsRow } from "@/components/billing/BillingMetricsRow";
+import { DrawTimeline } from "@/components/billing/DrawTimeline";
+import { InvoiceList } from "@/components/billing/InvoiceList";
+import { updateContractValue, createDraw } from "@/lib/actions/billing";
+import { isHabitat608Project } from "@/lib/billing/constants";
 import {
-  updateContractValue,
-  seedDrawSchedule,
-  createDraw,
-  createInvoiceFromDraw,
-  markInvoicePaid,
-} from "@/lib/actions/billing";
+  computeBillingSummary,
+  getBillingSetupStep,
+  type DrawRecord,
+  type InvoiceRecord,
+} from "@/lib/billing/summary";
 import { stripeConfigured } from "@/lib/stripe/config";
 
 export const dynamic = "force-dynamic";
@@ -17,187 +25,200 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title, contract_value, client_id")
+    .select("id, title, slug, contract_value, client_id")
     .eq("id", id)
     .single();
 
   if (!project) notFound();
 
-  const [{ data: draws }, { data: invoices }] = await Promise.all([
-    supabase
-      .from("payment_draws")
-      .select("*, invoices(id, invoice_number, status, stripe_hosted_invoice_url)")
-      .eq("project_id", id)
-      .order("draw_number"),
-    supabase
-      .from("invoices")
-      .select("id, invoice_number, title, status, total, amount_paid, due_date, paid_at, created_at")
-      .eq("project_id", id)
-      .order("created_at", { ascending: false }),
-  ]);
+  const [{ data: draws }, { data: invoices }, { data: changeOrders }, clientRes] =
+    await Promise.all([
+      supabase
+        .from("payment_draws")
+        .select(
+          "id, draw_number, title, description, amount, percent_of_contract, status, scheduled_date, invoice_id"
+        )
+        .eq("project_id", id)
+        .order("draw_number"),
+      supabase
+        .from("invoices")
+        .select(
+          "id, invoice_number, title, status, total, amount_paid, due_date, paid_at, created_at"
+        )
+        .eq("project_id", id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("change_orders")
+        .select("cost_impact, status")
+        .eq("project_id", id),
+      project.client_id
+        ? supabase
+            .from("profiles")
+            .select("first_name, last_name, email")
+            .eq("id", project.client_id)
+            .single()
+        : Promise.resolve({ data: null }),
+    ]);
 
-  const contract = Number(project.contract_value ?? 0);
-  const invoiced = (draws ?? [])
-    .filter((d) => d.status === "invoiced" || d.status === "paid")
-    .reduce((s, d) => s + Number(d.amount), 0);
-  const paid = (draws ?? [])
-    .filter((d) => d.status === "paid")
-    .reduce((s, d) => s + Number(d.amount), 0);
+  const changeOrderTotal = (changeOrders ?? [])
+    .filter((c) => c.status === "approved")
+    .reduce((s, c) => s + Number(c.cost_impact ?? 0), 0);
+
+  const contractValue = Number(project.contract_value ?? 0);
+  const drawList = (draws ?? []) as DrawRecord[];
+  const invoiceList = (invoices ?? []) as InvoiceRecord[];
+
+  const summary = computeBillingSummary(contractValue, changeOrderTotal, drawList);
+  const setupStep = getBillingSetupStep(contractValue, drawList.length);
+  const isHabitat = isHabitat608Project(project.slug);
+  const stripeReady = stripeConfigured();
+
+  const clientName = clientRes.data
+    ? [clientRes.data.first_name, clientRes.data.last_name].filter(Boolean).join(" ") ||
+      clientRes.data.email
+    : null;
 
   return (
-    <div className="max-w-3xl">
-      <h2 className="font-display text-2xl text-ink mb-2">Billing & Draws</h2>
-      <p className="text-sm text-ink/60 mb-2">
-        Draw schedule tied to construction progress. Saving contract value auto-creates a 5-draw schedule when none exists.
-      </p>
-      {!stripeConfigured() && (
-        <p className="text-xs text-ink/45 mb-6">Add STRIPE_SECRET_KEY in Vercel to enable client Pay Now.</p>
+    <div className="max-w-4xl">
+      <HubPageHeader
+        title="Client Invoices"
+        description="What Habitat or the homeowner pays you — separate from our internal cost plan."
+      />
+
+      {isHabitat && <HabitatProjectBanner projectId={id} />}
+
+      {!stripeReady && (
+        <div className="hub-panel border-amber-200/80 bg-amber-50/90 px-5 py-4 mb-8 text-sm text-amber-950">
+          <strong>Card payments are off.</strong> Add{" "}
+          <code className="font-mono text-xs">STRIPE_SECRET_KEY</code> in Vercel to let clients pay
+          online. Until then, use &ldquo;Mark as paid&rdquo; when checks arrive — perfect for Habitat.
+        </div>
       )}
-      {stripeConfigured() && <div className="mb-6" />}
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="p-5 border border-ink/15 bg-paper">
-          <div className="eyebrow">Contract</div>
-          <div className="font-display text-2xl mt-1">${contract.toLocaleString()}</div>
-        </div>
-        <div className="p-5 border border-ink/15 bg-paper">
-          <div className="eyebrow">Invoiced</div>
-          <div className="font-display text-2xl mt-1">${invoiced.toLocaleString()}</div>
-        </div>
-        <div className="p-5 border border-ink/15 bg-paper">
-          <div className="eyebrow">Paid</div>
-          <div className="font-display text-2xl mt-1">${paid.toLocaleString()}</div>
-        </div>
-      </div>
+      <BillingSetupWizard
+        projectId={id}
+        projectSlug={project.slug}
+        projectTitle={project.title}
+        step={setupStep}
+        contractValue={contractValue}
+        drawCount={drawList.length}
+        clientId={project.client_id}
+        clientName={clientName}
+        stripeReady={stripeReady}
+      />
 
-      <form
-        action={async (fd) => {
-          "use server";
-          await updateContractValue(fd);
-        }}
-        className="flex flex-wrap gap-3 items-end p-5 border border-ink/15 bg-paper mb-6"
-      >
-        <input type="hidden" name="project_id" value={id} />
-        <div>
-          <label className="field-label">Contract value ($)</label>
-          <input
-            type="number"
-            name="contract_value"
-            step="0.01"
-            defaultValue={contract || ""}
-            className="field-input w-40"
-            required
-          />
-        </div>
-        <button type="submit" className="h-10 px-4 bg-ink text-bone font-mono text-[10px] uppercase">
-          Save
-        </button>
-        {(draws ?? []).length === 0 && contract > 0 && (
-          <button
-            formAction={async (fd) => {
+      {setupStep !== 1 && (
+        <>
+          <BillingMetricsRow summary={summary} />
+
+          {setupStep !== 2 && (
+            <>
+              <DrawTimeline projectId={id} draws={drawList} />
+              <InvoiceList projectId={id} invoices={invoiceList} />
+            </>
+          )}
+        </>
+      )}
+
+      {/* Adjust contract — collapsed for advanced use */}
+      {contractValue > 0 && (
+        <details className="mt-12 hub-panel p-5">
+          <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-wider text-stone-300">
+            Adjust contract amount
+          </summary>
+          <form
+            action={async (fd) => {
               "use server";
-              await seedDrawSchedule(fd);
+              await updateContractValue(fd);
             }}
-            className="h-10 px-4 border border-copper text-copper font-mono text-[10px] uppercase"
+            className="mt-5 flex flex-wrap gap-3 items-end"
           >
-            Seed 5-draw schedule
-          </button>
-        )}
-      </form>
-
-      <h3 className="eyebrow mb-4">Draw schedule</h3>
-      <ul className="space-y-3 mb-10">
-        {(draws ?? []).map((d) => (
-          <li key={d.id} className="p-5 border border-ink/15 bg-paper">
-            <div className="flex flex-wrap justify-between gap-3">
-              <div>
-                <div className="font-mono text-xs text-stone-300">Draw {d.draw_number}</div>
-                <div className="font-medium text-ink">{d.title}</div>
-                <div className="text-sm font-mono mt-1">${Number(d.amount).toLocaleString()}</div>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-stone-300">
-                  {d.status}
-                </span>
-                {d.scheduled_date && (
-                  <div className="text-xs text-stone-300 mt-1">Due {d.scheduled_date}</div>
-                )}
-              </div>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {d.status === "scheduled" && (
-                <form
-                  action={async (fd) => {
-                    "use server";
-                    await createInvoiceFromDraw(fd);
-                  }}
-                >
-                  <input type="hidden" name="project_id" value={id} />
-                  <input type="hidden" name="draw_id" value={d.id} />
-                  <button
-                    type="submit"
-                    className="h-9 px-4 bg-copper text-bone font-mono text-[10px] uppercase"
-                  >
-                    Create & Send Invoice
-                  </button>
-                </form>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      <details className="mb-10 border border-ink/15 p-5 bg-paper">
-        <summary className="cursor-pointer font-mono text-[10px] uppercase text-stone-300">
-          Add custom draw
-        </summary>
-        <form
-          action={async (fd) => {
-            "use server";
-            await createDraw(fd);
-          }}
-          className="mt-4 grid grid-cols-2 gap-3"
-        >
-          <input type="hidden" name="project_id" value={id} />
-          <input name="title" placeholder="Title" required className="field-input col-span-2" />
-          <input type="number" name="amount" placeholder="Amount" required className="field-input" />
-          <input type="date" name="scheduled_date" className="field-input" />
-          <button type="submit" className="col-span-2 h-9 px-4 bg-ink text-bone font-mono text-[10px] uppercase w-fit">
-            Add Draw
-          </button>
-        </form>
-      </details>
-
-      <h3 className="eyebrow mb-4">Invoices</h3>
-      <ul className="space-y-3">
-        {(invoices ?? []).map((inv) => (
-          <li key={inv.id} className="p-5 border border-ink/15 bg-paper flex justify-between gap-4">
+            <input type="hidden" name="project_id" value={id} />
+            <input type="hidden" name="auto_seed_draws" value="off" />
             <div>
-              <div className="font-mono text-xs text-stone-300">{inv.invoice_number}</div>
-              <div className="text-sm text-ink">{inv.title}</div>
-              <div className="font-display text-lg mt-1">${Number(inv.total).toLocaleString()}</div>
+              <label className="field-label">Contract value ($)</label>
+              <input
+                type="number"
+                name="contract_value"
+                step="1"
+                defaultValue={contractValue}
+                className="field-input w-40"
+                required
+              />
             </div>
-            <div className="text-right">
-              <span className="text-[10px] font-mono uppercase">{inv.status}</span>
-              {inv.status !== "paid" && (
-                <form
-                  action={async (fd) => {
-                    "use server";
-                    await markInvoicePaid(fd);
-                  }}
-                  className="mt-2"
-                >
-                  <input type="hidden" name="project_id" value={id} />
-                  <input type="hidden" name="invoice_id" value={inv.id} />
-                  <button type="submit" className="text-[10px] font-mono uppercase text-stone-300 hover:text-ink">
-                    Mark paid (manual)
-                  </button>
-                </form>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
+            <button
+              type="submit"
+              className="h-10 px-4 bg-ink text-bone font-mono text-[10px] uppercase"
+            >
+              Update
+            </button>
+          </form>
+          <p className="mt-3 text-xs text-ink/45">
+            Changing the total does not update existing payment amounts. Edit draws individually
+            below if needed.
+          </p>
+        </details>
+      )}
+
+      {drawList.length > 0 && (
+        <details className="mt-4 hub-panel p-5">
+          <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-wider text-stone-300">
+            Add a one-time payment
+          </summary>
+          <form
+            action={async (fd) => {
+              "use server";
+              await createDraw(fd);
+            }}
+            className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4"
+          >
+            <input type="hidden" name="project_id" value={id} />
+            <input
+              name="title"
+              placeholder="What is this payment for?"
+              required
+              className="field-input sm:col-span-2"
+            />
+            <input
+              name="description"
+              placeholder="Short note (optional)"
+              className="field-input sm:col-span-2"
+            />
+            <input type="number" name="amount" placeholder="Amount ($)" required className="field-input" />
+            <input type="date" name="scheduled_date" className="field-input" />
+            <button
+              type="submit"
+              className="sm:col-span-2 h-10 px-4 bg-ink text-bone font-mono text-[10px] uppercase w-fit"
+            >
+              Add payment
+            </button>
+          </form>
+        </details>
+      )}
+
+      <div className="mt-10 pt-8 border-t border-ink/10 flex flex-wrap gap-4 text-sm">
+        <Link
+          href={`/admin/projects/${id}`}
+          className="text-copper hover:underline font-mono text-[10px] uppercase tracking-wider"
+        >
+          ← Back to Job Home
+        </Link>
+        <Link
+          href={`/admin/projects/${id}/overview`}
+          className="text-stone-300 hover:text-ink font-mono text-[10px] uppercase tracking-wider"
+        >
+          Job Details
+        </Link>
+        {project.client_id && (
+          <Link
+            href={`/client/projects/${id}/billing`}
+            target="_blank"
+            className="text-stone-300 hover:text-ink font-mono text-[10px] uppercase tracking-wider"
+          >
+            Preview client billing ↗
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

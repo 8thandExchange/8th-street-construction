@@ -3,21 +3,31 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+/** Plain-language project navigation */
 const GROUPS = [
   {
-    label: "Hub",
+    label: "Job",
     items: [
-      { href: "", label: "Command" },
-      { href: "/overview", label: "Overview" },
+      { href: "", label: "Master Board" },
+      { href: "/overview", label: "Job Details" },
     ],
   },
   {
     label: "Build",
     items: [
-      { href: "/build", label: "System" },
+      { href: "/build", label: "Build Plan" },
       { href: "/tasks", label: "Checklists" },
       { href: "/schedule", label: "Schedule" },
-      { href: "/daily-logs", label: "Logs" },
+      { href: "/daily-logs", label: "Field Notes" },
+    ],
+  },
+  {
+    label: "Money",
+    items: [
+      { href: "/costs", label: "Our Cost Plan" },
+      { href: "/bid-requests", label: "Sub Quotes" },
+      { href: "/billing", label: "Client Invoices" },
+      { href: "/change-orders", label: "Change Orders" },
     ],
   },
   {
@@ -26,17 +36,9 @@ const GROUPS = [
       { href: "/milestones", label: "Timeline" },
       { href: "/updates", label: "Updates" },
       { href: "/plans", label: "Plans" },
-      { href: "/documents", label: "Documents" },
+      { href: "/documents", label: "Files" },
       { href: "/messages", label: "Messages" },
       { href: "/selections", label: "Selections" },
-    ],
-  },
-  {
-    label: "Business",
-    items: [
-      { href: "/billing", label: "Billing" },
-      { href: "/change-orders", label: "Change Orders" },
-      { href: "/bid-requests", label: "Bids" },
       { href: "/punch-list", label: "Punch List" },
     ],
   },
@@ -48,7 +50,7 @@ export function ProjectHubNav({ projectId }: { projectId: string }) {
 
   return (
     <nav className="hub-nav" aria-label="Project sections">
-      <div className="flex gap-6 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+      <div className="flex gap-5 md:gap-8 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
         {GROUPS.map((group) => (
           <div key={group.label} className="shrink-0">
             <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-stone-300 mb-2 px-1">

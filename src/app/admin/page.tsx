@@ -1,102 +1,72 @@
-import { createClient } from "@/lib/supabase/server";
-import { StatCard } from "@/components/admin/StatCard";
-import { LEAD_STATUS_LABELS, LEAD_STATUS_COLORS } from "@/lib/utils";
-import { getComplianceDashboardAlerts } from "@/lib/compliance/compliance-reminders";
 import Link from "next/link";
+import { loadCompanyDashboard } from "@/lib/data/company-dashboard";
+import { formatMoney } from "@/lib/billing/constants";
+import { PROJECT_STATUS_LABELS } from "@/lib/project/labels";
+import { StatCard } from "@/components/admin/StatCard";
+import { ProgressRing } from "@/components/hub/HubUI";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
-  const supabase = await createClient();
+  const { jobs, complianceAlerts, newLeads, pendingConsults } = await loadCompanyDashboard();
 
-  const [{ count: newLeads }, { count: totalLeads }, { count: activeProjects }, { count: pendingConsults }, { data: recentLeads }, complianceAlerts, { data: activeJobs }] =
-    await Promise.all([
-      supabase.from("leads").select("*", { count: "exact", head: true }).eq("status", "new"),
-      supabase.from("leads").select("*", { count: "exact", head: true }),
-      supabase.from("projects").select("*", { count: "exact", head: true }).in("status", ["pre_construction", "in_progress"]),
-      supabase.from("consultations").select("*", { count: "exact", head: true }).eq("status", "requested"),
-      supabase
-        .from("leads")
-        .select("id, first_name, last_name, email, status, project_type, created_at")
-        .order("created_at", { ascending: false })
-        .limit(5),
-      getComplianceDashboardAlerts(),
-      supabase
-        .from("projects")
-        .select("id, title, status, playbook_applied_at")
-        .in("status", ["pre_construction", "in_progress"])
-        .order("updated_at", { ascending: false })
-        .limit(6),
-    ]);
+  const totalAlerts = jobs.reduce((s, j) => s + j.alertCount, 0) + complianceAlerts.length;
 
   return (
-    <div className="p-8 md:p-12">
-      <div className="mb-12">
-        <span className="eyebrow">— Dashboard</span>
-        <h1 className="mt-2 font-display text-display-md text-ink">Overview</h1>
+    <div className="p-8 md:p-12 max-w-6xl">
+      <div className="mb-10">
+        <span className="eyebrow">— Good morning</span>
+        <h1 className="mt-2 font-display text-display-md text-ink">Company Home</h1>
+        <p className="mt-3 text-ink/60 max-w-2xl leading-relaxed">
+          Every active job at a glance. Tap a job to open its master board — checklists, money, and
+          what needs attention today.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-12">
         <StatCard
-          label="New Leads"
-          value={newLeads ?? 0}
-          hint="Awaiting response"
-          href="/admin/leads?status=new"
-          accent={(newLeads ?? 0) > 0}
-        />
-        <StatCard
-          label="Pending Consultations"
-          value={pendingConsults ?? 0}
-          hint="Needs confirmation"
-          href="/admin/consultations"
-          accent={(pendingConsults ?? 0) > 0}
-        />
-        <StatCard
-          label="Active Projects"
-          value={activeProjects ?? 0}
-          hint="In construction"
+          label="Active Jobs"
+          value={jobs.length}
+          hint="Homes in progress"
           href="/admin/projects"
         />
         <StatCard
-          label="Total Leads"
-          value={totalLeads ?? 0}
-          hint="All time"
-          href="/admin/leads"
+          label="Needs Attention"
+          value={totalAlerts}
+          hint="Across all jobs + licenses"
+          accent={totalAlerts > 0}
+          href={complianceAlerts.length ? "/admin/compliance" : "/admin/projects"}
         />
         <StatCard
-          label="Compliance Alerts"
-          value={complianceAlerts.length}
-          hint="Licenses & insurance"
-          href="/admin/compliance"
-          accent={complianceAlerts.length > 0}
+          label="New Leads"
+          value={newLeads}
+          hint="From the website"
+          href="/admin/leads?status=new"
+          accent={newLeads > 0}
+        />
+        <StatCard
+          label="Consult Requests"
+          value={pendingConsults}
+          hint="Need a call back"
+          href="/admin/consultations"
+          accent={pendingConsults > 0}
         />
       </div>
 
       {complianceAlerts.length > 0 && (
-        <div className="mb-12 bg-paper border border-amber-200/80 p-8">
-          <div className="flex items-baseline justify-between mb-4">
-            <h2 className="font-display text-xl text-ink">Renewals & Compliance</h2>
-            <Link
-              href="/admin/compliance"
-              className="font-mono text-[11px] tracking-[0.18em] uppercase text-copper hover:text-copper-400"
-            >
+        <div className="hub-panel p-6 mb-10 border-amber-200/80">
+          <div className="flex justify-between items-baseline mb-4">
+            <h2 className="font-display text-lg text-ink">Licenses & insurance</h2>
+            <Link href="/admin/compliance" className="font-mono text-[10px] uppercase text-copper">
               Manage →
             </Link>
           </div>
-          <ul className="divide-y divide-ink/10">
-            {complianceAlerts.slice(0, 5).map((item) => (
-              <li key={item.id} className="py-3 flex justify-between gap-4 text-sm">
-                <span className="text-ink">{item.title}</span>
-                <span
-                  className={`shrink-0 font-mono text-[10px] uppercase tracking-wider ${
-                    item.status === "expired" ? "text-red-700" : "text-amber-800"
-                  }`}
-                >
-                  {item.status === "expired"
-                    ? "Expired"
-                    : item.days === 0
-                      ? "Today"
-                      : `${item.days}d left`}
+          <ul className="space-y-2 text-sm">
+            {complianceAlerts.slice(0, 4).map((item) => (
+              <li key={item.id} className="flex justify-between gap-4">
+                <span>{item.title}</span>
+                <span className="font-mono text-[10px] uppercase text-amber-800 shrink-0">
+                  {item.status === "expired" ? "Expired" : `${item.days}d left`}
                 </span>
               </li>
             ))}
@@ -104,82 +74,90 @@ export default async function AdminDashboard() {
         </div>
       )}
 
-      {(activeJobs ?? []).length > 0 && (
-        <div className="mb-12 hub-panel p-8">
-          <div className="flex items-baseline justify-between mb-6">
-            <h2 className="font-display text-xl text-ink">Active jobs</h2>
-            <Link href="/admin/projects" className="font-mono text-[11px] tracking-[0.18em] uppercase text-copper hover:text-copper-400">
-              All projects →
+      <div className="mb-6 flex justify-between items-baseline">
+        <h2 className="font-display text-2xl text-ink">Active jobs</h2>
+        <Link href="/admin/projects" className="font-mono text-[10px] uppercase text-copper">
+          All projects →
+        </Link>
+      </div>
+
+      {jobs.length === 0 ? (
+        <div className="hub-panel py-16 text-center text-ink/50">
+          No active jobs.{" "}
+          <Link href="/admin/projects/new" className="text-copper hover:underline">
+            Start a project
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {jobs.map((job) => (
+            <Link
+              key={job.id}
+              href={`/admin/projects/${job.id}`}
+              className="hub-panel p-6 md:p-8 block hover:border-copper/40 transition-colors group"
+            >
+              <div className="flex flex-wrap gap-6 md:gap-10 items-start">
+                <ProgressRing pct={job.progressPct} size={88} label="Done" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h3 className="font-display text-xl text-ink group-hover:text-copper transition-colors">
+                      {job.title}
+                    </h3>
+                    <span className="text-[10px] font-mono uppercase text-stone-300">
+                      {PROJECT_STATUS_LABELS[job.status] || job.status}
+                    </span>
+                    {job.alertCount > 0 && (
+                      <span className="text-[10px] font-mono uppercase px-2 py-0.5 border border-amber-300 text-amber-900 bg-amber-50">
+                        {job.alertCount} need{job.alertCount === 1 ? "s" : ""} attention
+                      </span>
+                    )}
+                  </div>
+                  {job.location && (
+                    <p className="text-sm text-ink/50 mt-1">{job.location}</p>
+                  )}
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <p className="text-[10px] font-mono uppercase text-stone-300">Checklists</p>
+                      <p className="font-medium text-ink mt-0.5">
+                        {job.tasksTotal ? `${job.tasksDone}/${job.tasksTotal}` : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-mono uppercase text-stone-300">Our cost plan</p>
+                      <p className="font-medium text-ink mt-0.5">
+                        {job.estimatedCost ? formatMoney(job.estimatedCost) : "Not set"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-mono uppercase text-stone-300">Client pays us</p>
+                      <p className="font-medium text-ink mt-0.5">
+                        {job.clientContract ? formatMoney(job.clientContract) : "Not set"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-mono uppercase text-stone-300">Collected</p>
+                      <p className="font-medium text-ink mt-0.5">
+                        {job.paidToUs ? formatMoney(job.paidToUs) : "$0"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <span className="font-mono text-[10px] uppercase text-copper shrink-0 self-center">
+                  Open master board →
+                </span>
+              </div>
             </Link>
-          </div>
-          <ul className="divide-y divide-ink/8">
-            {activeJobs!.map((job) => (
-              <li key={job.id}>
-                <Link
-                  href={`/admin/projects/${job.id}`}
-                  className="flex items-center justify-between py-4 hover:bg-bone/50 -mx-4 px-4 transition-colors group"
-                >
-                  <span className="font-medium text-ink group-hover:text-copper transition-colors">{job.title}</span>
-                  <span className="text-[10px] font-mono uppercase text-stone-300">
-                    {job.playbook_applied_at ? "Command →" : "Setup needed →"}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          ))}
         </div>
       )}
 
-      <div className="bg-paper border border-ink/15 p-8">
-        <div className="flex items-baseline justify-between mb-6">
-          <h2 className="font-display text-2xl text-ink">Recent Leads</h2>
-          <Link
-            href="/admin/leads"
-            className="font-mono text-[11px] tracking-[0.18em] uppercase text-copper hover:text-copper-400"
-          >
-            View All →
-          </Link>
-        </div>
-
-        {recentLeads && recentLeads.length > 0 ? (
-          <div className="divide-y divide-ink/10">
-            {recentLeads.map((lead) => (
-              <Link
-                key={lead.id}
-                href={`/admin/leads/${lead.id}`}
-                className="flex items-center justify-between py-4 hover:bg-bone/50 -mx-4 px-4 transition-colors"
-              >
-                <div>
-                  <div className="font-medium text-ink">
-                    {lead.first_name} {lead.last_name}
-                  </div>
-                  <div className="text-xs text-stone-300 font-mono tracking-wider mt-1">
-                    {lead.email}
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  {lead.project_type && (
-                    <span className="text-xs text-ink/60 font-mono tracking-wider hidden md:block">
-                      {lead.project_type.replace(/_/g, " ")}
-                    </span>
-                  )}
-                  <span
-                    className={`text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border ${
-                      LEAD_STATUS_COLORS[lead.status]
-                    }`}
-                  >
-                    {LEAD_STATUS_LABELS[lead.status]}
-                  </span>
-                  <span className="text-xs text-stone-300 font-mono">
-                    {new Date(lead.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <p className="text-ink/50 italic">No leads yet. They'll show up here once the contact form starts getting submissions.</p>
-        )}
+      <div className="mt-12 pt-8 border-t border-ink/10">
+        <Link
+          href="/admin/leads"
+          className="text-sm text-stone-300 hover:text-ink font-mono text-[10px] uppercase tracking-wider"
+        >
+          Sales: leads & consultations →
+        </Link>
       </div>
     </div>
   );

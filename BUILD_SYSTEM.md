@@ -38,6 +38,32 @@ export $(grep -E '^NEXT_PUBLIC_SUPABASE_URL=|^SUPABASE_SERVICE_ROLE_KEY=' .env.l
 npx tsx scripts/seed-608-macon.ts
 ```
 
+**Cost plan** (our internal estimate — NOT client billing):
+
+```bash
+npx tsx scripts/seed-608-macon.ts --cost-plan
+```
+
+**Habitat portal contact** (messages, updates, invoices):
+
+```bash
+npx tsx scripts/seed-608-macon.ts --client
+# Or set HABITAT_CLIENT_EMAIL=contact@example.org
+```
+
+Both together:
+
+```bash
+npx tsx scripts/seed-608-macon.ts --cost-plan --client
+```
+
+Then open **Admin → Company Home → 608 Macon → Master Board**.
+
+Three money buckets per job:
+- **Our Cost Plan** — internal estimator (refine as sub quotes arrive)
+- **Sub Quotes** — what subs actually bid (enter manually or scan PDF)
+- **Client Invoices** — what Habitat or the homeowner pays you
+
 ## Roadmap (Buildertrend-class)
 
 | Next | Feature |

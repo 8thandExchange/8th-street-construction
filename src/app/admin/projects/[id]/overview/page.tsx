@@ -135,7 +135,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
             />
           </div>
           <div>
-            <label className="field-label">Client</label>
+            <label className="field-label">Portal client (Habitat / homeowner)</label>
             <select name="client_id" className="field-input" defaultValue={project.client_id ?? ""}>
               <option value="">— None —</option>
               {(clients ?? []).map((c) => (
@@ -144,16 +144,27 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
                 </option>
               ))}
             </select>
+            <p className="text-xs text-ink/50 mt-2">
+              They can see updates, messages, and invoices in the client portal.
+            </p>
           </div>
           <div>
-            <label className="field-label">Contract value (internal)</label>
+            <label className="field-label">What the client pays us ($)</label>
             <input
               type="number"
-              step="0.01"
+              step="1"
               name="contract_value"
               defaultValue={project.contract_value ?? ""}
               className="field-input"
+              placeholder="Agreement amount"
             />
+            <p className="text-xs text-ink/50 mt-2">
+              Client billing only — our cost plan is on the{" "}
+              <a href={`/admin/projects/${project.id}/costs`} className="text-copper hover:underline">
+                Cost Plan
+              </a>{" "}
+              page.
+            </p>
           </div>
         </div>
 

@@ -10,6 +10,8 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://www.8thstreetconstruct
 
 function revalidate(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/bid-requests`);
+  revalidatePath(`/admin/projects/${projectId}/costs`);
+  revalidatePath(`/admin/projects/${projectId}`);
   revalidatePath("/admin/subcontractors");
   revalidatePath("/subs");
 }
@@ -93,6 +95,13 @@ export async function awardBid(formData: FormData) {
   const projectId = String(formData.get("project_id"));
   const bidId = String(formData.get("bid_id"));
   const rfqId = String(formData.get("bid_request_id"));
+  const estimateLineId = String(formData.get("estimate_line_id") || "").trim() || null;
+
+  const { data: bid } = await supabase
+    .from("bids")
+    .select("amount")
+    .eq("id", bidId)
+    .single();
 
   await supabase.from("bids").update({ status: "awarded" }).eq("id", bidId);
   await supabase
@@ -103,7 +112,99 @@ export async function awardBid(formData: FormData) {
     .in("status", ["invited", "viewed", "submitted", "shortlisted"]);
   await supabase.from("bid_requests").update({ status: "awarded" }).eq("id", rfqId);
 
+  if (estimateLineId && bid?.amount) {
+    const { linkAwardedBidToLine } = await import("@/lib/actions/estimate");
+    await linkAwardedBidToLine(projectId, estimateLineId, rfqId, Number(bid.amount));
+  }
+
   revalidate(projectId);
+}
+
+/** Record a sub quote from email, phone, or scanned PDF — no portal login required */
+export async function recordManualSubQuote(formData: FormData) {
+  const { supabase, user } = await requireAdmin();
+  const projectId = String(formData.get("project_id"));
+  const companyName = String(formData.get("company_name")).trim();
+  const trade = String(formData.get("trade")).trim();
+  const title = String(formData.get("title") || trade).trim();
+  const amount = Number(formData.get("amount"));
+  const scope = String(formData.get("scope_of_work") || "").trim() || `${trade} work per quote`;
+  const documentId = String(formData.get("document_id") || "").trim() || null;
+  const estimateLineId = String(formData.get("estimate_line_id") || "").trim() || null;
+  const awardNow = formData.get("award_now") === "on";
+
+  if (!companyName || !trade || !amount) {
+    throw new Error("Company name, trade, and quote amount are required.");
+  }
+
+  let subId = String(formData.get("subcontractor_id") || "").trim() || null;
+
+  if (!subId) {
+    const { data: existing } = await supabase
+      .from("subcontractors")
+      .select("id")
+      .ilike("company_name", companyName)
+      .maybeSingle();
+
+    if (existing) {
+      subId = existing.id;
+    } else {
+      const { data: created, error } = await supabase
+        .from("subcontractors")
+        .insert({
+          company_name: companyName,
+          trade,
+          preferred: false,
+          active: true,
+          notes: "Added from manual quote entry",
+        })
+        .select("id")
+        .single();
+      if (error || !created) throw new Error(error?.message ?? "Could not add subcontractor");
+      subId = created.id;
+    }
+  }
+
+  const { data: rfq, error: rfqErr } = await supabase
+    .from("bid_requests")
+    .insert({
+      project_id: projectId,
+      title,
+      scope_of_work: scope,
+      trade,
+      created_by: user.id,
+      status: awardNow ? "awarded" : "closed",
+      estimate_line_id: estimateLineId,
+    })
+    .select("id")
+    .single();
+
+  if (rfqErr || !rfq) throw new Error(rfqErr?.message ?? "Failed to save quote request");
+
+  const { data: bid, error: bidErr } = await supabase
+    .from("bids")
+    .insert({
+      bid_request_id: rfq.id,
+      subcontractor_id: subId,
+      amount,
+      status: awardNow ? "awarded" : "submitted",
+      submitted_at: new Date().toISOString(),
+      source: "manual",
+      document_id: documentId,
+      notes: String(formData.get("notes") || "").trim() || null,
+    })
+    .select("id")
+    .single();
+
+  if (bidErr) throw new Error(bidErr.message);
+
+  if (awardNow && estimateLineId) {
+    const { linkAwardedBidToLine } = await import("@/lib/actions/estimate");
+    await linkAwardedBidToLine(projectId, estimateLineId, rfq.id, amount);
+  }
+
+  revalidate(projectId);
+  return { bidId: bid?.id };
 }
 
 export async function closeBidRequest(formData: FormData) {

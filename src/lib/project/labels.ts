@@ -62,6 +62,7 @@ export const DOCUMENT_CATEGORIES = [
   { value: "permit", label: "Permit" },
   { value: "plan", label: "Plan / Drawing" },
   { value: "invoice", label: "Invoice" },
+  { value: "sub_quote", label: "Sub Quote (scanned)" },
   { value: "other", label: "Other" },
 ] as const;
 
@@ -79,4 +80,40 @@ export const TASK_STATUS_STYLES: Record<string, string> = {
   blocked: "bg-amber-50 text-amber-800 border-amber-200",
   done: "bg-emerald-50 text-emerald-700 border-emerald-200",
   cancelled: "bg-stone-100 text-stone-400 border-stone-200",
+};
+
+export const DRAW_STATUS_LABELS: Record<string, string> = {
+  scheduled: "Not billed yet",
+  invoiced: "Invoice sent",
+  paid: "Paid",
+  skipped: "Skipped",
+  cancelled: "Cancelled",
+};
+
+export const DRAW_STATUS_STYLES: Record<string, string> = {
+  scheduled: "bg-stone-100 text-stone-600 border-stone-200",
+  invoiced: "bg-amber-50 text-amber-900 border-amber-200",
+  paid: "bg-emerald-50 text-emerald-800 border-emerald-200",
+  skipped: "bg-stone-50 text-stone-400 border-stone-200",
+  cancelled: "bg-red-50 text-red-700 border-red-200",
+};
+
+export const INVOICE_STATUS_LABELS: Record<string, string> = {
+  draft: "Draft",
+  sent: "Sent — waiting on payment",
+  viewed: "Client opened it",
+  paid: "Paid in full",
+  partial: "Partly paid",
+  overdue: "Past due",
+  void: "Cancelled",
+};
+
+export const INVOICE_STATUS_STYLES: Record<string, string> = {
+  draft: "bg-stone-100 text-stone-500 border-stone-200",
+  sent: "bg-amber-50 text-amber-900 border-amber-200",
+  viewed: "bg-violet-50 text-violet-800 border-violet-200",
+  paid: "bg-emerald-50 text-emerald-800 border-emerald-200",
+  partial: "bg-amber-50 text-amber-900 border-amber-200",
+  overdue: "bg-red-50 text-red-800 border-red-200",
+  void: "bg-stone-100 text-stone-400 border-stone-200",
 };

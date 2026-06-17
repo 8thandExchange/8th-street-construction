@@ -39,7 +39,7 @@ export async function loadProjectForHub(projectId: string) {
   const { data: project } = await supabase
     .from("projects")
     .select(
-      "id, slug, title, subtitle, status, category, location, street_address, client_id, project_manager_id, start_date, target_completion_date, contract_value, hero_image_url, playbook_applied_at, playbook_id"
+      "id, slug, title, subtitle, status, category, location, street_address, client_id, project_manager_id, start_date, target_completion_date, contract_value, estimated_cost, hero_image_url, playbook_applied_at, playbook_id"
     )
     .eq("id", projectId)
     .single();
@@ -144,11 +144,27 @@ export async function loadProjectForHub(projectId: string) {
     });
   }
 
+  if (contractValue === 0 && project.slug === "608-macon-ave") {
+    nextActions.unshift({
+      href: `${base}/billing`,
+      label: "Set client billing amount",
+      hint: "What Habitat pays you — not our cost plan",
+    });
+  }
+
+  if (Number(project.estimated_cost ?? 0) === 0 && project.slug === "608-macon-ave") {
+    nextActions.unshift({
+      href: `${base}/costs`,
+      label: "Import our cost plan",
+      hint: "Permit-set estimate — refine with sub quotes",
+    });
+  }
+
   if (contractValue > 0 && draws.length === 0) {
     nextActions.push({
       href: `${base}/billing`,
-      label: "Set up draw schedule",
-      hint: "One-click 5-draw template",
+      label: "Set up invoices",
+      hint: "One-click Habitat payment schedule",
     });
   }
 
@@ -199,7 +215,7 @@ export async function loadProjectForHub(projectId: string) {
       severity: "warning",
       title: `${unpaidInvoices} unpaid invoice${unpaidInvoices > 1 ? "s" : ""}`,
       href: `${base}/billing`,
-      actionLabel: "Billing",
+      actionLabel: "Money & Invoices",
     });
   }
 

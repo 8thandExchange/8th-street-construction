@@ -26,7 +26,7 @@ export function ProjectHubShell({ project, children }: ProjectHubShellProps) {
           </Link>
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <span className="eyebrow">— Project Command</span>
+              <span className="eyebrow">— Master Board</span>
               <h1 className="mt-1 font-display text-display-md text-ink leading-tight">
                 {project.title}
               </h1>
