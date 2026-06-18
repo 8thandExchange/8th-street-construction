@@ -27,7 +27,10 @@ export default function NewProjectPage() {
         action={createProjectWithPlaybook}
         className="bg-paper border border-ink/15 p-8 md:p-12 space-y-8"
       >
-        <ProjectFormFields defaults={{ status: "pre_construction", category: "custom_home" }} />
+        <ProjectFormFields
+          autoSlugFromTitle
+          defaults={{ status: "pre_construction", category: "custom_home" }}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-ink/15">
           <div>

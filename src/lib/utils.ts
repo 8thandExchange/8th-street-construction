@@ -5,6 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** URL-safe project path segment, e.g. "608 Macon Ave" → "608-macon-ave" */
+export function slugifyProjectTitle(title: string): string {
+  return title
+    .trim()
+    .toLowerCase()
+    .replace(/['']/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export function formatPhone(input: string) {
   const digits = input.replace(/\D/g, "");
   if (digits.length !== 10) return input;

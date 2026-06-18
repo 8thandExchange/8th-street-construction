@@ -1,6 +1,9 @@
+import { ProjectTitleSlugFields } from "@/components/admin/ProjectTitleSlugFields";
 import { PROJECT_CATEGORY_LABELS } from "@/lib/utils";
 
 interface ProjectFormFieldsProps {
+  /** New jobs: slug follows job name until edited */
+  autoSlugFromTitle?: boolean;
   defaults?: {
     slug?: string;
     title?: string;
@@ -20,31 +23,17 @@ interface ProjectFormFieldsProps {
   };
 }
 
-export function ProjectFormFields({ defaults = {} }: ProjectFormFieldsProps) {
+export function ProjectFormFields({
+  defaults = {},
+  autoSlugFromTitle = false,
+}: ProjectFormFieldsProps) {
   return (
     <div className="flex flex-col gap-7">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <label className="field-label">Title *</label>
-          <input
-            name="title"
-            required
-            defaultValue={defaults.title ?? ""}
-            className="field-input"
-          />
-        </div>
-        <div>
-          <label className="field-label">Slug (URL) *</label>
-          <input
-            name="slug"
-            required
-            pattern="[a-z0-9-]+"
-            defaultValue={defaults.slug ?? ""}
-            className="field-input"
-            placeholder="riverside-residence"
-          />
-        </div>
-      </div>
+      <ProjectTitleSlugFields
+        defaultTitle={defaults.title ?? ""}
+        defaultSlug={defaults.slug ?? ""}
+        autoSlugFromTitle={autoSlugFromTitle}
+      />
 
       <div>
         <label className="field-label">Subtitle</label>

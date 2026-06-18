@@ -5,15 +5,23 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { applyPlaybookToProject } from "@/lib/build/apply-playbook";
 import { DEFAULT_PLAYBOOK_ID } from "@/lib/build/playbook-registry";
+import { slugifyProjectTitle } from "@/lib/utils";
 
 export async function createProjectWithPlaybook(formData: FormData) {
   const { supabase, user } = await requireAdmin();
   const applyPlaybook = formData.get("apply_playbook") === "on";
   const status = String(formData.get("status"));
+  const title = String(formData.get("title")).trim();
+  const slugInput = String(formData.get("slug")).trim().toLowerCase();
+  const slug = slugInput || slugifyProjectTitle(title);
+
+  if (!slug) {
+    throw new Error("Enter a job name so we can create the public project link.");
+  }
 
   const payload = {
-    slug: String(formData.get("slug")).trim().toLowerCase(),
-    title: String(formData.get("title")).trim(),
+    slug,
+    title,
     subtitle: String(formData.get("subtitle") || "").trim() || null,
     category: String(formData.get("category")),
     status,
