@@ -20,6 +20,14 @@ export type InvoiceRecord = {
   due_date: string | null;
   paid_at: string | null;
   created_at: string;
+  mercury_pay_slug?: string | null;
+  mercury_status?: string | null;
+  line_items?: {
+    description: string;
+    quantity: number;
+    unit_amount: number;
+    amount: number;
+  }[];
 };
 
 export type BillingSummary = {
