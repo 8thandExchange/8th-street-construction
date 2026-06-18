@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { mercuryWebhookConfigured } from "@/lib/mercury/config";
 import { syncAllOpenMercuryInvoices } from "@/lib/mercury/sync";
 
 export const dynamic = "force-dynamic";
@@ -26,13 +25,20 @@ function verifyMercurySignature(payload: string, signatureHeader: string, secret
   }
 }
 
+/** Mercury verifies reachability before revealing the signing secret. */
+export async function GET() {
+  return NextResponse.json({ ok: true, endpoint: "mercury-webhook" });
+}
+
 export async function POST(request: Request) {
+  const body = await request.text();
   const secret = process.env.MERCURY_WEBHOOK_SECRET?.trim();
-  if (!mercuryWebhookConfigured() || !secret) {
-    return NextResponse.json({ error: "Mercury webhook not configured" }, { status: 503 });
+
+  // Bootstrap: Mercury won't show the secret until verify succeeds.
+  if (!secret) {
+    return NextResponse.json({ received: true, pending_secret: true });
   }
 
-  const body = await request.text();
   const sig = (await headers()).get("mercury-signature") ?? (await headers()).get("Mercury-Signature");
 
   if (!sig || !verifyMercurySignature(body, sig, secret)) {
@@ -65,7 +71,6 @@ export async function POST(request: Request) {
     });
   }
 
-  // Transaction events may indicate invoice payment — poll open invoices to reconcile.
   if (event.resourceType === "transaction") {
     await syncAllOpenMercuryInvoices();
   }
