@@ -1,4 +1,5 @@
 import { MERCURY_API_BASE } from "./config";
+import { ProxyAgent, fetch as undiciFetch } from "undici";
 
 export class MercuryApiError extends Error {
   constructor(
@@ -17,6 +18,12 @@ function getToken() {
   return token;
 }
 
+function getFixieDispatcher() {
+  const fixieUrl = process.env.FIXIE_URL?.trim();
+  if (!fixieUrl) return undefined;
+  return new ProxyAgent(fixieUrl);
+}
+
 export async function mercuryFetch<T>(
   path: string,
   init?: RequestInit & { json?: unknown }
@@ -30,11 +37,22 @@ export async function mercuryFetch<T>(
     headers.set("Content-Type", "application/json");
   }
 
-  const res = await fetch(`${MERCURY_API_BASE}${path}`, {
-    ...init,
-    headers,
-    body: init?.json !== undefined ? JSON.stringify(init.json) : init?.body,
-  });
+  const url = `${MERCURY_API_BASE}${path}`;
+  const body = init?.json !== undefined ? JSON.stringify(init.json) : init?.body;
+  const dispatcher = getFixieDispatcher();
+
+  const res = dispatcher
+    ? await undiciFetch(url, {
+        method: init?.method,
+        headers,
+        body: body as string | undefined,
+        dispatcher,
+      })
+    : await fetch(url, {
+        ...init,
+        headers,
+        body,
+      });
 
   const text = await res.text();
   if (!res.ok) {
