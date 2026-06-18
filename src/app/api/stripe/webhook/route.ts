@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe/client";
+import { markInvoicePaidLocally } from "@/lib/mercury/sync";
 
 export const dynamic = "force-dynamic";
 
@@ -52,24 +53,12 @@ export async function POST(request: Request) {
     if (invoiceId) {
       const { data: inv } = await admin
         .from("invoices")
-        .select("total, project_id")
+        .select("project_id")
         .eq("id", invoiceId)
         .single();
 
-      if (inv) {
-        await admin
-          .from("invoices")
-          .update({
-            status: "paid",
-            amount_paid: inv.total,
-            paid_at: new Date().toISOString(),
-          })
-          .eq("id", invoiceId);
-
-        await admin
-          .from("payment_draws")
-          .update({ status: "paid", paid_at: new Date().toISOString() })
-          .eq("invoice_id", invoiceId);
+      if (inv?.project_id) {
+        await markInvoicePaidLocally(admin, invoiceId, inv.project_id);
       }
     }
   }

@@ -1,7 +1,9 @@
+import Image from "next/image";
 import { formatMoney } from "@/lib/billing/constants";
 import { mercuryPayUrl } from "@/lib/mercury/invoices";
 import { INVOICE_STATUS_LABELS, INVOICE_STATUS_STYLES } from "@/lib/project/labels";
 import { PayInvoiceButton } from "./PayInvoiceButton";
+import { InvoiceActions } from "./InvoiceActions";
 
 export type InvoiceCardData = {
   id: string;
@@ -10,7 +12,7 @@ export type InvoiceCardData = {
   status: string;
   total: number;
   amount_paid?: number;
-  due_date: string | null;
+  due_date?: string | null;
   paid_at?: string | null;
   created_at?: string;
   mercury_pay_slug?: string | null;
@@ -21,7 +23,6 @@ export type InvoiceCardData = {
 type InvoiceCardProps = {
   invoice: InvoiceCardData;
   variant: "admin" | "client";
-  projectId?: string;
   stripeReady?: boolean;
   markPaidAction?: React.ReactNode;
 };
@@ -42,6 +43,7 @@ export function InvoiceCard({
   const statusStyle = INVOICE_STATUS_STYLES[invoice.status] ?? INVOICE_STATUS_STYLES.sent;
   const isPaid = invoice.status === "paid";
   const mercuryUrl = invoice.mercury_pay_slug ? mercuryPayUrl(invoice.mercury_pay_slug) : null;
+  const pdfUrl = invoice.mercury_pay_slug ? `/api/invoices/${invoice.id}/mercury-pdf` : null;
   const lineItems = invoice.line_items ?? [];
 
   return (
@@ -49,6 +51,20 @@ export function InvoiceCard({
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-copper/80 via-copper/30 to-transparent" />
 
       <div className="p-6 md:p-7">
+        <div className="flex items-start justify-between gap-4 mb-1">
+          <Image
+            src="/img/logo-icon.svg"
+            alt=""
+            width={28}
+            height={28}
+            className="opacity-35 shrink-0 mt-1"
+            aria-hidden
+          />
+          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-stone-400 text-right">
+            8th Street Construction
+          </p>
+        </div>
+
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2.5">
@@ -97,7 +113,7 @@ export function InvoiceCard({
                     rel="noopener noreferrer"
                     className="inline-flex h-11 items-center justify-center px-6 bg-ink text-bone font-mono text-[10px] tracking-[0.16em] uppercase hover:bg-copper transition-colors"
                   >
-                    Pay via Mercury
+                    Pay securely
                   </a>
                 )}
                 {stripeReady && <PayInvoiceButton invoiceId={invoice.id} variant="secondary" />}
@@ -140,18 +156,12 @@ export function InvoiceCard({
           </div>
         )}
 
-        {!isPaid && variant === "admin" && mercuryUrl && (
-          <div className="mt-5 pt-4 border-t border-ink/8 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-ink/50">Mercury pay page — share with Habitat or homeowner</p>
-            <a
-              href={mercuryUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-[10px] uppercase tracking-wider text-copper hover:underline"
-            >
-              Open pay link ↗
-            </a>
-          </div>
+        {(mercuryUrl || pdfUrl) && (
+          <InvoiceActions
+            mercuryPayUrl={mercuryUrl}
+            pdfUrl={pdfUrl}
+            variant={variant}
+          />
         )}
       </div>
     </article>

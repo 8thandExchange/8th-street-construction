@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { HubPageHeader } from "@/components/hub/HubUI";
+import { BillingBrandHeader } from "@/components/billing/BillingBrandHeader";
 import { HabitatProjectBanner } from "@/components/billing/HabitatProjectBanner";
 import { BillingSetupWizard } from "@/components/billing/BillingSetupWizard";
 import { BillingMetricsRow } from "@/components/billing/BillingMetricsRow";
@@ -120,9 +120,11 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
 
   return (
     <div className="max-w-4xl">
-      <HubPageHeader
-        title="Client Invoices"
-        description="Progress billing for Habitat or the homeowner — powered by Mercury when connected."
+      <BillingBrandHeader
+        eyebrow="Client invoices"
+        title="Progress billing"
+        projectTitle={project.title}
+        description="What Habitat or the homeowner pays you — synced with Mercury for secure ACH and card payments."
       />
 
       <BillingStatusBanner stripeReady={stripeReady} mercuryReady={mercuryReady} variant="admin" />

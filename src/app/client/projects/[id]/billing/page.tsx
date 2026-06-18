@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { BillingBrandHeader } from "@/components/billing/BillingBrandHeader";
 import { BillingProgressHero } from "@/components/billing/BillingProgressHero";
 import { BillingStatusBanner } from "@/components/billing/BillingStatusBanner";
 import { InvoiceCard, type InvoiceCardData } from "@/components/billing/InvoiceCard";
@@ -74,17 +75,12 @@ export default async function ClientBillingPage(props: {
 
   return (
     <div className="px-6 md:px-10 lg:px-14 py-10 max-w-3xl">
-      <header className="mb-2">
-        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper">Billing</p>
-        <h2 className="font-display text-3xl md:text-4xl text-ink mt-2 tracking-tight">
-          Your payments
-        </h2>
-        <p className="mt-4 text-[15px] text-ink/60 leading-relaxed max-w-xl">
-          Payment plan for <span className="text-ink font-medium">{project.title}</span>. Invoices
-          arrive after each major construction phase — pay securely via Mercury or your client
-          portal.
-        </p>
-      </header>
+      <BillingBrandHeader
+        eyebrow="Your billing"
+        title="Your payments"
+        projectTitle={project.title}
+        description="Invoices arrive after each major construction phase. Pay securely online or review your payment plan below."
+      />
 
       {paid === "1" && (
         <div className="mt-8 p-5 border border-emerald-200 bg-emerald-50 text-emerald-900 text-sm leading-relaxed">

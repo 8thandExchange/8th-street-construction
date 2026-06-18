@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatMoney } from "@/lib/billing/constants";
+import { sendInvoicePaidEmail } from "@/lib/email/invoice-notify";
 import { mercuryConfigured } from "./config";
 import { getMercuryInvoice } from "./invoices";
 
@@ -13,15 +15,17 @@ function revalidateBilling(projectId: string) {
 export async function markInvoicePaidLocally(
   admin: ReturnType<typeof createAdminClient>,
   invoiceId: string,
-  projectId: string
+  projectId: string,
+  options?: { notifyClient?: boolean }
 ) {
   const { data: inv } = await admin
     .from("invoices")
-    .select("total")
+    .select("total, invoice_number, title, client_id, status")
     .eq("id", invoiceId)
     .single();
 
   if (!inv) return false;
+  const wasAlreadyPaid = inv.status === "paid";
 
   await admin
     .from("invoices")
@@ -37,6 +41,24 @@ export async function markInvoicePaidLocally(
     .from("payment_draws")
     .update({ status: "paid", paid_at: new Date().toISOString() })
     .eq("invoice_id", invoiceId);
+
+  if (!wasAlreadyPaid && options?.notifyClient !== false && inv.client_id) {
+    const [{ data: project }, { data: client }] = await Promise.all([
+      admin.from("projects").select("title").eq("id", projectId).single(),
+      admin.from("profiles").select("email, first_name").eq("id", inv.client_id).single(),
+    ]);
+    if (client?.email) {
+      await sendInvoicePaidEmail({
+        to: client.email,
+        firstName: client.first_name || "",
+        projectTitle: project?.title ?? "Your project",
+        projectId,
+        invoiceNumber: inv.invoice_number,
+        invoiceTitle: inv.title ?? "Invoice",
+        amountFormatted: formatMoney(Number(inv.total)),
+      });
+    }
+  }
 
   await revalidateBilling(projectId);
   return true;

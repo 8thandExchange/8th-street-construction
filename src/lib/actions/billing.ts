@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe/client";
-import { Resend } from "resend";
+import { formatMoney } from "@/lib/billing/constants";
+import { sendInvoiceReadyEmail } from "@/lib/email/invoice-notify";
 import {
   getDrawTemplateForProject,
   HABITAT_608_MACON,
@@ -13,9 +14,17 @@ import {
 } from "@/lib/billing/constants";
 import { mercuryConfigured } from "@/lib/mercury/config";
 import { getMercuryPayLink, pushInvoiceToMercury } from "@/lib/mercury/service";
+import { markInvoicePaidLocally } from "@/lib/mercury/sync";
+import { getSiteUrl } from "@/lib/brand/assets";
 
-const FROM = process.env.EMAIL_FROM || "8th Street Construction <hello@8thstreetconstruction.com>";
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://www.8thstreetconstruction.com";
+function formatDueDateLabel(due: string | null) {
+  if (!due) return null;
+  return new Date(`${due}T12:00:00`).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 function revalidate(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/billing`);
@@ -281,23 +290,18 @@ export async function createInvoiceFromDraw(formData: FormData) {
       }
     }
 
-    if (client?.email && process.env.RESEND_API_KEY) {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const portalUrl = `${SITE}/client/projects/${projectId}/billing`;
-      const payNote = mercuryPayLink
-        ? "Pay by bank transfer (ACH) or card using the secure Mercury link below, or open your client portal."
-        : isHabitat608Project(project.slug ?? "")
-          ? "Habitat or the homeowner can pay online or by check — see the client portal for details."
-          : "You can pay online through your client portal.";
-      const mercuryBlock = mercuryPayLink
-        ? `<p style="margin:20px 0"><a href="${mercuryPayLink}" style="display:inline-block;padding:12px 20px;background:#1a1a1a;color:#f5f0e8;text-decoration:none;font-size:13px;letter-spacing:0.08em;text-transform:uppercase">Pay invoice securely →</a></p>`
-        : "";
-      await resend.emails.send({
-        from: FROM,
+    if (client?.email) {
+      await sendInvoiceReadyEmail({
         to: client.email,
-        subject: `Invoice ${invoiceNumber} — ${project.title}`,
-        html: `<p>Hi ${client.first_name || "there"},</p><p>Draw invoice <strong>${invoiceNumber}</strong> for <strong>$${amount.toLocaleString()}</strong> is ready.</p><p>${payNote}</p>${mercuryBlock}<p><a href="${portalUrl}">Open billing in your portal →</a></p>`,
-        text: `Invoice ${invoiceNumber} ready: ${mercuryPayLink ?? portalUrl}`,
+        firstName: client.first_name || "there",
+        projectTitle: project.title ?? "Your project",
+        projectId,
+        invoiceNumber,
+        invoiceTitle: `Draw ${draw.draw_number}: ${draw.title}`,
+        amountFormatted: formatMoney(amount),
+        dueDateFormatted: formatDueDateLabel(draw.scheduled_date),
+        mercuryPayUrl: mercuryPayLink,
+        isHabitat: isHabitat608Project(project.slug ?? ""),
       });
     }
   }
@@ -306,30 +310,12 @@ export async function createInvoiceFromDraw(formData: FormData) {
 }
 
 export async function markInvoicePaid(formData: FormData) {
-  const { supabase } = await requireAdmin();
+  await requireAdmin();
   const projectId = String(formData.get("project_id"));
   const invoiceId = String(formData.get("invoice_id"));
 
-  const { data: inv } = await supabase
-    .from("invoices")
-    .select("total")
-    .eq("id", invoiceId)
-    .single();
-
-  await supabase
-    .from("invoices")
-    .update({
-      status: "paid",
-      amount_paid: inv?.total ?? 0,
-      paid_at: new Date().toISOString(),
-    })
-    .eq("id", invoiceId);
-
-  await supabase
-    .from("payment_draws")
-    .update({ status: "paid", paid_at: new Date().toISOString() })
-    .eq("invoice_id", invoiceId);
-
+  const admin = createAdminClient();
+  await markInvoicePaidLocally(admin, invoiceId, projectId, { notifyClient: false });
   revalidate(projectId);
 }
 
@@ -382,8 +368,8 @@ export async function createCheckoutSession(invoiceId: string) {
       invoice_id: invoice.id,
       project_id: invoice.project_id,
     },
-    success_url: `${SITE}/client/projects/${invoice.project_id}/billing?paid=1`,
-    cancel_url: `${SITE}/client/projects/${invoice.project_id}/billing`,
+    success_url: `${getSiteUrl()}/client/projects/${invoice.project_id}/billing?paid=1`,
+    cancel_url: `${getSiteUrl()}/client/projects/${invoice.project_id}/billing`,
   });
 
   return { url: session.url };
