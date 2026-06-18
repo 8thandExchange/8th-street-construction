@@ -5,6 +5,7 @@ import { HubPageHeader } from "@/components/hub/HubUI";
 import { HabitatProjectBanner } from "@/components/billing/HabitatProjectBanner";
 import { BillingSetupWizard } from "@/components/billing/BillingSetupWizard";
 import { BillingMetricsRow } from "@/components/billing/BillingMetricsRow";
+import { BillingStatusBanner } from "@/components/billing/BillingStatusBanner";
 import { DrawTimeline } from "@/components/billing/DrawTimeline";
 import { InvoiceList } from "@/components/billing/InvoiceList";
 import { updateContractValue, createDraw } from "@/lib/actions/billing";
@@ -15,13 +16,43 @@ import {
   type DrawRecord,
   type InvoiceRecord,
 } from "@/lib/billing/summary";
+import { mercuryConfigured } from "@/lib/mercury/config";
+import { syncProjectMercuryInvoices } from "@/lib/mercury/sync";
 import { stripeConfigured } from "@/lib/stripe/config";
 
 export const dynamic = "force-dynamic";
 
+async function loadInvoiceLineItems(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  invoiceIds: string[]
+) {
+  if (!invoiceIds.length) return new Map<string, InvoiceRecord["line_items"]>();
+
+  const { data: items } = await supabase
+    .from("invoice_line_items")
+    .select("invoice_id, description, quantity, unit_amount, amount, display_order")
+    .in("invoice_id", invoiceIds)
+    .order("display_order");
+
+  const map = new Map<string, NonNullable<InvoiceRecord["line_items"]>>();
+  for (const row of items ?? []) {
+    const list = map.get(row.invoice_id) ?? [];
+    list.push({
+      description: row.description,
+      quantity: Number(row.quantity),
+      unit_amount: Number(row.unit_amount),
+      amount: Number(row.amount),
+    });
+    map.set(row.invoice_id, list);
+  }
+  return map;
+}
+
 export default async function ProjectBillingPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
   const supabase = await createClient();
+
+  await syncProjectMercuryInvoices(id);
 
   const { data: project } = await supabase
     .from("projects")
@@ -43,7 +74,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
       supabase
         .from("invoices")
         .select(
-          "id, invoice_number, title, status, total, amount_paid, due_date, paid_at, created_at"
+          "id, invoice_number, title, status, total, amount_paid, due_date, paid_at, created_at, mercury_pay_slug, mercury_status"
         )
         .eq("project_id", id)
         .order("created_at", { ascending: false }),
@@ -60,18 +91,27 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
         : Promise.resolve({ data: null }),
     ]);
 
+  const lineItemMap = await loadInvoiceLineItems(
+    supabase,
+    (invoices ?? []).map((i) => i.id)
+  );
+
   const changeOrderTotal = (changeOrders ?? [])
     .filter((c) => c.status === "approved")
     .reduce((s, c) => s + Number(c.cost_impact ?? 0), 0);
 
   const contractValue = Number(project.contract_value ?? 0);
   const drawList = (draws ?? []) as DrawRecord[];
-  const invoiceList = (invoices ?? []) as InvoiceRecord[];
+  const invoiceList: InvoiceRecord[] = (invoices ?? []).map((inv) => ({
+    ...(inv as InvoiceRecord),
+    line_items: lineItemMap.get(inv.id),
+  }));
 
   const summary = computeBillingSummary(contractValue, changeOrderTotal, drawList);
   const setupStep = getBillingSetupStep(contractValue, drawList.length);
   const isHabitat = isHabitat608Project(project.slug);
   const stripeReady = stripeConfigured();
+  const mercuryReady = mercuryConfigured();
 
   const clientName = clientRes.data
     ? [clientRes.data.first_name, clientRes.data.last_name].filter(Boolean).join(" ") ||
@@ -82,18 +122,12 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
     <div className="max-w-4xl">
       <HubPageHeader
         title="Client Invoices"
-        description="What Habitat or the homeowner pays you — separate from our internal cost plan."
+        description="Progress billing for Habitat or the homeowner — powered by Mercury when connected."
       />
 
-      {isHabitat && <HabitatProjectBanner projectId={id} />}
+      <BillingStatusBanner stripeReady={stripeReady} mercuryReady={mercuryReady} variant="admin" />
 
-      {!stripeReady && (
-        <div className="hub-panel border-amber-200/80 bg-amber-50/90 px-5 py-4 mb-8 text-sm text-amber-950">
-          <strong>Card payments are off.</strong> Add{" "}
-          <code className="font-mono text-xs">STRIPE_SECRET_KEY</code> in Vercel to let clients pay
-          online. Until then, use &ldquo;Mark as paid&rdquo; when checks arrive — perfect for Habitat.
-        </div>
-      )}
+      {isHabitat && <HabitatProjectBanner projectId={id} />}
 
       <BillingSetupWizard
         projectId={id}
@@ -105,6 +139,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
         clientId={project.client_id}
         clientName={clientName}
         stripeReady={stripeReady}
+        mercuryReady={mercuryReady}
       />
 
       {setupStep !== 1 && (
@@ -120,7 +155,6 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
         </>
       )}
 
-      {/* Adjust contract — collapsed for advanced use */}
       {contractValue > 0 && (
         <details className="mt-12 hub-panel p-5">
           <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-wider text-stone-300">

@@ -11,6 +11,8 @@ import {
   isHabitat608Project,
   type DrawTemplateLine,
 } from "@/lib/billing/constants";
+import { mercuryConfigured } from "@/lib/mercury/config";
+import { getMercuryPayLink, pushInvoiceToMercury } from "@/lib/mercury/service";
 
 const FROM = process.env.EMAIL_FROM || "8th Street Construction <hello@8thstreetconstruction.com>";
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://www.8thstreetconstruction.com";
@@ -245,24 +247,57 @@ export async function createInvoiceFromDraw(formData: FormData) {
     .update({ invoice_id: invoice.id, status: "invoiced" })
     .eq("id", drawId);
 
+  let mercuryPayLink: string | null = null;
   if (project?.client_id) {
     const admin = createAdminClient();
     const { data: client } = await admin
       .from("profiles")
-      .select("email, first_name")
+      .select("email, first_name, last_name")
       .eq("id", project.client_id)
       .single();
+
+    if (client?.email && mercuryConfigured()) {
+      try {
+        const mercury = await pushInvoiceToMercury({
+          invoiceId: invoice.id,
+          invoiceNumber,
+          title: `Draw ${draw.draw_number}: ${draw.title}`,
+          amount,
+          dueDate: draw.scheduled_date,
+          lineDescription: draw.description || draw.title,
+          projectId,
+          projectTitle: project.title ?? "Your project",
+          clientId: project.client_id,
+          clientEmail: client.email,
+          clientName:
+            [client.first_name, client.last_name].filter(Boolean).join(" ") || client.email,
+          payerMemo: isHabitat608Project(project.slug ?? "")
+            ? "Habitat for Humanity draw payment — ACH or card accepted."
+            : undefined,
+        });
+        mercuryPayLink = mercury ? getMercuryPayLink(mercury.slug) : null;
+      } catch (err) {
+        console.error("Mercury invoice sync failed:", err);
+      }
+    }
+
     if (client?.email && process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
-      const payNote = isHabitat608Project(project.slug ?? "")
-        ? "Habitat or the homeowner can pay online or by check — see the client portal for details."
-        : "You can pay online through your client portal.";
+      const portalUrl = `${SITE}/client/projects/${projectId}/billing`;
+      const payNote = mercuryPayLink
+        ? "Pay by bank transfer (ACH) or card using the secure Mercury link below, or open your client portal."
+        : isHabitat608Project(project.slug ?? "")
+          ? "Habitat or the homeowner can pay online or by check — see the client portal for details."
+          : "You can pay online through your client portal.";
+      const mercuryBlock = mercuryPayLink
+        ? `<p style="margin:20px 0"><a href="${mercuryPayLink}" style="display:inline-block;padding:12px 20px;background:#1a1a1a;color:#f5f0e8;text-decoration:none;font-size:13px;letter-spacing:0.08em;text-transform:uppercase">Pay invoice securely →</a></p>`
+        : "";
       await resend.emails.send({
         from: FROM,
         to: client.email,
         subject: `Invoice ${invoiceNumber} — ${project.title}`,
-        html: `<p>Hi ${client.first_name || "there"},</p><p>Draw invoice <strong>${invoiceNumber}</strong> for <strong>$${amount.toLocaleString()}</strong> is ready.</p><p>${payNote}</p><p><a href="${SITE}/client/projects/${projectId}/billing">Open billing →</a></p>`,
-        text: `Invoice ${invoiceNumber} ready: ${SITE}/client/projects/${projectId}/billing`,
+        html: `<p>Hi ${client.first_name || "there"},</p><p>Draw invoice <strong>${invoiceNumber}</strong> for <strong>$${amount.toLocaleString()}</strong> is ready.</p><p>${payNote}</p>${mercuryBlock}<p><a href="${portalUrl}">Open billing in your portal →</a></p>`,
+        text: `Invoice ${invoiceNumber} ready: ${mercuryPayLink ?? portalUrl}`,
       });
     }
   }
@@ -315,7 +350,16 @@ export async function createCheckoutSession(invoiceId: string) {
     .single();
 
   if (!invoice || invoice.status === "paid") throw new Error("Invoice unavailable");
-  if (invoice.client_id !== user.id) throw new Error("Unauthorized");
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("client_id")
+    .eq("id", invoice.project_id)
+    .single();
+
+  const ownsInvoice =
+    invoice.client_id === user.id || (!invoice.client_id && project?.client_id === user.id);
+  if (!ownsInvoice) throw new Error("Unauthorized");
 
   const amountCents = Math.round(Number(invoice.total) * 100);
 
