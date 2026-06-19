@@ -5,14 +5,14 @@ export type RenderingDimensions = {
   height: number;
 };
 
-/** Native pixel dimensions — drives layout without cropping */
+/** Native pixel dimensions — all renderings share one uniform 1024×824 frame */
 export const COLLECTION_DIMENSIONS: Record<CollectionVariant, RenderingDimensions> = {
-  augusta: { width: 1402, height: 1122 },
-  savannah: { width: 1145, height: 1373 },
-  riverwalk: { width: 1145, height: 1374 },
-  summerville: { width: 1146, height: 1372 },
-  midtown: { width: 1402, height: 1122 },
-  broad: { width: 1402, height: 1122 },
+  augusta: { width: 1024, height: 824 },
+  savannah: { width: 1024, height: 824 },
+  riverwalk: { width: 1024, height: 824 },
+  summerville: { width: 1024, height: 824 },
+  midtown: { width: 1024, height: 824 },
+  broad: { width: 1024, height: 824 },
 };
 
 /** Heritage Rendering portraits — /public/img/collection/ */
@@ -42,8 +42,8 @@ export const FEATURED_RENDERING_DIMENSIONS: RenderingDimensions = {
   height: 1122,
 };
 
-/** Uniform frame for homepage collection grid — same box size for every card */
+/** Uniform frame for homepage collection grid — matches the rendering aspect */
 export const COLLECTION_CARD_DIMENSIONS: RenderingDimensions = {
-  width: 4,
-  height: 5,
+  width: 1024,
+  height: 824,
 };
