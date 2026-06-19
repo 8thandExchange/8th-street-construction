@@ -41,3 +41,9 @@ export const FEATURED_RENDERING_DIMENSIONS: RenderingDimensions = {
   width: 1402,
   height: 1122,
 };
+
+/** Uniform frame for homepage collection grid — same box size for every card */
+export const COLLECTION_CARD_DIMENSIONS: RenderingDimensions = {
+  width: 4,
+  height: 5,
+};

@@ -5,7 +5,7 @@ import type { CollectionHome } from "@/lib/home-collection";
 import {
   getCollectionImage,
   getCollectionImageAlt,
-  getCollectionDimensions,
+  COLLECTION_CARD_DIMENSIONS,
 } from "@/lib/collection-images";
 
 type CollectionCardProps = {
@@ -20,12 +20,12 @@ export function CollectionCard({ home, index }: CollectionCardProps) {
         <RenderingFrame
           src={getCollectionImage(home.id)}
           alt={getCollectionImageAlt(home.name)}
-          dimensions={getCollectionDimensions(home.id)}
+          dimensions={COLLECTION_CARD_DIMENSIONS}
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-          className="border-0 border-b border-ink/8 rounded-none"
+          className="shrink-0 border-0 border-b border-ink/8 rounded-none"
         />
 
-        <div className="flex flex-col flex-1 p-5 sm:p-6 md:p-8">
+        <div className="flex flex-col flex-1 p-5 sm:p-6 md:p-8 min-h-[11.5rem]">
           <h3 className="font-display text-xl sm:text-2xl text-ink leading-tight group-hover:text-rust transition-colors duration-500">
             {home.name}
           </h3>
