@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { LeadConnectorChat } from "@/components/site/LeadConnectorChat";
 
 const display = Cormorant_Garamond({
   subsets: ["latin"],
@@ -119,6 +120,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         {children}
+        <LeadConnectorChat />
       </body>
     </html>
   );
