@@ -135,7 +135,7 @@ export function Macon608ProjectPage() {
           </Container>
         </section>
 
-        {/* The Build, Documented — real photos only, placeholders for now */}
+        {/* The Build, Documented — site photos only when available */}
         <section className="relative bg-paper section-pad border-t border-ink/10">
           <Container size="wide">
             <Reveal>
@@ -145,19 +145,34 @@ export function Macon608ProjectPage() {
               </p>
             </Reveal>
 
-            <ol className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            <ol className="mt-12 md:mt-16 border-t border-ink/10">
               {copy.timeline.milestones.map((milestone, i) => (
-                <Reveal key={milestone.title} delay={(i % 3) * 80}>
-                  <li className="border border-ink/12 bg-bone p-6 md:p-8 h-full flex flex-col">
-                    <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-stone-300">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <h3 className="mt-3 font-display text-2xl text-ink">{milestone.title}</h3>
-                    <div className="mt-5 flex-1 aspect-[4/3] border border-dashed border-ink/20 bg-warm-white/60 flex items-center justify-center">
-                      <span className="font-mono text-[10px] tracking-[0.18em] uppercase text-stone-300 text-center px-4">
-                        {milestone.note}
+                <Reveal key={milestone.title} delay={(i % 3) * 60}>
+                  <li className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 py-8 md:py-10 border-b border-ink/10">
+                    <div className="lg:col-span-4">
+                      <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-stone-300">
+                        {String(i + 1).padStart(2, "0")}
                       </span>
+                      <h3 className="mt-2 font-display text-xl md:text-2xl text-ink">{milestone.title}</h3>
+                      {milestone.when && (
+                        <p className="mt-2 font-mono text-[10px] tracking-[0.18em] uppercase text-copper">
+                          {milestone.when}
+                        </p>
+                      )}
                     </div>
+                    {milestone.image && (
+                      <div className="lg:col-span-8">
+                        <div className="relative aspect-[16/10] overflow-hidden bg-navy">
+                          <Image
+                            src={milestone.image}
+                            alt={milestone.imageAlt || milestone.title}
+                            fill
+                            sizes="(min-width: 1024px) 66vw, 100vw"
+                            className="object-cover brand-photo"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </li>
                 </Reveal>
               ))}

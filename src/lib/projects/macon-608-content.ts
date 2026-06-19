@@ -42,15 +42,21 @@ export const MACON_608_COPY = {
   },
   timeline: {
     label: "The Build, Documented",
-    intro: "This page updates as 608 rises. Check back as each milestone is completed.",
+    intro: "This page updates as 608 rises. Site photos appear here as each milestone is completed.",
+    /** Add `image` + `imageAlt` when real site photos are ready — no placeholders. */
     milestones: [
-      { title: "Ground breaks", note: "Summer 2026 · photo coming" },
-      { title: "Foundation", note: "photo coming" },
-      { title: "Framing", note: "photo coming" },
-      { title: "Dry-in", note: "photo coming" },
-      { title: "Finish", note: "photo coming" },
-      { title: "Delivered", note: "photo coming" },
-    ],
+      { title: "Ground breaks", when: "Summer 2026" },
+      { title: "Foundation" },
+      { title: "Framing" },
+      { title: "Dry-in" },
+      { title: "Finish" },
+      { title: "Delivered" },
+    ] satisfies ReadonlyArray<{
+      title: string;
+      when?: string;
+      image?: string;
+      imageAlt?: string;
+    }>,
   },
   partnership: {
     label: "Part of the Work",
