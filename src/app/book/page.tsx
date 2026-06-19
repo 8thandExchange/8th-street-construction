@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: "Book a Consultation | 8th Street Construction",
   description:
     "Schedule a consultation with 8th Street Construction. Phone, video, in-person, or on-site visits available across the CSRA.",
+  alternates: { canonical: "/book" },
 };
 
 const HOW_IT_WORKS = [

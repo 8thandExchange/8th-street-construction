@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   title: "Selected Work — Custom Homes & Commercial Projects in Augusta",
   description:
     "Custom homes, renovations, and commercial construction by 8th Street Construction in Augusta and the CSRA.",
+  alternates: { canonical: "/projects" },
 };
 
 function projectCardImage(project: {

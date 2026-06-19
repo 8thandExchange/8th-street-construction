@@ -44,6 +44,7 @@ export async function generateMetadata(
   return {
     title: project.title,
     description: project.meta_description || project.excerpt || project.subtitle,
+    alternates: { canonical: `/projects/${params.slug}` },
     openGraph: {
       title: project.title,
       description: project.meta_description || project.excerpt || project.subtitle || undefined,

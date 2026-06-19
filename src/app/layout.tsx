@@ -27,7 +27,7 @@ const mono = JetBrains_Mono({
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://8thstreetconstruction.com";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+  metadataBase: new URL("https://www.8thstreetconstruction.com"),
   title: {
     default: "8th Street Construction — Custom Homes & Commercial Building | Augusta, GA",
     template: "%s · 8th Street Construction",
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
       "Custom homes and commercial construction rooted in craft, precision, and lasting quality.",
   },
   robots: { index: true, follow: true },
-  alternates: { canonical: SITE_URL },
+  alternates: { canonical: "/" },
 };
 
 export const viewport: Viewport = {

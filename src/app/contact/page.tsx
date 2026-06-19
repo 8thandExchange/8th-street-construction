@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   title: "Contact — Discuss Your Project | 8th Street Construction",
   description:
     "Get in touch with 8th Street Construction in Augusta, GA. We respond to every inquiry within one business day.",
+  alternates: { canonical: "/contact" },
 };
 
 export default function ContactPage() {

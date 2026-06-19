@@ -24,6 +24,7 @@ export async function generateMetadata(props: {
   return {
     title: home.name,
     description: home.statement,
+    alternates: { canonical: `/collection/${slug}` },
     openGraph: {
       title: `${home.name} | 8th Street Construction`,
       description: home.statement,

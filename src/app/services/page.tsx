@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   title: "Services — Custom Homes, Commercial Construction & Renovations",
   description:
     "Full-service construction in Augusta, GA — custom homes, residential renovations, commercial new builds, tenant buildouts, pre-construction, and design-build.",
+  alternates: { canonical: "/services" },
 };
 
 export default async function ServicesPage() {

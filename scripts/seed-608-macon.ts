@@ -127,16 +127,19 @@ async function main() {
       .from("projects")
       .insert({
         slug,
-        title: "608 Macon Ave",
-        subtitle: "Habitat for Humanity — custom residential new construction",
+        title: "608 Macon Avenue",
+        subtitle: "Custom home under construction in Augusta",
         category: "custom_home",
-        status: "pre_construction",
+        status: "in_progress",
         location: "Augusta, GA",
         street_address: "608 Macon Ave",
         jurisdiction: "City of Augusta, Richmond County, GA",
-        excerpt: "Active Habitat build in Augusta.",
-        square_footage: HABITAT_608_MACON.heatedSquareFeet,
-        internal_notes: `Habitat for Humanity build. Architect: ${HABITAT_608_MACON.architect}.`,
+        excerpt: "Active custom home build in Augusta, Georgia.",
+        narrative: "PLACEHOLDER: project narrative\n\nReplace with approved copy.",
+        hero_image_url: "/img/projects/608-macon-ave.png",
+        featured: true,
+        published_at: new Date().toISOString(),
+        display_order: 0,
       })
       .select("id, title, slug, playbook_applied_at")
       .single();
@@ -147,11 +150,20 @@ async function main() {
     await sb
       .from("projects")
       .update({
+        title: "608 Macon Avenue",
+        subtitle: "Custom home under construction in Augusta",
+        category: "custom_home",
+        status: "in_progress",
         street_address: "608 Macon Ave",
         location: "Augusta, GA",
         jurisdiction: "City of Augusta, Richmond County, GA",
         slug: project.slug || slug,
-        square_footage: HABITAT_608_MACON.heatedSquareFeet,
+        excerpt: "Active custom home build in Augusta, Georgia.",
+        narrative: "PLACEHOLDER: project narrative\n\nReplace with approved copy.",
+        hero_image_url: "/img/projects/608-macon-ave.png",
+        featured: true,
+        published_at: new Date().toISOString(),
+        display_order: 0,
       })
       .eq("id", project.id);
     console.log("Updated:", project.title);

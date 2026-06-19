@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   description:
     "The 8th Street Heritage Rendering System — design tokens, required layers, and template specifications.",
   robots: { index: false, follow: false },
+  alternates: { canonical: "/design-system/heritage-rendering" },
 };
 
 export default function HeritageRenderingSystemPage() {

@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "About — A Builder's Standard | Augusta, GA",
   description:
     "8th Street Construction is a residential and commercial builder in Augusta, GA. A division of 8th and Exchange Capital, we bring institutional planning to local construction.",
+  alternates: { canonical: "/about" },
 };
 
 const VALUES = [
