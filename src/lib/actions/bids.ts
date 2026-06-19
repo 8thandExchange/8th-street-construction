@@ -278,3 +278,40 @@ export async function createSubcontractor(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/subcontractors");
 }
+
+export async function updateSubcontractor(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const id = String(formData.get("id"));
+  const profileId = String(formData.get("profile_id") || "").trim() || null;
+
+  const { error } = await supabase
+    .from("subcontractors")
+    .update({
+      profile_id: profileId,
+      company_name: String(formData.get("company_name")).trim(),
+      trade: String(formData.get("trade")).trim(),
+      license_number: String(formData.get("license_number") || "").trim() || null,
+      insurance_expires: String(formData.get("insurance_expires") || "").trim() || null,
+      preferred: formData.get("preferred") === "on",
+      notes: String(formData.get("notes") || "").trim() || null,
+    })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/subcontractors");
+}
+
+export async function toggleSubcontractorActive(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const id = String(formData.get("id"));
+  const active = String(formData.get("active")) === "true";
+
+  const { error } = await supabase
+    .from("subcontractors")
+    .update({ active: !active })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/subcontractors");
+  revalidatePath("/subs");
+}

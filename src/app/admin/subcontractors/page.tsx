@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createSubcontractor } from "@/lib/actions/bids";
+import { SubcontractorRow, type SubRow } from "@/components/admin/SubcontractorRow";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -74,24 +75,13 @@ export default async function SubcontractorsPage() {
 
       <div className="space-y-3">
         {(subs ?? []).map((s) => (
-          <div key={s.id} className="p-5 border border-ink/15 bg-paper flex justify-between gap-4">
-            <div>
-              <div className="font-medium text-ink">
-                {s.company_name}
-                {s.preferred && (
-                  <span className="ml-2 text-[10px] font-mono text-copper uppercase">Preferred</span>
-                )}
-              </div>
-              <div className="text-xs font-mono text-stone-300 mt-1 uppercase">{s.trade}</div>
-              {s.insurance_expires && (
-                <div className="text-xs text-ink/50 mt-2">Insurance exp: {s.insurance_expires}</div>
-              )}
-            </div>
-            <div className="text-xs text-stone-300">
-              {s.profile_id ? "Portal linked" : "No portal user"}
-            </div>
-          </div>
+          <SubcontractorRow key={s.id} sub={s as SubRow} profiles={profiles ?? []} />
         ))}
+        {!subs?.length && (
+          <p className="text-ink/50 italic py-12 text-center border border-dashed border-ink/20">
+            No subcontractors yet — add your first vendor above.
+          </p>
+        )}
       </div>
 
       <p className="mt-8 text-sm text-ink/50">

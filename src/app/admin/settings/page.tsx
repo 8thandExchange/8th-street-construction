@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { SettingField } from "@/components/admin/SettingField";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,9 @@ export default async function AdminSettings() {
         <span className="eyebrow">— Configuration</span>
         <h1 className="mt-2 font-display text-display-md text-ink">Site Settings</h1>
         <p className="mt-4 text-sm text-ink/65 max-w-2xl">
-          Edit global site content stored as JSON. Be careful with formatting — invalid JSON will be rejected. Changes are pushed to the marketing site on save.
+          Edit global site content with friendly controls. Text, numbers, and
+          on/off toggles save automatically as valid values; structured settings
+          fall back to a JSON editor. Changes are pushed to the marketing site on save.
         </p>
       </div>
 
@@ -50,17 +53,14 @@ export default async function AdminSettings() {
           >
             <input type="hidden" name="key" value={setting.key} />
             <div className="flex items-baseline justify-between mb-4">
-              <h2 className="font-display text-xl text-ink capitalize">{setting.key}</h2>
+              <h2 className="font-display text-xl text-ink capitalize">
+                {setting.key.replace(/_/g, " ")}
+              </h2>
               <span className="text-xs text-stone-300 font-mono">
                 Updated {new Date(setting.updated_at).toLocaleString()}
               </span>
             </div>
-            <textarea
-              name="value"
-              rows={Math.min(20, Math.max(4, JSON.stringify(setting.value, null, 2).split("\n").length + 1))}
-              defaultValue={JSON.stringify(setting.value, null, 2)}
-              className="field-input py-3 font-mono text-xs leading-relaxed resize-y"
-            />
+            <SettingField value={setting.value} />
             <button
               type="submit"
               className="mt-4 inline-flex h-10 items-center px-5 bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"

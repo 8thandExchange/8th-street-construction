@@ -62,7 +62,13 @@ export default async function ClientPlansPage(props: { params: Promise<{ id: str
 
   return (
     <div className="px-6 md:px-10 lg:px-14 py-12 md:py-16 mx-auto max-w-3xl">
-      <h1 className="font-display text-3xl text-ink">Plans & Renderings</h1>
+      <Link
+        href={`/client/projects/${id}`}
+        className="text-xs font-mono tracking-[0.18em] uppercase text-stone-300 hover:text-ink transition-colors"
+      >
+        ← Overview
+      </Link>
+      <h1 className="mt-4 font-display text-3xl text-ink">Plans & Renderings</h1>
       <p className="mt-3 text-ink/65 text-sm leading-relaxed">
         Review architectural plans and renderings for your project. Sign off when you approve, or
         request revisions — we keep a permanent record of your decision.

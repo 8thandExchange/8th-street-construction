@@ -75,6 +75,12 @@ export default async function ClientBillingPage(props: {
 
   return (
     <div className="px-6 md:px-10 lg:px-14 py-10 max-w-3xl">
+      <Link
+        href={`/client/projects/${id}`}
+        className="text-xs font-mono tracking-[0.18em] uppercase text-stone-300 hover:text-ink transition-colors mb-6 inline-block"
+      >
+        ← Overview
+      </Link>
       <BillingBrandHeader
         eyebrow="Your billing"
         title="Your payments"
