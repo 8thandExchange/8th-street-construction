@@ -21,6 +21,7 @@ export function CollectionCard({ home, index }: CollectionCardProps) {
           src={getCollectionImage(home.id)}
           alt={getCollectionImageAlt(home.name)}
           dimensions={COLLECTION_CARD_DIMENSIONS}
+          fit="cover"
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           className="shrink-0 border-0 border-b border-ink/8 rounded-none"
         />

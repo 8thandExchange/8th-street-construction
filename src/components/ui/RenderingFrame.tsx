@@ -15,11 +15,19 @@ type RenderingFrameProps = {
   variant?: "light" | "dark";
   className?: string;
   imageClassName?: string;
+  /**
+   * "contain" (default) shows the full artwork — used by hero and featured
+   * sections that intentionally display the complete rendering.
+   * "cover" fills the frame edge-to-edge for a uniform grid (collection cards),
+   * trading a small crop of the outer decorative margin for equal visible size.
+   */
+  fit?: "contain" | "cover";
 };
 
 /**
- * Displays Heritage Rendering portraits at native proportions —
- * full artwork visible including title, badge, and border.
+ * Displays Heritage Rendering portraits inside a uniform frame. Defaults to
+ * showing the full artwork (title, badge, border); pass fit="cover" for a
+ * grid where every image must render at an identical visible size.
  */
 export function RenderingFrame({
   src,
@@ -31,6 +39,7 @@ export function RenderingFrame({
   variant = "light",
   className,
   imageClassName,
+  fit = "contain",
 }: RenderingFrameProps) {
   const isDark = variant === "dark";
 
@@ -55,7 +64,11 @@ export function RenderingFrame({
             fill
             priority={priority}
             sizes={sizes}
-            className={cn("object-contain object-center", imageClassName)}
+            className={cn(
+              fit === "cover" ? "object-cover" : "object-contain",
+              "object-center",
+              imageClassName
+            )}
           />
         </div>
       </div>
