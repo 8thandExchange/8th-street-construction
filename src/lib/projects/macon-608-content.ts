@@ -11,6 +11,22 @@ export const MACON_608_MEDIA = {
   cardImage: "/img/projects/608-macon-ave.png",
 } as const;
 
+export type Macon608Milestone = {
+  title: string;
+  when?: string;
+  image?: string;
+  imageAlt?: string;
+};
+
+export const MACON_608_TIMELINE_MILESTONES: Macon608Milestone[] = [
+  { title: "Ground breaks", when: "June 26, 2026" },
+  { title: "Foundation" },
+  { title: "Framing" },
+  { title: "Dry-in" },
+  { title: "Finish" },
+  { title: "Delivered" },
+];
+
 export const MACON_608_COPY = {
   eyebrow: "Flagship Project · Augusta, Georgia",
   title: "608 Macon Avenue",
@@ -43,20 +59,7 @@ export const MACON_608_COPY = {
   timeline: {
     label: "The Build, Documented",
     intro: "This page updates as 608 rises. Site photos appear here as each milestone is completed.",
-    /** Add `image` + `imageAlt` when real site photos are ready — no placeholders. */
-    milestones: [
-      { title: "Ground breaks", when: "June 26, 2026" },
-      { title: "Foundation" },
-      { title: "Framing" },
-      { title: "Dry-in" },
-      { title: "Finish" },
-      { title: "Delivered" },
-    ] satisfies ReadonlyArray<{
-      title: string;
-      when?: string;
-      image?: string;
-      imageAlt?: string;
-    }>,
+    milestones: MACON_608_TIMELINE_MILESTONES,
   },
   partnership: {
     label: "Part of the Work",
