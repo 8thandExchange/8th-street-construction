@@ -15,7 +15,7 @@ export const MACON_608_COPY = {
   eyebrow: "Flagship Project · Augusta, Georgia",
   title: "608 Macon Avenue",
   subhead: "A custom home, documented from the ground up.",
-  statusLine: "Breaking ground, Summer 2026 · Augusta, Georgia",
+  statusLine: "Breaking ground, June 26, 2026 · Augusta, Georgia",
   metaDescription:
     "608 Macon Avenue — a custom home in Augusta, documented from the ground up by 8th Street Construction. Watch the build unfold milestone by milestone.",
   excerpt: "A custom home in Augusta, documented from the ground up.",
@@ -36,7 +36,7 @@ export const MACON_608_COPY = {
       { label: "Bedrooms", value: "3" },
       { label: "Baths", value: "2.5" },
       { label: "Location", value: "Macon Avenue, Augusta, Georgia" },
-      { label: "Status", value: "Breaking ground, Summer 2026" },
+      { label: "Status", value: "Breaking ground, June 26, 2026" },
       { label: "Builder", value: "8th Street Construction" },
     ],
   },
@@ -45,7 +45,7 @@ export const MACON_608_COPY = {
     intro: "This page updates as 608 rises. Site photos appear here as each milestone is completed.",
     /** Add `image` + `imageAlt` when real site photos are ready — no placeholders. */
     milestones: [
-      { title: "Ground breaks", when: "Summer 2026" },
+      { title: "Ground breaks", when: "June 26, 2026" },
       { title: "Foundation" },
       { title: "Framing" },
       { title: "Dry-in" },

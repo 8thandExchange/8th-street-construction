@@ -4,7 +4,7 @@ export const FEATURED_PROJECT = {
   title: "608 Macon Avenue",
   shortTitle: "608 Macon Avenue",
   eyebrow: "Flagship Project",
-  status: "Breaking ground, Summer 2026",
+  status: "Breaking ground, June 26, 2026",
   description:
     "A custom home in Augusta, documented from the ground up — designed before a single board is cut, built in the open.",
   overview:
