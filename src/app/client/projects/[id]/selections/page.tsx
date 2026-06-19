@@ -1,6 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { clientApproveSelection } from "@/lib/actions/selections";
+import {
+  SELECTION_STATUS_LABELS,
+  SELECTION_STATUS_STYLES,
+} from "@/lib/project/labels";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +25,13 @@ export default async function ClientSelectionsPage(props: { params: Promise<{ id
 
   return (
     <div className="px-6 md:px-10 lg:px-14 py-10 max-w-3xl">
-      <h2 className="font-display text-xl text-ink mb-2">Selections</h2>
+      <Link
+        href={`/client/projects/${id}`}
+        className="text-xs font-mono tracking-[0.18em] uppercase text-stone-300 hover:text-ink transition-colors"
+      >
+        ← Overview
+      </Link>
+      <h2 className="mt-4 font-display text-xl text-ink mb-2">Selections</h2>
       <p className="mt-2 text-sm text-ink/60">Finish selections and allowances for your home.</p>
 
       <ul className="mt-10 space-y-4">
@@ -29,8 +40,18 @@ export default async function ClientSelectionsPage(props: { params: Promise<{ id
             <div className="flex justify-between gap-4">
               <div>
                 <h2 className="font-medium text-ink">{item.title}</h2>
-                <div className="text-xs font-mono text-stone-300 mt-1 uppercase">
-                  {item.category.replace(/_/g, " ")} · {item.status.replace(/_/g, " ")}
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-mono text-stone-300 uppercase">
+                    {item.category.replace(/_/g, " ")}
+                  </span>
+                  <span
+                    className={`text-[10px] font-mono uppercase tracking-[0.1em] px-2 py-0.5 border ${
+                      SELECTION_STATUS_STYLES[item.status] ??
+                      "bg-stone-100 text-stone-500 border-stone-200"
+                    }`}
+                  >
+                    {SELECTION_STATUS_LABELS[item.status] ?? item.status.replace(/_/g, " ")}
+                  </span>
                 </div>
               </div>
               {item.allowance_amount != null && (

@@ -75,6 +75,24 @@ export const DOCUMENT_CATEGORIES = [
   { value: "other", label: "Other" },
 ] as const;
 
+export const SELECTION_STATUS_LABELS: Record<string, string> = {
+  pending: "Pending",
+  client_review: "Needs Your Choice",
+  selected: "Selected",
+  ordered: "Ordered",
+  installed: "Installed",
+  approved: "Approved",
+};
+
+export const SELECTION_STATUS_STYLES: Record<string, string> = {
+  pending: "bg-stone-100 text-stone-500 border-stone-200",
+  client_review: "bg-copper/10 text-copper border-copper/30",
+  selected: "bg-blue-50 text-blue-700 border-blue-200",
+  ordered: "bg-violet-50 text-violet-700 border-violet-200",
+  installed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
+};
+
 export const TASK_STATUS_LABELS: Record<string, string> = {
   todo: "To Do",
   in_progress: "In Progress",

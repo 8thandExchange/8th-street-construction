@@ -138,35 +138,50 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <section className="hub-panel p-8">
-            <h2 className="font-display text-xl text-ink mb-6">Timeline</h2>
+            <div className="flex justify-between items-baseline mb-6">
+              <h2 className="font-display text-xl text-ink">Timeline</h2>
+              <Link
+                href={`/client/projects/${project.id}/schedule`}
+                className="font-mono text-[10px] uppercase tracking-[0.15em] text-copper hover:underline"
+              >
+                Full schedule →
+              </Link>
+            </div>
             {milestones && milestones.length > 0 ? (
               <ol className="space-y-4">
                 {milestones.map((m, i) => (
-                  <li key={m.id} className="flex gap-4">
-                    <div
-                      className={`w-2.5 h-2.5 rounded-full mt-2 shrink-0 ${
-                        m.status === "completed"
-                          ? "bg-emerald-500"
-                          : m.status === "in_progress"
-                            ? "bg-copper"
-                            : "bg-stone-300"
-                      }`}
-                    />
-                    <div className={i < milestones.length - 1 ? "pb-4 border-b border-ink/5 flex-1" : "flex-1"}>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-medium text-ink">{m.title}</h3>
-                        <span
-                          className={`text-[9px] font-mono uppercase px-1.5 py-0.5 border ${MILESTONE_STATUS_COLORS[m.status]}`}
-                        >
-                          {m.status.replace("_", " ")}
-                        </span>
-                      </div>
-                      {m.target_date && (
-                        <div className="text-xs text-stone-300 font-mono mt-1">
-                          Target {new Date(m.target_date + "T12:00:00").toLocaleDateString()}
+                  <li key={m.id}>
+                    <Link
+                      href={`/client/projects/${project.id}/schedule`}
+                      className="flex gap-4 group"
+                    >
+                      <div
+                        className={`w-2.5 h-2.5 rounded-full mt-2 shrink-0 ${
+                          m.status === "completed"
+                            ? "bg-emerald-500"
+                            : m.status === "in_progress"
+                              ? "bg-copper"
+                              : "bg-stone-300"
+                        }`}
+                      />
+                      <div className={i < milestones.length - 1 ? "pb-4 border-b border-ink/5 flex-1" : "flex-1"}>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-medium text-ink group-hover:text-copper transition-colors">
+                            {m.title}
+                          </h3>
+                          <span
+                            className={`text-[9px] font-mono uppercase px-1.5 py-0.5 border ${MILESTONE_STATUS_COLORS[m.status]}`}
+                          >
+                            {m.status.replace("_", " ")}
+                          </span>
                         </div>
-                      )}
-                    </div>
+                        {m.target_date && (
+                          <div className="text-xs text-stone-300 font-mono mt-1">
+                            Target {new Date(m.target_date + "T12:00:00").toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
                   </li>
                 ))}
               </ol>
@@ -176,17 +191,31 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
           </section>
 
           <section className="hub-panel p-8">
-            <h2 className="font-display text-xl text-ink mb-6">Recent updates</h2>
+            <div className="flex justify-between items-baseline mb-6">
+              <h2 className="font-display text-xl text-ink">Recent updates</h2>
+              <Link
+                href={`/client/projects/${project.id}/updates`}
+                className="font-mono text-[10px] uppercase tracking-[0.15em] text-copper hover:underline"
+              >
+                View all →
+              </Link>
+            </div>
             {updates && updates.length > 0 ? (
               <div className="space-y-8">
                 {updates.map((u) => (
-                  <article key={u.id} className="border-b border-ink/8 last:border-0 pb-8 last:pb-0">
+                  <Link
+                    key={u.id}
+                    href={`/client/projects/${project.id}/updates`}
+                    className="block border-b border-ink/8 last:border-0 pb-8 last:pb-0 group"
+                  >
                     <div className="text-xs text-stone-300 font-mono mb-2">
                       {new Date(u.created_at).toLocaleDateString()}
                     </div>
-                    <h3 className="font-display text-lg text-ink mb-2">{u.title}</h3>
+                    <h3 className="font-display text-lg text-ink mb-2 group-hover:text-copper transition-colors">
+                      {u.title}
+                    </h3>
                     {u.body && (
-                      <p className="text-sm text-ink/75 leading-relaxed whitespace-pre-wrap">{u.body}</p>
+                      <p className="text-sm text-ink/75 leading-relaxed whitespace-pre-wrap line-clamp-4">{u.body}</p>
                     )}
                     {u.project_update_images && u.project_update_images.length > 0 && (
                       <div className="grid grid-cols-3 gap-2 mt-4">
@@ -197,7 +226,7 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
                         ))}
                       </div>
                     )}
-                  </article>
+                  </Link>
                 ))}
               </div>
             ) : (
@@ -226,7 +255,15 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
           </div>
 
           <div className="hub-panel p-6">
-            <h2 className="eyebrow mb-4">Documents</h2>
+            <div className="flex justify-between items-baseline mb-4">
+              <h2 className="eyebrow">Documents</h2>
+              <Link
+                href={`/client/projects/${project.id}/documents`}
+                className="font-mono text-[10px] uppercase tracking-[0.15em] text-copper hover:underline"
+              >
+                View all →
+              </Link>
+            </div>
             {documents && documents.length > 0 ? (
               <ul className="space-y-3 text-sm">
                 {documents.map((d) => (
