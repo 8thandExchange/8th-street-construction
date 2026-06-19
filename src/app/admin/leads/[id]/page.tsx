@@ -4,8 +4,14 @@ import {
   LEAD_STATUS_COLORS,
   PROJECT_CATEGORY_LABELS,
 } from "@/lib/utils";
-import { deleteLead, updateLead, updateLeadPipeline } from "@/lib/actions/leads";
+import {
+  convertLeadToProject,
+  deleteLead,
+  updateLead,
+  updateLeadPipeline,
+} from "@/lib/actions/leads";
 import { DeleteLeadButton } from "@/components/admin/DeleteLeadButton";
+import { ConvertToProjectButton } from "@/components/admin/ConvertToProjectButton";
 import { PROJECT_CATEGORIES } from "@/lib/validations";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -227,6 +233,17 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
               )}
             </div>
           </div>
+
+          <form action={convertLeadToProject} className="bg-paper border border-ink/15 p-6">
+            <input type="hidden" name="id" value={lead.id} />
+            <h2 className="eyebrow mb-2">Won this lead?</h2>
+            <p className="text-sm text-ink/60 mb-4">
+              Create a pre-construction project pre-filled from this lead and mark it won.
+            </p>
+            <ConvertToProjectButton
+              confirmText={`Create a project from ${leadName} and mark this lead won?`}
+            />
+          </form>
 
           <form action={deleteLead} className="bg-paper border border-red-200/60 p-6">
             <input type="hidden" name="id" value={lead.id} />

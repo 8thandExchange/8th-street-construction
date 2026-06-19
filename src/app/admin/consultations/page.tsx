@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { PROJECT_CATEGORY_LABELS } from "@/lib/utils";
+import { convertConsultationToProject } from "@/lib/actions/consultations";
+import { ConvertToProjectButton } from "@/components/admin/ConvertToProjectButton";
 
 export const dynamic = "force-dynamic";
 
@@ -112,25 +114,35 @@ export default async function AdminConsultations() {
                   )}
                 </div>
 
-                <form action={updateConsultationStatus} className="md:w-48">
-                  <input type="hidden" name="id" value={c.id} />
-                  <label className="field-label">Status</label>
-                  <select
-                    name="status"
-                    defaultValue={c.status}
-                    className="field-input mb-3"
-                  >
-                    {Object.entries(STATUS_LABELS).map(([v, l]) => (
-                      <option key={v} value={v}>{l}</option>
-                    ))}
-                  </select>
-                  <button
-                    type="submit"
-                    className="w-full inline-flex h-10 items-center justify-center bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
-                  >
-                    Update
-                  </button>
-                </form>
+                <div className="md:w-48 flex flex-col gap-3">
+                  <form action={updateConsultationStatus}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <label className="field-label">Status</label>
+                    <select
+                      name="status"
+                      defaultValue={c.status}
+                      className="field-input mb-3"
+                    >
+                      {Object.entries(STATUS_LABELS).map(([v, l]) => (
+                        <option key={v} value={v}>{l}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="submit"
+                      className="w-full inline-flex h-10 items-center justify-center bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
+                    >
+                      Update
+                    </button>
+                  </form>
+                  <form action={convertConsultationToProject}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <ConvertToProjectButton
+                      label="Convert to Project →"
+                      confirmText={`Create a project from ${c.first_name} ${c.last_name}'s consultation?`}
+                      className="w-full inline-flex h-10 items-center justify-center bg-copper text-bone hover:bg-copper-400 disabled:opacity-60 disabled:cursor-wait font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
+                    />
+                  </form>
+                </div>
               </div>
               <div className="mt-4 pt-4 border-t border-ink/10 text-xs text-stone-300 font-mono">
                 Requested {new Date(c.created_at).toLocaleString()}

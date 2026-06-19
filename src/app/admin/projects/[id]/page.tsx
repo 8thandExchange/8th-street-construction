@@ -11,8 +11,22 @@ import {
 import { CostComparisonPanel } from "@/components/costs/CostComparisonPanel";
 import { computeProjectCostSummary } from "@/lib/estimate/summary";
 import { formatMoney } from "@/lib/billing/constants";
-import { PROJECT_STATUS_LABELS, TASK_STATUS_LABELS } from "@/lib/project/labels";
+import {
+  PROJECT_STATUS_LABELS,
+  PROJECT_STATUS_STYLES,
+  TASK_STATUS_LABELS,
+  TASK_STATUS_STYLES,
+} from "@/lib/project/labels";
 import { DRAW_STATUS_LABELS } from "@/lib/project/labels";
+import { InlineStatusSelect } from "@/components/admin/InlineStatusSelect";
+import { setProjectStatusAction, setTaskStatusAction } from "@/lib/actions/project-status";
+
+const PROJECT_STATUS_OPTIONS = Object.entries(PROJECT_STATUS_LABELS).map(
+  ([value, label]) => ({ value, label })
+);
+const TASK_STATUS_OPTIONS = Object.entries(TASK_STATUS_LABELS).map(
+  ([value, label]) => ({ value, label })
+);
 
 export const dynamic = "force-dynamic";
 
@@ -43,8 +57,16 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
             One screen for <span className="text-ink font-medium">{project.title}</span> — what&apos;s
             done, what&apos;s next, and all three money buckets.
           </p>
-          <div className="mt-3 flex flex-wrap gap-3 text-xs font-mono uppercase text-stone-300">
-            <span>{PROJECT_STATUS_LABELS[project.status] || project.status}</span>
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs font-mono uppercase text-stone-300">
+            <InlineStatusSelect
+              value={project.status}
+              options={PROJECT_STATUS_OPTIONS}
+              styles={PROJECT_STATUS_STYLES}
+              action={setProjectStatusAction}
+              hiddenFields={{ id }}
+              size="md"
+              aria-label="Change project status"
+            />
             {project.street_address && (
               <>
                 <span className="text-ink/15">·</span>
@@ -99,10 +121,17 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
           ) : board.openTasks.length ? (
             <ul className="hub-panel divide-y divide-ink/8">
               {board.openTasks.map((t) => (
-                <li key={t.id} className="px-5 py-4 flex justify-between gap-4 text-sm">
+                <li key={t.id} className="px-5 py-4 flex items-center justify-between gap-4 text-sm">
                   <span className="text-ink">{t.title}</span>
-                  <span className="text-[10px] font-mono uppercase text-stone-300 shrink-0">
-                    {TASK_STATUS_LABELS[t.status] ?? t.status}
+                  <span className="shrink-0">
+                    <InlineStatusSelect
+                      value={t.status}
+                      options={TASK_STATUS_OPTIONS}
+                      styles={TASK_STATUS_STYLES}
+                      action={setTaskStatusAction}
+                      hiddenFields={{ id: t.id, project_id: id }}
+                      aria-label={`Change status for ${t.title}`}
+                    />
                   </span>
                 </li>
               ))}

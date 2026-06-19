@@ -2,18 +2,15 @@ import { createClient } from "@/lib/supabase/server";
 import { PROJECT_CATEGORY_LABELS } from "@/lib/utils";
 import Link from "next/link";
 import { formatMoney } from "@/lib/billing/constants";
-import { PROJECT_STATUS_LABELS } from "@/lib/project/labels";
+import { PROJECT_STATUS_LABELS, PROJECT_STATUS_STYLES } from "@/lib/project/labels";
+import { InlineStatusSelect } from "@/components/admin/InlineStatusSelect";
+import { setProjectStatusAction } from "@/lib/actions/project-status";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_STYLES: Record<string, string> = {
-  draft: "border-stone-300 text-stone-300",
-  pre_construction: "border-blue-400/50 text-blue-600",
-  in_progress: "border-copper/50 text-copper",
-  completed: "border-emerald-500/50 text-emerald-600",
-  on_hold: "border-amber-500/50 text-amber-600",
-  archived: "border-stone-300 text-stone-300",
-};
+const PROJECT_STATUS_OPTIONS = Object.entries(PROJECT_STATUS_LABELS).map(
+  ([value, label]) => ({ value, label })
+);
 
 export default async function AdminProjects() {
   const supabase = await createClient();
@@ -103,11 +100,14 @@ export default async function AdminProjects() {
                     {p.contract_value ? formatMoney(Number(p.contract_value)) : "—"}
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={`inline-block text-[10px] font-mono uppercase px-2 py-1 border ${STATUS_STYLES[p.status] ?? ""}`}
-                    >
-                      {PROJECT_STATUS_LABELS[p.status] || p.status}
-                    </span>
+                    <InlineStatusSelect
+                      value={p.status}
+                      options={PROJECT_STATUS_OPTIONS}
+                      styles={PROJECT_STATUS_STYLES}
+                      action={setProjectStatusAction}
+                      hiddenFields={{ id: p.id }}
+                      aria-label={`Change status for ${p.title}`}
+                    />
                   </td>
                 </tr>
               ))}

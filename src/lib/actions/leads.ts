@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { leadAdminUpdateSchema } from "@/lib/validations";
+import { uniqueProjectSlug, normalizeCategory } from "@/lib/project/create";
 
 function revalidateLeadPaths(id: string) {
   revalidatePath(`/admin/leads/${id}`);
@@ -72,6 +73,53 @@ export async function updateLead(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidateLeadPaths(id);
+}
+
+export async function convertLeadToProject(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const id = String(formData.get("id"));
+
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (!lead) throw new Error("Lead not found");
+
+  const leadName = [lead.first_name, lead.last_name].filter(Boolean).join(" ").trim();
+  const title = leadName || lead.email || "New Project";
+  const slug = await uniqueProjectSlug(supabase, title);
+
+  const { data: project, error } = await supabase
+    .from("projects")
+    .insert({
+      slug,
+      title,
+      category: normalizeCategory(lead.project_type),
+      status: "pre_construction",
+      excerpt: lead.message ? String(lead.message).slice(0, 280) : null,
+      narrative: lead.message || null,
+      published_at: null,
+    })
+    .select("id")
+    .single();
+
+  if (error || !project) {
+    throw new Error(error?.message ?? "Could not create project from lead");
+  }
+
+  await supabase
+    .from("leads")
+    .update({
+      status: "won",
+      closed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  revalidateLeadPaths(id);
+  revalidatePath("/admin/projects");
+  redirect(`/admin/projects/${project.id}`);
 }
 
 export async function deleteLead(formData: FormData) {

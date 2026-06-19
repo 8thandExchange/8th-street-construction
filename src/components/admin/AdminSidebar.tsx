@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { AdminSearch } from "@/components/admin/AdminSearch";
 
 const NAV = [
   { href: "/admin", label: "Company Home", exact: true },
@@ -38,7 +39,11 @@ export function AdminSidebar({ userEmail }: { userEmail: string }) {
         </Link>
       </div>
 
-      <nav className="flex-1 px-3 py-6">
+      <div className="pt-6 pb-2">
+        <AdminSearch />
+      </div>
+
+      <nav className="flex-1 px-3 pb-6">
         {NAV.map((item) => {
           const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
           return (

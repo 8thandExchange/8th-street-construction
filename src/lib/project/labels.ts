@@ -35,6 +35,15 @@ export const PROJECT_STATUS_LABELS: Record<string, string> = {
   archived: "Archived",
 };
 
+export const PROJECT_STATUS_STYLES: Record<string, string> = {
+  draft: "bg-stone-100 text-stone-500 border-stone-200",
+  pre_construction: "bg-blue-50 text-blue-700 border-blue-200",
+  in_progress: "bg-copper/10 text-copper border-copper/30",
+  completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  on_hold: "bg-amber-50 text-amber-800 border-amber-200",
+  archived: "bg-stone-100 text-stone-400 border-stone-200",
+};
+
 export const PLAN_SET_STATUS_LABELS: Record<string, string> = {
   draft: "Draft",
   pending_client: "Awaiting Sign-Off",
