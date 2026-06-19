@@ -3,14 +3,14 @@ export const FEATURED_PROJECT = {
   slug: "608-macon-ave",
   title: "608 Macon Avenue",
   shortTitle: "608 Macon Avenue",
-  eyebrow: "Featured Home",
-  status: "Under Construction",
+  eyebrow: "Flagship Project",
+  status: "Breaking ground, Summer 2026",
   description:
-    "A custom home currently under construction by 8th Street Construction.",
+    "A custom home in Augusta, documented from the ground up — designed before a single board is cut, built in the open.",
   overview:
-    "A bespoke residence taking shape on Macon Avenue in Augusta — designed with Southern proportion, honest materials, and the full attention of a single accountable build team.",
+    "608 Macon Avenue is where 8th Street Construction begins in public. The rendering is the vision. Everything on the project page becomes a record, milestone by milestone, as the house rises.",
   rendering: "/img/projects/608-macon-ave.png",
   renderingAlt:
-    "Architectural portrait rendering of 608 Macon Avenue — custom home under construction in Augusta, Georgia",
+    "Architectural rendering of 608 Macon Avenue — custom home under construction in Augusta, Georgia",
   location: "Augusta, Georgia",
 } as const;

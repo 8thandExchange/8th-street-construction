@@ -128,14 +128,15 @@ async function main() {
       .insert({
         slug,
         title: "608 Macon Avenue",
-        subtitle: "Custom home under construction in Augusta",
+        subtitle: "A custom home, documented from the ground up.",
         category: "custom_home",
         status: "in_progress",
         location: "Augusta, GA",
         street_address: "608 Macon Ave",
         jurisdiction: "City of Augusta, Richmond County, GA",
-        excerpt: "Active custom home build in Augusta, Georgia.",
-        narrative: "PLACEHOLDER: project narrative\n\nReplace with approved copy.",
+        excerpt: "A custom home in Augusta, documented from the ground up.",
+        meta_description:
+          "608 Macon Avenue — a custom home in Augusta, documented from the ground up by 8th Street Construction. Watch the build unfold milestone by milestone.",
         hero_image_url: "/img/projects/608-macon-ave.png",
         featured: true,
         published_at: new Date().toISOString(),
@@ -151,15 +152,16 @@ async function main() {
       .from("projects")
       .update({
         title: "608 Macon Avenue",
-        subtitle: "Custom home under construction in Augusta",
+        subtitle: "A custom home, documented from the ground up.",
         category: "custom_home",
         status: "in_progress",
         street_address: "608 Macon Ave",
         location: "Augusta, GA",
         jurisdiction: "City of Augusta, Richmond County, GA",
         slug: project.slug || slug,
-        excerpt: "Active custom home build in Augusta, Georgia.",
-        narrative: "PLACEHOLDER: project narrative\n\nReplace with approved copy.",
+        excerpt: "A custom home in Augusta, documented from the ground up.",
+        meta_description:
+          "608 Macon Avenue — a custom home in Augusta, documented from the ground up by 8th Street Construction. Watch the build unfold milestone by milestone.",
         hero_image_url: "/img/projects/608-macon-ave.png",
         featured: true,
         published_at: new Date().toISOString(),

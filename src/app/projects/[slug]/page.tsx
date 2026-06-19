@@ -11,6 +11,12 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { FEATURED_PROJECT } from "@/lib/featured-project";
+import { Macon608ProjectPage } from "@/components/projects/Macon608ProjectPage";
+import {
+  isMacon608Slug,
+  MACON_608_COPY,
+  MACON_608_MEDIA,
+} from "@/lib/projects/macon-608-content";
 
 export const revalidate = 1800;
 export const dynamicParams = true;
@@ -41,6 +47,20 @@ export async function generateMetadata(
     .neq("status", "archived")
     .single();
   if (!project) return { title: "Project Not Found" };
+
+  if (isMacon608Slug(params.slug)) {
+    return {
+      title: MACON_608_COPY.title,
+      description: MACON_608_COPY.metaDescription,
+      alternates: { canonical: `/projects/${params.slug}` },
+      openGraph: {
+        title: MACON_608_COPY.title,
+        description: MACON_608_COPY.metaDescription,
+        images: [{ url: MACON_608_MEDIA.twilight }],
+      },
+    };
+  }
+
   return {
     title: project.title,
     description: project.meta_description || project.excerpt || project.subtitle,
@@ -66,6 +86,10 @@ export default async function ProjectDetail(props: { params: Promise<{ slug: str
     .single();
 
   if (!project) notFound();
+
+  if (isMacon608Slug(params.slug)) {
+    return <Macon608ProjectPage />;
+  }
 
   const { data: images } = await supabase
     .from("project_images")

@@ -5,7 +5,7 @@
  * Run: npx tsx scripts/seed-608-macon-public.ts
  *
  * Does not set square footage, dates, contract value, or client names.
- * Narrative is a placeholder until real copy is supplied.
+ * Narrative lives in the dedicated page component (src/lib/projects/macon-608-content.ts).
  */
 import { createClient } from "@supabase/supabase-js";
 
@@ -24,11 +24,13 @@ const sb = createClient(url, key, {
 const PUBLIC_RECORD = {
   slug: "608-macon-ave",
   title: "608 Macon Avenue",
-  subtitle: "Custom home under construction in Augusta",
+  subtitle: "A custom home, documented from the ground up.",
   category: "custom_home" as const,
   status: "in_progress" as const,
-  excerpt: "Active custom home build in Augusta, Georgia.",
-  narrative: "PLACEHOLDER: project narrative\n\nReplace with approved copy.",
+  excerpt: "A custom home in Augusta, documented from the ground up.",
+  meta_description:
+    "608 Macon Avenue — a custom home in Augusta, documented from the ground up by 8th Street Construction. Watch the build unfold milestone by milestone.",
+  narrative: null,
   hero_image_url: "/img/projects/608-macon-ave.png",
   location: "Augusta, GA",
   street_address: "608 Macon Ave",
