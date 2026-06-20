@@ -116,25 +116,15 @@ export function LeadForm({ dark = false }: { dark?: boolean }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Input
-          label="Email"
-          name="email"
-          type="email"
-          required
-          dark={dark}
-          autoComplete="email"
-          error={errors.email}
-        />
-        <Input
-          label="Phone"
-          name="phone"
-          type="tel"
-          dark={dark}
-          autoComplete="tel"
-          error={errors.phone}
-        />
-      </div>
+      <Input
+        label="Email"
+        name="email"
+        type="email"
+        required
+        dark={dark}
+        autoComplete="email"
+        error={errors.email}
+      />
 
       <Select
         label="Project Type"

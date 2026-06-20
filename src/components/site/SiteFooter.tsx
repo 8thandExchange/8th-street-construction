@@ -103,6 +103,12 @@ export function SiteFooter() {
               © {new Date().getFullYear()} 8th Street Construction · A division of 8th &amp; Exchange Capital
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 font-mono text-[10px] sm:text-[11px] tracking-[0.16em] uppercase text-bone/40">
+              <Link href="/privacy" className="hover:text-copper-100 transition-colors py-1">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="hover:text-copper-100 transition-colors py-1">
+                Terms &amp; Conditions
+              </Link>
               {PORTAL_LOGIN_LINKS.map((link) => (
                 <Link
                   key={link.kind}

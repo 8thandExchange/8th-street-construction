@@ -10,6 +10,8 @@
 // Have a Georgia attorney review before relying on it.
 
 import type { Metadata } from "next";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 const LEGAL_ENTITY = "8th Street Construction, LLC"; // [CONFIRM] match A2P registration
 const MAILING_ADDRESS = "32 8th Street, Suite 201, Augusta, GA 30901";
@@ -26,7 +28,9 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto max-w-3xl px-6 py-16 text-[#1a1a18]">
+    <>
+      <SiteHeader />
+      <main className="mx-auto max-w-3xl px-6 py-16 text-[#1a1a18]">
       <p className="mb-3 text-xs uppercase tracking-[0.2em] text-[#6b645a]">
         8th Street Construction
       </p>
@@ -79,8 +83,8 @@ export default function PrivacyPage() {
 
       <Section title="SMS and text messaging">
         <p>
-          If you provide your mobile number and agree to the consent language on
-          our contact form or chat widget, you authorize {LEGAL_ENTITY} to send
+          If you provide your mobile number and agree to the consent language in
+          our chat widget, you authorize {LEGAL_ENTITY} to send
           you text messages related to your inquiry and project. These are
           informational and transactional messages, such as replies to your
           question, scheduling, and project updates. We do not send marketing
@@ -188,7 +192,9 @@ export default function PrivacyPage() {
           {SUPPORT_PHONE}
         </p>
       </Section>
-    </main>
+      </main>
+      <SiteFooter />
+    </>
   );
 }
 
