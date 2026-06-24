@@ -1,6 +1,7 @@
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { ContactForm } from "./ContactForm";
+import { BRAND, brandPhoneTel } from "@/lib/brand/assets";
 
 export function ContactSection() {
   return (
@@ -21,10 +22,16 @@ export function ContactSection() {
                 Share your vision for a custom residence in Augusta or the CSRA. We respond within one business day.
               </p>
             </Reveal>
-            <Reveal delay={220} className="mt-10 hidden lg:block">
+            <Reveal delay={220} className="mt-10 hidden lg:block space-y-3">
+              <a
+                href={`tel:${brandPhoneTel()}`}
+                className="block font-sans text-sm text-gold hover:text-parchment transition-colors duration-300 editorial-link"
+              >
+                {BRAND.phone}
+              </a>
               <a
                 href="mailto:construction@8thandexchange.com"
-                className="font-sans text-sm text-gold hover:text-parchment transition-colors duration-300 editorial-link"
+                className="block font-sans text-sm text-gold hover:text-parchment transition-colors duration-300 editorial-link"
               >
                 construction@8thandexchange.com
               </a>

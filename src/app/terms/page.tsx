@@ -11,10 +11,12 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { BRAND } from "@/lib/brand/assets";
 
 const LEGAL_ENTITY = "8th Street Construction, LLC"; // [CONFIRM] match A2P registration
 const MAILING_ADDRESS = "32 8th Street, Suite 201, Augusta, GA 30901";
 const SUPPORT_EMAIL = "hello@8thstreetconstruction.com";
+const SUPPORT_PHONE = BRAND.phone;
 const LAST_UPDATED = "June 19, 2026";
 
 export const metadata: Metadata = {
@@ -161,6 +163,8 @@ export default function TermsPage() {
           {MAILING_ADDRESS}
           <br />
           {SUPPORT_EMAIL}
+          <br />
+          {SUPPORT_PHONE}
         </p>
       </Section>
       </main>

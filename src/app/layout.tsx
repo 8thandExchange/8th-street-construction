@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { LeadConnectorChat } from "@/components/site/LeadConnectorChat";
+import { BRAND, brandPhoneTel } from "@/lib/brand/assets";
 
 const display = Cormorant_Garamond({
   subsets: ["latin"],
@@ -80,6 +81,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     alternateName: "8th Street Construction, a division of 8th and Exchange Capital",
     url: SITE_URL,
     email: "construction@8thandexchange.com",
+    telephone: brandPhoneTel(),
     image: `${SITE_URL}/opengraph-image`,
     description:
       "Custom homes, residential renovations, and commercial construction in Augusta, Georgia and the CSRA.",

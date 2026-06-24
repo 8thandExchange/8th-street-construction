@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PORTAL_LOGIN_LINKS } from "@/lib/portal-links";
+import { BRAND, brandPhoneTel } from "@/lib/brand/assets";
 
 const COLUMNS = [
   {
@@ -85,6 +86,14 @@ export function SiteFooter() {
             <div>
               <div className="eyebrow text-bone/40 mb-4">Contact</div>
               <ul className="space-y-2.5 text-[15px] text-bone/75">
+                <li>
+                  <a
+                    href={`tel:${brandPhoneTel()}`}
+                    className="hover:text-copper-100 transition-colors duration-300"
+                  >
+                    {BRAND.phone}
+                  </a>
+                </li>
                 <li>
                   <a
                     href="mailto:hello@8thstreetconstruction.com"

@@ -1,4 +1,4 @@
-import { BRAND, brandLogoUrl, getSiteUrl } from "@/lib/brand/assets";
+import { BRAND, brandLogoUrl, brandPhoneTel, getSiteUrl } from "@/lib/brand/assets";
 import { EMAIL_BRAND, EMAIL_FONT } from "./brand";
 
 const { parchment, paper, ink, inkMuted, navy, rust, pencil, border } = EMAIL_BRAND;
@@ -49,6 +49,9 @@ export function emailLayout({ title, preheader, body }: EmailLayoutOptions) {
               <div style="font-family:${EMAIL_FONT.sans};font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${pencil};">${BRAND.name}</div>
               <div style="font-family:${EMAIL_FONT.sans};font-size:11px;color:${pencil};margin-top:6px;">${BRAND.tagline}</div>
               <div style="font-family:${EMAIL_FONT.sans};font-size:11px;color:${pencil};margin-top:10px;">${BRAND.parent}</div>
+              <div style="font-family:${EMAIL_FONT.sans};font-size:11px;color:${pencil};margin-top:10px;">
+                <a href="tel:${brandPhoneTel()}" style="color:${rust};text-decoration:none;">${BRAND.phone}</a>
+              </div>
               <div style="font-family:${EMAIL_FONT.sans};font-size:11px;margin-top:16px;">
                 <a href="${getSiteUrl()}" style="color:${rust};text-decoration:none;">8thstreetconstruction.com</a>
               </div>
