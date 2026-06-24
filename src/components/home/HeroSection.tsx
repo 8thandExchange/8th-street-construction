@@ -62,7 +62,7 @@ export function HeroSection() {
               href="#featured-project"
               className="cta-lift inline-flex h-12 sm:h-14 items-center justify-center px-6 sm:px-8 bg-rust text-parchment hover:bg-rust-200 font-sans text-[10px] sm:text-[11px] tracking-[0.2em] sm:tracking-[0.22em] uppercase"
             >
-              Explore 608 Macon Avenue
+              Explore The Oaks
             </Link>
             <Link
               href="#collection"

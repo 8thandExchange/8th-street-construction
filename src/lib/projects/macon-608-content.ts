@@ -1,4 +1,4 @@
-/** Public page copy and assets for 608 Macon Avenue — founding chapter */
+/** Public page copy and assets for The Oaks — founding chapter */
 
 export const MACON_608_SLUG = "608-macon-ave";
 
@@ -29,18 +29,18 @@ export const MACON_608_TIMELINE_MILESTONES: Macon608Milestone[] = [
 
 export const MACON_608_COPY = {
   eyebrow: "Flagship Project · Augusta, Georgia",
-  title: "608 Macon Avenue",
+  title: "The Oaks",
   subhead: "A custom home, documented from the ground up.",
   statusLine: "Breaking ground, June 26, 2026 · Augusta, Georgia",
   metaDescription:
-    "608 Macon Avenue — a custom home in Augusta, documented from the ground up by 8th Street Construction. Watch the build unfold milestone by milestone.",
+    "The Oaks — a custom home in Augusta, documented from the ground up by 8th Street Construction. Watch the build unfold milestone by milestone.",
   excerpt: "A custom home in Augusta, documented from the ground up.",
   story: {
     label: "The Story",
     heading: "The first chapter",
     paragraphs: [
-      "608 Macon Avenue is where 8th Street Construction begins in public. A custom home in Augusta, designed before a single board is cut, and built in the open for anyone who wants to watch a house become a home.",
-      "We are not showing you a finished product and asking you to imagine the work. We are showing you the work, from the cleared lot forward. The rendering on this page is the vision. Everything below it becomes a record, milestone by milestone, as 608 rises.",
+      "The Oaks is where 8th Street Construction begins in public. A custom home in Augusta, designed before a single board is cut, and built in the open for anyone who wants to watch a house become a home.",
+      "We are not showing you a finished product and asking you to imagine the work. We are showing you the work, from the cleared lot forward. The rendering on this page is the vision. Everything below it becomes a record, milestone by milestone, as The Oaks rises.",
       "Most builders show you one polished finished photo and hope you never ask what happened in between. We are doing the opposite. The slab, the framing, the dry-in, the finish. You will see all of it here.",
     ],
   },
@@ -51,19 +51,19 @@ export const MACON_608_COPY = {
     specs: [
       { label: "Bedrooms", value: "3" },
       { label: "Baths", value: "2.5" },
-      { label: "Location", value: "Macon Avenue, Augusta, Georgia" },
+      { label: "Location", value: "Augusta, Georgia" },
       { label: "Status", value: "Breaking ground, June 26, 2026" },
       { label: "Builder", value: "8th Street Construction" },
     ],
   },
   timeline: {
     label: "The Build, Documented",
-    intro: "This page updates as 608 rises. Site photos appear here as each milestone is completed.",
+    intro: "This page updates as The Oaks rises. Site photos appear here as each milestone is completed.",
     milestones: MACON_608_TIMELINE_MILESTONES,
   },
   partnership: {
     label: "Part of the Work",
-    body: "608 Macon Avenue is built in partnership with Habitat for Humanity CSRA. It is work we are proud of, and it is one part of what 8th Street builds across Augusta and the region. Custom homes, renovations, and commercial projects make up the rest. The standard is the same on every one.",
+    body: "The Oaks is built in partnership with Habitat for Humanity CSRA. It is work we are proud of, and it is one part of what 8th Street builds across Augusta and the region. Custom homes, renovations, and commercial projects make up the rest. The standard is the same on every one.",
   },
   cta: {
     heading: "Want a home built like this?",

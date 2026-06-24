@@ -85,7 +85,7 @@ export function Macon608ProjectPage() {
                 <div className="relative aspect-[4/3] md:aspect-[16/11] overflow-hidden bg-bone">
                   <Image
                     src={MACON_608_MEDIA.twilight}
-                    alt="608 Macon Avenue at twilight — architectural rendering"
+                    alt="The Oaks at twilight — architectural rendering"
                     fill
                     priority
                     sizes="(min-width: 1024px) 58vw, 100vw"
@@ -112,7 +112,7 @@ export function Macon608ProjectPage() {
                 <div className="relative aspect-[16/10] overflow-hidden bg-paper">
                   <Image
                     src={MACON_608_MEDIA.streetAngle}
-                    alt="608 Macon Avenue — three-quarter street view rendering"
+                    alt="The Oaks — three-quarter street view rendering"
                     fill
                     sizes="(min-width: 1024px) 58vw, 100vw"
                     className="object-cover brand-photo"
@@ -195,7 +195,7 @@ export function Macon608ProjectPage() {
                 <div className="relative aspect-[3/4] max-w-md mx-auto lg:max-w-none lg:ml-auto overflow-hidden bg-bone">
                   <Image
                     src={MACON_608_MEDIA.porchDetail}
-                    alt="608 Macon Avenue — front porch and entry detail rendering"
+                    alt="The Oaks — front porch and entry detail rendering"
                     fill
                     sizes="(min-width: 1024px) 40vw, 80vw"
                     className="object-cover brand-photo"
