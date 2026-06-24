@@ -15,13 +15,14 @@ type CollectionCardProps = {
 
 export function CollectionCard({ home, index }: CollectionCardProps) {
   return (
-    <Reveal delay={index * 70}>
+    <Reveal delay={index * 80} direction="up">
       <article className="group luxury-card h-full flex flex-col bg-warm-white border border-ink/8">
         <RenderingFrame
           src={getCollectionImage(home.id)}
           alt={getCollectionImageAlt(home.name)}
           dimensions={COLLECTION_CARD_DIMENSIONS}
           fit="contain"
+          zoomOnHover
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           className="shrink-0 border-0 border-b border-ink/8 rounded-none"
         />

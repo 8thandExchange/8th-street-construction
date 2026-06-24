@@ -19,6 +19,13 @@
 
   --rule: 1px;
   --max: 88rem;
+
+  /* Motion system — MotionSites principles, editorial restraint.
+     One signature easing; a consistent timing scale; purposeful motion. */
+  --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-micro: 0.2s;   /* hover/press feedback */
+  --dur-base: 0.4s;    /* standard transitions */
+  --dur-reveal: 0.9s;  /* scroll reveals + entrances */
 }
 
 * {
@@ -471,18 +478,34 @@ body {
 }
 
 /* =====================================================================
-   Reveal on scroll utility
+   Reveal on scroll — directional, composable, GPU-only (transform/opacity)
+   Direction + distance + blur are driven by CSS variables so a single
+   transition rule serves every variant. Defaults to a gentle rise.
    ===================================================================== */
 .reveal {
   opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate3d(var(--reveal-x, 0px), var(--reveal-y, 24px), 0)
+    scale(var(--reveal-scale, 1));
+  filter: blur(var(--reveal-blur, 0px));
+  transition:
+    opacity var(--dur-reveal) var(--ease-editorial),
+    transform var(--dur-reveal) var(--ease-editorial),
+    filter var(--dur-reveal) var(--ease-editorial);
+  will-change: opacity, transform;
 }
 
 .reveal.in {
   opacity: 1;
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0) scale(1);
+  filter: blur(0px);
 }
+
+/* Directional variants */
+.reveal-up { --reveal-y: 32px; }
+.reveal-left { --reveal-x: -36px; --reveal-y: 0px; }
+.reveal-right { --reveal-x: 36px; --reveal-y: 0px; }
+.reveal-scale { --reveal-y: 0px; --reveal-scale: 0.94; }
+.reveal-blur { --reveal-y: 16px; --reveal-blur: 14px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -490,7 +513,54 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-  .reveal { opacity: 1; transform: none; }
+  .reveal { opacity: 1; transform: none; filter: none; }
+}
+
+/* =====================================================================
+   Media zoom — slow, intentional scale on hover. Pair `.media-zoom`
+   (clip container) with a parent `.group` or direct hover.
+   ===================================================================== */
+.media-zoom {
+  overflow: hidden;
+}
+
+.media-zoom img {
+  transition: transform 0.9s var(--ease-editorial);
+  will-change: transform;
+}
+
+.group:hover .media-zoom img,
+.media-zoom:hover img {
+  transform: scale(1.045);
+}
+
+/* =====================================================================
+   CTA lift — restrained press/hover feedback for primary actions.
+   ===================================================================== */
+.cta-lift {
+  transition:
+    transform var(--dur-base) var(--ease-editorial),
+    background-color var(--dur-base) var(--ease-editorial),
+    border-color var(--dur-base) var(--ease-editorial),
+    color var(--dur-base) var(--ease-editorial);
+}
+
+.cta-lift:hover {
+  transform: translateY(-2px);
+}
+
+.cta-lift:active {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .media-zoom img,
+  .group:hover .media-zoom img,
+  .media-zoom:hover img,
+  .cta-lift:hover,
+  .cta-lift:active {
+    transform: none;
+  }
 }
 
 /* =====================================================================

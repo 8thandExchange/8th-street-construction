@@ -22,6 +22,11 @@ type RenderingFrameProps = {
    * trading a small crop of the outer decorative margin for equal visible size.
    */
   fit?: "contain" | "cover";
+  /**
+   * When true, the image slowly scales on hover (clipped to the frame). Pair
+   * with a parent `.group` for card-level hover. Honors reduced motion.
+   */
+  zoomOnHover?: boolean;
 };
 
 /**
@@ -40,6 +45,7 @@ export function RenderingFrame({
   className,
   imageClassName,
   fit = "contain",
+  zoomOnHover = false,
 }: RenderingFrameProps) {
   const isDark = variant === "dark";
 
@@ -55,7 +61,7 @@ export function RenderingFrame({
     >
       <div className="p-1.5 sm:p-2">
         <div
-          className="relative w-full"
+          className={cn("relative w-full", zoomOnHover && "media-zoom")}
           style={{ aspectRatio: `${dimensions.width} / ${dimensions.height}` }}
         >
           <Image
