@@ -38,8 +38,8 @@ export function getCollectionImageAlt(name: string): string {
 }
 
 export const FEATURED_RENDERING_DIMENSIONS: RenderingDimensions = {
-  width: 1402,
-  height: 1122,
+  width: 1600,
+  height: 1366,
 };
 
 /** Uniform frame for homepage collection grid — matches the rendering aspect */
