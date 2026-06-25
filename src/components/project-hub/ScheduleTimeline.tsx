@@ -1,7 +1,6 @@
 "use client";
 
 import { updateMilestoneSchedule, updateProjectSchedule } from "@/lib/actions/schedule";
-import { MILESTONE_STATUS_STYLES, MILESTONE_STATUS_LABELS } from "@/lib/project/labels";
 
 export type ScheduleMilestone = {
   id: string;
@@ -12,15 +11,6 @@ export type ScheduleMilestone = {
   scheduled_end: string | null;
   display_order: number;
 };
-
-function parseDate(s: string | null) {
-  if (!s) return null;
-  return new Date(s + "T12:00:00");
-}
-
-function daysBetween(a: Date, b: Date) {
-  return Math.round((b.getTime() - a.getTime()) / 86400000);
-}
 
 export function ScheduleTimeline({
   projectId,
@@ -33,32 +23,6 @@ export function ScheduleTimeline({
   projectEnd: string | null;
   milestones: ScheduleMilestone[];
 }) {
-  const dates = milestones.flatMap((m) =>
-    [m.scheduled_start, m.scheduled_end, m.target_date].filter(Boolean) as string[]
-  );
-  if (projectStart) dates.push(projectStart);
-  if (projectEnd) dates.push(projectEnd);
-
-  const parsed = dates.map((d) => parseDate(d)!).filter(Boolean);
-  const minDate =
-    parsed.length > 0
-      ? new Date(Math.min(...parsed.map((d) => d.getTime())))
-      : new Date();
-  const maxDate =
-    parsed.length > 0
-      ? new Date(Math.max(...parsed.map((d) => d.getTime())))
-      : new Date(minDate.getTime() + 90 * 86400000);
-
-  const span = Math.max(daysBetween(minDate, maxDate), 30);
-
-  function barStyle(m: ScheduleMilestone) {
-    const start = parseDate(m.scheduled_start || m.target_date) ?? minDate;
-    const end = parseDate(m.scheduled_end || m.target_date) ?? start;
-    const left = (daysBetween(minDate, start) / span) * 100;
-    const width = Math.max((daysBetween(start, end) / span) * 100, 2);
-    return { left: `${Math.min(left, 98)}%`, width: `${Math.min(width, 100 - left)}%` };
-  }
-
   return (
     <div className="space-y-8">
       <form action={updateProjectSchedule} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 border border-ink/15 bg-paper">
@@ -80,37 +44,6 @@ export function ScheduleTimeline({
           Save project dates
         </button>
       </form>
-
-      <div className="border border-ink/15 bg-paper overflow-x-auto">
-        <div className="min-w-[640px] p-6">
-          <div className="text-xs font-mono text-stone-300 mb-4 uppercase tracking-wider">
-            {minDate.toLocaleDateString()} — {maxDate.toLocaleDateString()}
-          </div>
-          <div className="space-y-3">
-            {milestones.map((m) => (
-              <div key={m.id} className="grid grid-cols-[180px_1fr] gap-4 items-center">
-                <div>
-                  <div className="text-sm font-medium text-ink truncate">{m.title}</div>
-                  <span
-                    className={`text-[9px] font-mono uppercase tracking-wider px-1 py-0.5 border ${MILESTONE_STATUS_STYLES[m.status]}`}
-                  >
-                    {MILESTONE_STATUS_LABELS[m.status]}
-                  </span>
-                </div>
-                <div className="relative h-8 bg-bone/80">
-                  {(m.scheduled_start || m.target_date) && (
-                    <div
-                      className="absolute top-1 bottom-1 bg-copper/80 rounded-sm"
-                      style={barStyle(m)}
-                      title={`${m.scheduled_start || m.target_date} → ${m.scheduled_end || m.target_date || ""}`}
-                    />
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
       <div className="space-y-4">
         <h3 className="eyebrow">Edit phase dates</h3>
