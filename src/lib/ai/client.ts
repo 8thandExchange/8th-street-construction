@@ -25,14 +25,23 @@ type GenerateOptions = {
   temperature?: number;
   /** Public image URLs to include for vision (e.g. jobsite photos). */
   images?: string[];
+  /** Public PDF URLs to include as documents (e.g. plan sets). */
+  documents?: string[];
 };
 
-function buildUserContent(prompt: string, images?: string[]): Anthropic.MessageParam["content"] {
-  if (!images?.length) return prompt;
-  const blocks: Anthropic.ContentBlockParam[] = images.slice(0, 8).map((url) => ({
-    type: "image",
-    source: { type: "url", url },
-  }));
+function buildUserContent(
+  prompt: string,
+  images?: string[],
+  documents?: string[]
+): Anthropic.MessageParam["content"] {
+  if (!images?.length && !documents?.length) return prompt;
+  const blocks: Anthropic.ContentBlockParam[] = [];
+  for (const url of (documents ?? []).slice(0, 5)) {
+    blocks.push({ type: "document", source: { type: "url", url } });
+  }
+  for (const url of (images ?? []).slice(0, 8)) {
+    blocks.push({ type: "image", source: { type: "url", url } });
+  }
   blocks.push({ type: "text", text: prompt });
   return blocks;
 }
@@ -44,6 +53,7 @@ export async function generateText({
   maxTokens = 1024,
   temperature = 0.5,
   images,
+  documents,
 }: GenerateOptions): Promise<string> {
   const client = getClient();
   const message = await client.messages.create({
@@ -51,7 +61,7 @@ export async function generateText({
     max_tokens: maxTokens,
     temperature,
     system,
-    messages: [{ role: "user", content: buildUserContent(prompt, images) }],
+    messages: [{ role: "user", content: buildUserContent(prompt, images, documents) }],
   });
 
   return message.content
@@ -71,6 +81,7 @@ export async function generateJson<T>({
   maxTokens = 1024,
   temperature = 0.4,
   images,
+  documents,
 }: GenerateOptions): Promise<T> {
   const raw = await generateText({
     system: `${system}\n\nRespond with ONLY valid JSON. No markdown, no commentary.`,
@@ -78,6 +89,7 @@ export async function generateJson<T>({
     maxTokens,
     temperature,
     images,
+    documents,
   });
 
   const cleaned = raw
