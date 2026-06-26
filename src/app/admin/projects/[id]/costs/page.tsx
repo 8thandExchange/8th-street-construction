@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { HubPageHeader } from "@/components/hub/HubUI";
 import { CostComparisonPanel } from "@/components/costs/CostComparisonPanel";
+import { CostEstimateGenerator } from "@/components/costs/CostEstimateGenerator";
 import { computeProjectCostSummary } from "@/lib/estimate/summary";
 import { formatMoney } from "@/lib/billing/constants";
 import {
@@ -51,6 +52,8 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
       />
 
       <CostComparisonPanel projectId={id} summary={costSummary} compact />
+
+      {lineList.length === 0 && <CostEstimateGenerator projectId={id} />}
 
       {lineList.length === 0 && isHabitat && (
         <div className="hub-panel p-6 mb-10 border-copper/20">
