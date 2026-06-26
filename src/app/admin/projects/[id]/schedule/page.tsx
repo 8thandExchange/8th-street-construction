@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ScheduleTimeline } from "@/components/project-hub/ScheduleTimeline";
 import { ProjectGantt } from "@/components/schedule/ProjectGantt";
 import { ShareManager } from "@/components/schedule/ShareManager";
+import { AiScheduleGenerator } from "@/components/schedule/AiScheduleGenerator";
 import { getProjectShareSettings } from "@/lib/actions/project-share";
 
 export const dynamic = "force-dynamic";
@@ -49,6 +50,12 @@ export default async function ProjectSchedulePage(props: { params: Promise<{ id:
             dateMode="internal"
             title={project.title}
             subtitle="Internal planning view — clients see target dates."
+          />
+
+          <AiScheduleGenerator
+            projectId={id}
+            defaultStart={project.start_date}
+            defaultEnd={project.target_completion_date}
           />
 
           <ShareManager projectId={id} settings={shareSettings} />
