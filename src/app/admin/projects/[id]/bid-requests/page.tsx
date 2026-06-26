@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createBidRequest, awardBid, closeBidRequest } from "@/lib/actions/bids";
 import { ManualSubQuoteForm } from "@/components/costs/ManualSubQuoteForm";
-import { formatMoney } from "@/lib/billing/constants";
+import { BidLeveling } from "@/components/costs/BidLeveling";
 
 export const dynamic = "force-dynamic";
 
@@ -184,6 +184,12 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
                 })}
               </tbody>
             </table>
+            <BidLeveling
+              bidRequestId={rfq.id}
+              bidCount={
+                (Array.isArray(rfq.bids) ? rfq.bids : []).filter((b) => b.amount != null).length
+              }
+            />
           </section>
         ))}
         {!rfqs?.length && (
