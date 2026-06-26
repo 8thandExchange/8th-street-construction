@@ -23,7 +23,19 @@ type GenerateOptions = {
   prompt: string;
   maxTokens?: number;
   temperature?: number;
+  /** Public image URLs to include for vision (e.g. jobsite photos). */
+  images?: string[];
 };
+
+function buildUserContent(prompt: string, images?: string[]): Anthropic.MessageParam["content"] {
+  if (!images?.length) return prompt;
+  const blocks: Anthropic.ContentBlockParam[] = images.slice(0, 8).map((url) => ({
+    type: "image",
+    source: { type: "url", url },
+  }));
+  blocks.push({ type: "text", text: prompt });
+  return blocks;
+}
 
 /** Single-turn text generation against Claude. Returns plain text. */
 export async function generateText({
@@ -31,6 +43,7 @@ export async function generateText({
   prompt,
   maxTokens = 1024,
   temperature = 0.5,
+  images,
 }: GenerateOptions): Promise<string> {
   const client = getClient();
   const message = await client.messages.create({
@@ -38,7 +51,7 @@ export async function generateText({
     max_tokens: maxTokens,
     temperature,
     system,
-    messages: [{ role: "user", content: prompt }],
+    messages: [{ role: "user", content: buildUserContent(prompt, images) }],
   });
 
   return message.content
@@ -57,12 +70,14 @@ export async function generateJson<T>({
   prompt,
   maxTokens = 1024,
   temperature = 0.4,
+  images,
 }: GenerateOptions): Promise<T> {
   const raw = await generateText({
     system: `${system}\n\nRespond with ONLY valid JSON. No markdown, no commentary.`,
     prompt,
     maxTokens,
     temperature,
+    images,
   });
 
   const cleaned = raw

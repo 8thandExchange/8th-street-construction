@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import { createDailyLog, deleteDailyLog } from "@/lib/actions/daily-logs";
+import { deleteDailyLog } from "@/lib/actions/daily-logs";
+import { DailyLogForm } from "@/components/project-hub/DailyLogForm";
 
 export const dynamic = "force-dynamic";
 
@@ -29,43 +30,7 @@ export default async function ProjectDailyLogsPage(props: {
         calendar day.
       </p>
 
-      <form
-        action={async (fd) => {
-          "use server";
-          await createDailyLog(fd);
-        }}
-        className="mt-8 p-6 border border-ink/15 bg-paper space-y-4"
-      >
-        <input type="hidden" name="project_id" value={id} />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="field-label">Date</label>
-            <input type="date" name="log_date" defaultValue={today} className="field-input" required />
-          </div>
-          <div>
-            <label className="field-label">Weather</label>
-            <input name="weather" className="field-input" placeholder="Clear, 72°F" />
-          </div>
-          <div>
-            <label className="field-label">Crew count</label>
-            <input type="number" name="crew_count" min={0} className="field-input" />
-          </div>
-        </div>
-        <div>
-          <label className="field-label">Work completed *</label>
-          <textarea name="summary" rows={4} className="field-input" required />
-        </div>
-        <div>
-          <label className="field-label">Issues / delays</label>
-          <textarea name="issues" rows={2} className="field-input" />
-        </div>
-        <button
-          type="submit"
-          className="h-11 px-5 bg-ink text-bone font-mono text-[10px] tracking-[0.2em] uppercase"
-        >
-          Save Log
-        </button>
-      </form>
+      <DailyLogForm projectId={id} today={today} />
 
       <div className="mt-10 space-y-4">
         {(logs ?? []).length === 0 ? (
