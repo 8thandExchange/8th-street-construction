@@ -1,38 +1,37 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
-import { RenderingFrame } from "@/components/ui/RenderingFrame";
 import { BrandTexture } from "@/components/site/BrandTexture";
-import { FEATURED_RENDERING_DIMENSIONS } from "@/lib/collection-images";
-import { FEATURED_PROJECT } from "@/lib/featured-project";
+import {
+  HOME_HERO_POSTER,
+  HOME_HERO_POSTER_ALT,
+  HOME_HERO_VIDEO,
+} from "@/lib/home-hero";
 import { ContourLines } from "./ContourLines";
+import { HeroVideoBackground } from "./HeroVideoBackground";
 
 export function HeroSection() {
   return (
-    <section id="home" className="relative bg-navy text-parchment overflow-hidden lg:min-h-[100svh]">
-      <BrandTexture kind="linen" opacity={0.12} />
-      <ContourLines className="text-parchment" opacity={0.06} />
+    <section id="home" className="relative bg-navy text-parchment overflow-hidden min-h-[100svh]">
+      <HeroVideoBackground
+        src={HOME_HERO_VIDEO}
+        poster={HOME_HERO_POSTER}
+        posterAlt={HOME_HERO_POSTER_ALT}
+      />
+
+      {/* Scrim — readable copy over video; lighter on the right so motion shows through */}
+      <div className="absolute inset-0 bg-gradient-to-r from-navy/92 via-navy/65 to-navy/25 md:from-navy/88 md:via-navy/55 md:to-navy/20" />
+      <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-transparent to-navy/30" />
+      <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-navy via-navy/85 to-transparent pointer-events-none" />
+
+      <BrandTexture kind="linen" opacity={0.1} />
+      <ContourLines className="text-parchment" opacity={0.05} />
 
       <Container
         size="wide"
-        className="relative grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10 lg:gap-16 lg:min-h-[100svh] pt-[calc(5rem+env(safe-area-inset-top))] md:pt-[calc(6.5rem+env(safe-area-inset-top))] lg:pt-[calc(7rem+env(safe-area-inset-top))] pb-8 md:pb-12 lg:pb-16"
+        className="relative z-10 flex min-h-[100svh] flex-col justify-center pt-[calc(5rem+env(safe-area-inset-top))] md:pt-[calc(6.5rem+env(safe-area-inset-top))] lg:pt-[calc(7rem+env(safe-area-inset-top))] pb-12 md:pb-16 lg:pb-20"
       >
-        {/* Mobile: rendering first for immediate visual impact. The flagship
-            rendering settles in with a soft scale — the hero's signature moment. */}
-        <Reveal delay={120} direction="scale" className="order-1 lg:order-2 flex items-stretch lg:items-center lg:justify-end">
-          <RenderingFrame
-            src={FEATURED_PROJECT.rendering}
-            alt={FEATURED_PROJECT.renderingAlt}
-            dimensions={FEATURED_RENDERING_DIMENSIONS}
-            priority
-            variant="dark"
-            label={`Flagship Project · ${FEATURED_PROJECT.title}`}
-            sizes="(min-width: 1024px) 46vw, 100vw"
-          />
-        </Reveal>
-
-        {/* Copy column cascades in from the left, one line at a time. */}
-        <div className="order-2 lg:order-1 flex flex-col justify-center max-w-xl lg:max-w-none">
+        <div className="max-w-2xl">
           <Reveal direction="left">
             <p className="font-sans text-[10px] sm:text-[11px] tracking-[0.42em] uppercase text-parchment/50">
               8TH STREET CONSTRUCTION
@@ -57,7 +56,7 @@ export function HeroSection() {
             </p>
           </Reveal>
 
-          <Reveal delay={340} direction="left" className="mt-8 sm:mt-10 flex flex-col gap-3">
+          <Reveal delay={340} direction="left" className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3">
             <Link
               href="#featured-project"
               className="cta-lift inline-flex h-12 sm:h-14 items-center justify-center px-6 sm:px-8 bg-rust text-parchment hover:bg-rust-200 font-sans text-[10px] sm:text-[11px] tracking-[0.2em] sm:tracking-[0.22em] uppercase"
