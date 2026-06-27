@@ -1,3 +1,9 @@
+import {
+  daysBetween,
+  resolveGanttDateRange,
+  resolveMilestoneDates,
+} from "./gantt-dates";
+
 export type GanttMilestone = {
   id: string;
   title: string;
@@ -25,6 +31,8 @@ export type GanttBar = {
   /** completion fill inside the bar (0-100) */
   progress: number;
   hasDates: boolean;
+  scheduled_start: string | null;
+  scheduled_end: string | null;
 };
 
 export type GanttModel = {
@@ -37,16 +45,6 @@ export type GanttModel = {
   totalPhases: number;
   completedPhases: number;
 };
-
-function parseDate(s: string | null | undefined): Date | null {
-  if (!s) return null;
-  const d = new Date(`${s}T12:00:00`);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function daysBetween(a: Date, b: Date) {
-  return (b.getTime() - a.getTime()) / 86_400_000;
-}
 
 function statusProgress(status: string, explicit?: number | null): number {
   if (typeof explicit === "number") return Math.max(0, Math.min(100, explicit));
@@ -63,6 +61,18 @@ function statusProgress(status: string, explicit?: number | null): number {
 const DAY_LABEL: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
 const MONTH_LABEL: Intl.DateTimeFormatOptions = { month: "short", year: "2-digit" };
 
+function formatDateLabel(date: Date | null) {
+  return date ? date.toLocaleDateString("en-US", DAY_LABEL) : null;
+}
+
+function toIsoDate(date: Date | null) {
+  if (!date) return null;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 /**
  * Build a normalized Gantt model from milestones.
  * `dateMode = "internal"` uses scheduled_start/end (admin); `"client"` uses target_date.
@@ -76,42 +86,14 @@ export function buildGanttModel(
     today?: Date;
   } = {}
 ): GanttModel {
-  const { projectStart, projectEnd, dateMode = "internal", today = new Date() } = options;
+  const { dateMode = "internal", today = new Date() } = options;
+  const range = resolveGanttDateRange(milestones, options);
+  const { minDate, maxDate, spanDays: span } = range;
 
   const resolved = milestones.map((m) => {
-    const start =
-      dateMode === "client"
-        ? parseDate(m.target_date)
-        : parseDate(m.scheduled_start) ?? parseDate(m.target_date);
-    const end =
-      dateMode === "client"
-        ? parseDate(m.target_date)
-        : parseDate(m.scheduled_end) ?? parseDate(m.target_date) ?? start;
+    const { start, end } = resolveMilestoneDates(m, dateMode);
     return { m, start, end: end ?? start };
   });
-
-  const allDates: Date[] = [];
-  for (const r of resolved) {
-    if (r.start) allDates.push(r.start);
-    if (r.end) allDates.push(r.end);
-  }
-  const ps = parseDate(projectStart);
-  const pe = parseDate(projectEnd);
-  if (ps) allDates.push(ps);
-  if (pe) allDates.push(pe);
-
-  const minDate = allDates.length
-    ? new Date(Math.min(...allDates.map((d) => d.getTime())))
-    : new Date(today);
-  const maxDateRaw = allDates.length
-    ? new Date(Math.max(...allDates.map((d) => d.getTime())))
-    : new Date(today.getTime() + 90 * 86_400_000);
-  const maxDate =
-    maxDateRaw.getTime() <= minDate.getTime()
-      ? new Date(minDate.getTime() + 30 * 86_400_000)
-      : maxDateRaw;
-
-  const span = Math.max(daysBetween(minDate, maxDate), 1);
 
   const bars: GanttBar[] = resolved.map(({ m, start, end }) => {
     const hasDates = Boolean(start);
@@ -124,18 +106,18 @@ export function buildGanttModel(
       id: m.id,
       title: m.title,
       status: m.status,
-      startLabel: start ? start.toLocaleDateString("en-US", DAY_LABEL) : null,
-      endLabel: end && end.getTime() !== (start?.getTime() ?? -1)
-        ? end.toLocaleDateString("en-US", DAY_LABEL)
-        : null,
+      startLabel: formatDateLabel(start),
+      endLabel:
+        end && start && end.getTime() !== start.getTime() ? formatDateLabel(end) : null,
       left,
       width,
       progress: statusProgress(m.status, m.progress),
       hasDates,
+      scheduled_start: toIsoDate(start),
+      scheduled_end: toIsoDate(end),
     };
   });
 
-  // Month gridlines
   const months: GanttModel["months"] = [];
   const cursor = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
   while (cursor <= maxDate) {
@@ -159,7 +141,7 @@ export function buildGanttModel(
   const completedPhases = milestones.filter((m) => m.status === "completed").length;
   const totalPhases = milestones.length;
   const overallProgress = totalPhases
-    ? Math.round(bars.reduce((s, b) => s + b.progress, 0) / totalPhases)
+    ? Math.round(bars.reduce((sum, bar) => sum + bar.progress, 0) / totalPhases)
     : 0;
 
   return {
@@ -173,3 +155,5 @@ export function buildGanttModel(
     completedPhases,
   };
 }
+
+export { resolveGanttDateRange } from "./gantt-dates";
