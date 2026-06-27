@@ -4,13 +4,19 @@ import { createMercuryCustomer } from "./customers";
 import { createMercuryInvoice, mercuryPayUrl } from "./invoices";
 import type { MercuryInvoice } from "./types";
 
+export type MercuryLineItem = {
+  description: string;
+  quantity: number;
+  unit_amount: number;
+};
+
 type SyncInvoiceInput = {
   invoiceId: string;
   invoiceNumber: string;
   title: string;
   amount: number;
   dueDate: string | null;
-  lineDescription: string;
+  lineItems: MercuryLineItem[];
   projectId: string;
   projectTitle: string;
   clientId: string | null;
@@ -71,13 +77,11 @@ export async function pushInvoiceToMercury(
     invoiceNumber: input.invoiceNumber,
     invoiceDate: today,
     dueDate,
-    lineItems: [
-      {
-        name: input.lineDescription,
-        unitPrice: input.amount,
-        quantity: 1,
-      },
-    ],
+    lineItems: input.lineItems.map((li) => ({
+      name: li.description,
+      unitPrice: li.unit_amount,
+      quantity: li.quantity,
+    })),
     payerMemo: input.payerMemo ?? `Payment for ${input.projectTitle}`,
     internalNote: `Platform invoice ${input.invoiceId} · project ${input.projectId}`,
     sendEmailOption: "DontSend",

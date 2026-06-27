@@ -1,4 +1,4 @@
-import { markInvoicePaid } from "@/lib/actions/billing";
+import { markInvoicePaid, sendCustomInvoice } from "@/lib/actions/billing";
 import type { InvoiceRecord } from "@/lib/billing/summary";
 import { InvoiceCard, type InvoiceCardData } from "./InvoiceCard";
 
@@ -28,7 +28,7 @@ export function InvoiceList({ projectId, invoices }: InvoiceListProps) {
         <div className="hub-panel text-center py-14 px-6 border-dashed border-ink/15">
           <p className="font-display text-lg text-ink/70">No invoices yet</p>
           <p className="text-ink/45 text-sm mt-2 max-w-sm mx-auto leading-relaxed">
-            Send one from the payment schedule when a build phase is complete.
+            Send one from the payment schedule, or create a custom invoice below.
           </p>
         </div>
       ) : (
@@ -39,7 +39,26 @@ export function InvoiceList({ projectId, invoices }: InvoiceListProps) {
                 invoice={inv as InvoiceCardData}
                 variant="admin"
                 markPaidAction={
-                  inv.status !== "paid" && inv.status !== "void" ? (
+                  inv.status === "draft" ? (
+                    <form
+                      action={async (fd) => {
+                        "use server";
+                        await sendCustomInvoice(fd);
+                      }}
+                    >
+                      <input type="hidden" name="project_id" value={projectId} />
+                      <input type="hidden" name="invoice_id" value={inv.id} />
+                      <button
+                        type="submit"
+                        className="h-10 px-4 bg-copper text-bone font-mono text-[10px] tracking-[0.14em] uppercase hover:bg-copper-400 transition-colors"
+                      >
+                        Send invoice
+                      </button>
+                      <p className="text-[10px] text-ink/45 mt-2 max-w-[9rem] text-right leading-relaxed">
+                        Draft — not sent yet
+                      </p>
+                    </form>
+                  ) : inv.status !== "paid" && inv.status !== "void" ? (
                     <form
                       action={async (fd) => {
                         "use server";
