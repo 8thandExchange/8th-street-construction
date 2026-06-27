@@ -16,6 +16,8 @@ export type GanttMilestone = {
   display_order?: number;
   /** Optional 0-100 completion from task rollup */
   progress?: number | null;
+  /** Finish-to-start predecessor */
+  predecessor_id?: string | null;
 };
 
 export type GanttBar = {
@@ -33,6 +35,7 @@ export type GanttBar = {
   hasDates: boolean;
   scheduled_start: string | null;
   scheduled_end: string | null;
+  predecessor_id: string | null;
 };
 
 export type GanttModel = {
@@ -115,6 +118,7 @@ export function buildGanttModel(
       hasDates,
       scheduled_start: toIsoDate(start),
       scheduled_end: toIsoDate(end),
+      predecessor_id: m.predecessor_id ?? null,
     };
   });
 

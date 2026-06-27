@@ -2,10 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { ScheduleTimeline } from "@/components/project-hub/ScheduleTimeline";
 import { InteractiveScheduleGantt } from "@/components/schedule/InteractiveScheduleGantt";
+import { ScheduleDashboard } from "@/components/schedule/ScheduleDashboard";
 import { ShareManager } from "@/components/schedule/ShareManager";
 import { AiScheduleGenerator } from "@/components/schedule/AiScheduleGenerator";
 import { getProjectShareSettings } from "@/lib/actions/project-share";
 import { loadGanttMilestones } from "@/lib/schedule/load-gantt-milestones";
+import { computeScheduleSummary } from "@/lib/schedule/summary";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +34,23 @@ export default async function ProjectSchedulePage(props: { params: Promise<{ id:
     scheduled_start: milestone.scheduled_start ?? null,
     scheduled_end: milestone.scheduled_end ?? null,
     display_order: milestone.display_order ?? 0,
+    predecessor_id: milestone.predecessor_id ?? null,
   }));
+
+  function fmtDate(date: string | null | undefined) {
+    if (!date) return null;
+    return new Date(`${date}T12:00:00`).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  const summary = computeScheduleSummary(milestones, {
+    projectStart: project.start_date,
+    projectEnd: project.target_completion_date,
+    dateMode: "internal",
+  });
 
   return (
     <div className="max-w-6xl space-y-10">
@@ -51,6 +69,12 @@ export default async function ProjectSchedulePage(props: { params: Promise<{ id:
         </p>
       ) : (
         <>
+          <ScheduleDashboard
+            summary={summary}
+            projectStartLabel={fmtDate(project.start_date)}
+            projectEndLabel={fmtDate(project.target_completion_date)}
+          />
+
           <InteractiveScheduleGantt
             projectId={id}
             milestones={milestones}
