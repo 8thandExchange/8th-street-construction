@@ -1,0 +1,524 @@
+"use client";
+
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import { updateMilestoneDates } from "@/lib/actions/schedule";
+import { buildGanttModel, type GanttMilestone } from "@/lib/schedule/gantt";
+import {
+  addDays,
+  formatDateISO,
+  pixelDeltaToDays,
+  resolveGanttDateRange,
+  resolveMilestoneDates,
+} from "@/lib/schedule/gantt-dates";
+import { MILESTONE_STATUS_LABELS, MILESTONE_STATUS_STYLES } from "@/lib/project/labels";
+
+type InteractiveScheduleGanttProps = {
+  projectId: string;
+  milestones: GanttMilestone[];
+  projectStart?: string | null;
+  projectEnd?: string | null;
+  title?: string;
+  subtitle?: string;
+};
+
+type DragMode = "move" | "resize-start" | "resize-end";
+
+type DragState = {
+  barId: string;
+  mode: DragMode;
+  pointerId: number;
+  startX: number;
+  origStart: Date;
+  origEnd: Date;
+};
+
+type LocalDates = {
+  scheduled_start: string | null;
+  scheduled_end: string | null;
+};
+
+const BAR_TONES: Record<string, { bar: string; fill: string; dot: string }> = {
+  completed: {
+    bar: "bg-emerald-500/15 border-emerald-500/30",
+    fill: "bg-emerald-500",
+    dot: "bg-emerald-500",
+  },
+  in_progress: {
+    bar: "bg-copper/15 border-copper/30",
+    fill: "bg-copper",
+    dot: "bg-copper",
+  },
+  blocked: {
+    bar: "bg-amber-400/15 border-amber-400/40",
+    fill: "bg-amber-400",
+    dot: "bg-amber-400",
+  },
+  pending: {
+    bar: "bg-ink/[0.04] border-ink/10",
+    fill: "bg-stone-400",
+    dot: "bg-stone-300",
+  },
+};
+
+const TIMELINE_MIN_WIDTH = 680;
+const PHASE_COL_WIDTH = 240;
+
+function toneFor(status: string) {
+  return BAR_TONES[status] ?? BAR_TONES.pending;
+}
+
+function fmtShort(date: string | null) {
+  if (!date) return "—";
+  return new Date(`${date}T12:00:00`).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+export function InteractiveScheduleGantt({
+  projectId,
+  milestones,
+  projectStart,
+  projectEnd,
+  title = "Build schedule",
+  subtitle,
+}: InteractiveScheduleGanttProps) {
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [drag, setDrag] = useState<DragState | null>(null);
+  const [localDates, setLocalDates] = useState<Map<string, LocalDates>>(new Map());
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!drag) {
+      setLocalDates(new Map());
+    }
+  }, [milestones]);
+
+  const effectiveMilestones = useMemo(() => {
+    return milestones.map((milestone) => {
+      const override = localDates.get(milestone.id);
+      if (!override) return milestone;
+      return {
+        ...milestone,
+        scheduled_start: override.scheduled_start,
+        scheduled_end: override.scheduled_end,
+      };
+    });
+  }, [milestones, localDates]);
+
+  const dateRange = useMemo(
+    () =>
+      resolveGanttDateRange(effectiveMilestones, {
+        projectStart,
+        projectEnd,
+        dateMode: "internal",
+      }),
+    [effectiveMilestones, projectStart, projectEnd]
+  );
+
+  const computeDraggedDates = useCallback(
+    (state: DragState, clientX: number) => {
+      const timeline = timelineRef.current;
+      if (!timeline) {
+        return {
+          scheduled_start: formatDateISO(state.origStart),
+          scheduled_end: formatDateISO(state.origEnd),
+        };
+      }
+
+      const deltaDays = pixelDeltaToDays(clientX - state.startX, timeline.clientWidth, dateRange);
+      let nextStart = new Date(state.origStart);
+      let nextEnd = new Date(state.origEnd);
+
+      if (state.mode === "move") {
+        nextStart = addDays(state.origStart, deltaDays);
+        nextEnd = addDays(state.origEnd, deltaDays);
+      } else if (state.mode === "resize-start") {
+        nextStart = addDays(state.origStart, deltaDays);
+        if (nextStart >= nextEnd) nextStart = addDays(nextEnd, -1);
+      } else {
+        nextEnd = addDays(state.origEnd, deltaDays);
+        if (nextEnd <= nextStart) nextEnd = addDays(nextStart, 1);
+      }
+
+      return {
+        scheduled_start: formatDateISO(nextStart),
+        scheduled_end: formatDateISO(nextEnd),
+      };
+    },
+    [dateRange]
+  );
+
+  const model = useMemo(
+    () =>
+      buildGanttModel(effectiveMilestones, {
+        projectStart,
+        projectEnd,
+        dateMode: "internal",
+      }),
+    [effectiveMilestones, projectStart, projectEnd]
+  );
+
+  const persistDates = useCallback(
+    (milestoneId: string, scheduled_start: string | null, scheduled_end: string | null) => {
+      startTransition(async () => {
+        try {
+          setError(null);
+          await updateMilestoneDates({
+            projectId,
+            milestoneId,
+            scheduled_start,
+            scheduled_end,
+          });
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Could not save schedule change.");
+          setLocalDates(new Map());
+        }
+      });
+    },
+    [projectId]
+  );
+
+  const applyDragDelta = useCallback(
+    (state: DragState, clientX: number) => {
+      const timeline = timelineRef.current;
+      if (!timeline) return;
+
+      const deltaPx = clientX - state.startX;
+      const deltaDays = pixelDeltaToDays(deltaPx, timeline.clientWidth, dateRange);
+      let nextStart = new Date(state.origStart);
+      let nextEnd = new Date(state.origEnd);
+
+      if (state.mode === "move") {
+        nextStart = addDays(state.origStart, deltaDays);
+        nextEnd = addDays(state.origEnd, deltaDays);
+      } else if (state.mode === "resize-start") {
+        nextStart = addDays(state.origStart, deltaDays);
+        if (nextStart >= nextEnd) nextStart = addDays(nextEnd, -1);
+      } else {
+        nextEnd = addDays(state.origEnd, deltaDays);
+        if (nextEnd <= nextStart) nextEnd = addDays(nextStart, 1);
+      }
+
+      setLocalDates((current) => {
+        const next = new Map(current);
+        next.set(state.barId, {
+          scheduled_start: formatDateISO(nextStart),
+          scheduled_end: formatDateISO(nextEnd),
+        });
+        return next;
+      });
+    },
+    [dateRange]
+  );
+
+  useEffect(() => {
+    if (!drag) return;
+
+    const activeDrag = drag;
+
+    function onMove(event: PointerEvent) {
+      if (event.pointerId !== activeDrag.pointerId) return;
+      applyDragDelta(activeDrag, event.clientX);
+    }
+
+    function onUp(event: PointerEvent) {
+      if (event.pointerId !== activeDrag.pointerId) return;
+
+      const { scheduled_start, scheduled_end } = computeDraggedDates(activeDrag, event.clientX);
+      if (scheduled_start && scheduled_end) {
+        persistDates(activeDrag.barId, scheduled_start, scheduled_end);
+      }
+
+      setDrag(null);
+    }
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [applyDragDelta, computeDraggedDates, drag, persistDates]);
+
+  function beginDrag(
+    barId: string,
+    mode: DragMode,
+    event: React.PointerEvent<HTMLDivElement>
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const milestone = milestones.find((item) => item.id === barId);
+    if (!milestone) return;
+
+    const { start, end } = resolveMilestoneDates(milestone, "internal");
+    if (!start || !end) return;
+
+    setSelectedId(barId);
+    setDrag({
+      barId,
+      mode,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      origStart: start,
+      origEnd: end,
+    });
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  if (!milestones.length) {
+    return (
+      <div className="hub-panel p-10 text-center">
+        <p className="font-display text-lg text-ink/70">No schedule yet</p>
+        <p className="mt-2 text-sm text-ink/45 max-w-sm mx-auto leading-relaxed">
+          Phases will appear here as the build plan is set up.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <section className="relative overflow-hidden border border-ink/10 bg-paper">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-copper/80 via-copper/30 to-transparent" />
+
+      <div className="px-6 md:px-8 pt-7 pb-5 flex flex-wrap items-end justify-between gap-5 border-b border-ink/8">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper">
+            Interactive schedule
+          </p>
+          <h3 className="mt-1 font-display text-xl md:text-2xl text-ink tracking-tight">{title}</h3>
+          {subtitle && <p className="mt-1 text-sm text-ink/55">{subtitle}</p>}
+          <p className="mt-2 text-xs text-ink/45">
+            Drag bars to move phases. Drag edges to adjust duration. Clients see target dates in
+            their portal.
+          </p>
+        </div>
+        <div className="text-right">
+          <div className="font-display text-3xl text-ink leading-none">{model.overallProgress}%</div>
+          <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-stone-400">
+            {model.completedPhases} of {model.totalPhases} phases complete
+          </p>
+        </div>
+      </div>
+
+      <div className="px-6 md:px-8 pt-5">
+        <div className="h-2 w-full bg-ink/[0.06] overflow-hidden rounded-full">
+          <div
+            className="h-full bg-gradient-to-r from-copper-400 to-copper-100 rounded-full transition-all duration-700"
+            style={{ width: `${model.overallProgress}%` }}
+          />
+        </div>
+      </div>
+
+      {(pending || drag) && (
+        <div className="px-6 md:px-8 pt-3">
+          <p className="font-mono text-[10px] uppercase tracking-wider text-copper">
+            {drag ? "Dragging…" : "Saving schedule…"}
+          </p>
+        </div>
+      )}
+
+      {error && (
+        <div className="px-6 md:px-8 pt-3">
+          <p className="text-sm text-red-700 bg-red-50 border border-red-100 px-3 py-2">{error}</p>
+        </div>
+      )}
+
+      <div className="mt-4 border-t border-ink/8">
+        <div className="flex">
+          <div
+            className="shrink-0 border-r border-ink/8 bg-paper/80"
+            style={{ width: PHASE_COL_WIDTH }}
+          >
+            <div className="h-10 px-4 flex items-end pb-2 border-b border-ink/8">
+              <span className="font-mono text-[10px] uppercase tracking-wider text-stone-400">
+                Phase
+              </span>
+            </div>
+            {model.bars.map((bar) => {
+              const tone = toneFor(bar.status);
+              const active = selectedId === bar.id;
+              return (
+                <button
+                  key={bar.id}
+                  type="button"
+                  onClick={() => setSelectedId(bar.id)}
+                  className={`w-full text-left px-4 py-3 border-b border-ink/5 transition-colors ${
+                    active ? "bg-copper/[0.06]" : "hover:bg-ink/[0.02]"
+                  }`}
+                >
+                  <div className="flex items-start gap-2 min-w-0">
+                    <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${tone.dot}`} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-ink truncate">{bar.title}</p>
+                      <span
+                        className={`inline-block mt-1 text-[9px] font-mono tracking-[0.12em] uppercase px-1.5 py-0.5 border ${
+                          MILESTONE_STATUS_STYLES[bar.status] ?? MILESTONE_STATUS_STYLES.pending
+                        }`}
+                      >
+                        {MILESTONE_STATUS_LABELS[bar.status] ?? bar.status}
+                      </span>
+                      <p className="mt-2 font-mono text-[10px] text-stone-400 leading-relaxed">
+                        {bar.hasDates ? (
+                          <>
+                            {fmtShort(bar.scheduled_start)}
+                            {bar.scheduled_end && bar.scheduled_end !== bar.scheduled_start
+                              ? ` → ${fmtShort(bar.scheduled_end)}`
+                              : ""}
+                          </>
+                        ) : (
+                          "Date TBD"
+                        )}
+                      </p>
+                      {bar.progress > 0 && (
+                        <p className="mt-1 font-mono text-[10px] text-copper">
+                          {bar.progress}% checklist done
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex-1 min-w-0 overflow-x-auto" ref={timelineRef}>
+            <div style={{ minWidth: TIMELINE_MIN_WIDTH }}>
+              <div className="sticky top-0 z-10 h-10 border-b border-ink/8 bg-paper/95 backdrop-blur-sm relative">
+                {model.months.map((month, index) => (
+                  <div
+                    key={index}
+                    className="absolute top-0 bottom-0 flex items-end"
+                    style={{ left: `${month.left}%`, width: `${month.width}%` }}
+                  >
+                    <span className="font-mono text-[9px] uppercase tracking-wider text-stone-400 pl-1 border-l border-ink/10 leading-none pb-2">
+                      {month.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 pointer-events-none" aria-hidden>
+                  {model.months.map((month, index) => (
+                    <div
+                      key={index}
+                      className="absolute top-0 bottom-0 border-l border-ink/[0.06]"
+                      style={{ left: `${month.left}%` }}
+                    />
+                  ))}
+                  {model.todayLeft != null && (
+                    <div
+                      className="absolute top-0 bottom-0 w-px bg-copper/60"
+                      style={{ left: `${model.todayLeft}%` }}
+                    >
+                      <span className="absolute top-0 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-copper" />
+                    </div>
+                  )}
+                </div>
+
+                {model.bars.map((bar) => {
+                  const tone = toneFor(bar.status);
+                  const active = selectedId === bar.id;
+                  const isDragging = drag?.barId === bar.id;
+
+                  return (
+                    <div
+                      key={bar.id}
+                      className={`relative h-[72px] border-b border-ink/5 ${
+                        active ? "bg-copper/[0.03]" : ""
+                      }`}
+                    >
+                      <div className="absolute inset-y-0 left-0 right-0 px-1">
+                        {bar.hasDates ? (
+                          <div
+                            className={`absolute top-1/2 -translate-y-1/2 h-8 border rounded-md overflow-visible ${tone.bar} ${
+                              isDragging ? "ring-2 ring-copper/40 shadow-md z-20" : "z-10"
+                            }`}
+                            style={{ left: `${bar.left}%`, width: `${bar.width}%` }}
+                          >
+                            <div
+                              className={`absolute inset-y-0 left-0 ${tone.fill} opacity-80 pointer-events-none`}
+                              style={{ width: `${bar.progress}%` }}
+                            />
+                            <div
+                              className="absolute inset-y-0 left-0 w-2 cursor-ew-resize z-30"
+                              onPointerDown={(event) => beginDrag(bar.id, "resize-start", event)}
+                              aria-label={`Resize start of ${bar.title}`}
+                            />
+                            <div
+                              className="absolute inset-y-0 right-0 w-2 cursor-ew-resize z-30"
+                              onPointerDown={(event) => beginDrag(bar.id, "resize-end", event)}
+                              aria-label={`Resize end of ${bar.title}`}
+                            />
+                            <div
+                              className="absolute inset-0 cursor-grab active:cursor-grabbing z-20"
+                              onPointerDown={(event) => beginDrag(bar.id, "move", event)}
+                              title={`${bar.startLabel ?? ""}${
+                                bar.endLabel ? ` → ${bar.endLabel}` : ""
+                              }`}
+                            >
+                              <div className="relative h-full flex items-center px-3 pointer-events-none">
+                                <span className="font-mono text-[9px] tracking-wide text-ink/70 whitespace-nowrap truncate">
+                                  {bar.startLabel}
+                                  {bar.endLabel ? ` – ${bar.endLabel}` : ""}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="absolute inset-y-0 left-0 flex items-center px-2">
+                            <span className="font-mono text-[9px] uppercase tracking-wider text-stone-300">
+                              Set dates below or use AI schedule
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-6 md:px-8 py-4 border-t border-ink/8 flex flex-wrap items-center gap-x-6 gap-y-2">
+        {[
+          { label: "Complete", cls: "bg-emerald-500" },
+          { label: "In progress", cls: "bg-copper" },
+          { label: "Blocked", cls: "bg-amber-400" },
+          { label: "Upcoming", cls: "bg-stone-300" },
+        ].map((item) => (
+          <span key={item.label} className="flex items-center gap-2 text-xs text-ink/55">
+            <span className={`w-2.5 h-2.5 rounded-full ${item.cls}`} aria-hidden />
+            {item.label}
+          </span>
+        ))}
+        {model.todayLeft != null && (
+          <span className="flex items-center gap-2 text-xs text-ink/55">
+            <span className="w-2.5 h-2.5 rounded-full bg-copper ring-2 ring-copper/30" aria-hidden />
+            Today
+          </span>
+        )}
+        <span className="flex items-center gap-2 text-xs text-ink/55">
+          <span className="w-4 h-2 rounded bg-copper/30 border border-copper/40" aria-hidden />
+          Checklist progress fill
+        </span>
+      </div>
+    </section>
+  );
+}

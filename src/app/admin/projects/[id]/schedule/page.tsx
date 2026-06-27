@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { ScheduleTimeline } from "@/components/project-hub/ScheduleTimeline";
-import { ProjectGantt } from "@/components/schedule/ProjectGantt";
+import { InteractiveScheduleGantt } from "@/components/schedule/InteractiveScheduleGantt";
 import { ShareManager } from "@/components/schedule/ShareManager";
 import { AiScheduleGenerator } from "@/components/schedule/AiScheduleGenerator";
 import { getProjectShareSettings } from "@/lib/actions/project-share";
+import { loadGanttMilestones } from "@/lib/schedule/load-gantt-milestones";
 
 export const dynamic = "force-dynamic";
 
@@ -20,36 +21,43 @@ export default async function ProjectSchedulePage(props: { params: Promise<{ id:
 
   if (!project) notFound();
 
-  const { data: milestones } = await supabase
-    .from("project_milestones")
-    .select("id, title, status, target_date, scheduled_start, scheduled_end, display_order")
-    .eq("project_id", id)
-    .order("display_order", { ascending: true });
-
+  const milestones = await loadGanttMilestones(supabase, id);
   const shareSettings = await getProjectShareSettings(id);
 
+  const scheduleMilestones = milestones.map((milestone) => ({
+    id: milestone.id,
+    title: milestone.title,
+    status: milestone.status,
+    target_date: milestone.target_date ?? null,
+    scheduled_start: milestone.scheduled_start ?? null,
+    scheduled_end: milestone.scheduled_end ?? null,
+    display_order: milestone.display_order ?? 0,
+  }));
+
   return (
-    <div className="max-w-4xl space-y-10">
+    <div className="max-w-6xl space-y-10">
       <div>
-        <h2 className="font-display text-2xl text-ink mb-2">Schedule</h2>
-        <p className="text-sm text-ink/60">
-          Plan phase dates, preview the client Gantt, and share a password-protected progress page.
+        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper">Build</p>
+        <h2 className="mt-2 font-display text-2xl md:text-3xl text-ink">Schedule</h2>
+        <p className="mt-2 text-sm text-ink/60 max-w-2xl leading-relaxed">
+          Drag phase bars to reschedule, preview the client view, and share a password-protected
+          progress page.
         </p>
       </div>
 
-      {!milestones?.length ? (
+      {!milestones.length ? (
         <p className="text-ink/50 italic p-8 border border-dashed border-ink/20">
           Apply a build playbook or add milestones to build the schedule.
         </p>
       ) : (
         <>
-          <ProjectGantt
+          <InteractiveScheduleGantt
+            projectId={id}
             milestones={milestones}
             projectStart={project.start_date}
             projectEnd={project.target_completion_date}
-            dateMode="internal"
             title={project.title}
-            subtitle="Internal planning view — clients see target dates."
+            subtitle="Internal planning view — checklist progress fills each bar."
           />
 
           <AiScheduleGenerator
@@ -64,7 +72,7 @@ export default async function ProjectSchedulePage(props: { params: Promise<{ id:
             projectId={id}
             projectStart={project.start_date}
             projectEnd={project.target_completion_date}
-            milestones={milestones}
+            milestones={scheduleMilestones}
           />
         </>
       )}

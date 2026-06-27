@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ProjectGantt } from "@/components/schedule/ProjectGantt";
+import { loadGanttMilestones } from "@/lib/schedule/load-gantt-milestones";
 
 export const dynamic = "force-dynamic";
 
@@ -25,11 +26,7 @@ export default async function ClientSchedulePage(props: { params: Promise<{ id: 
     .single();
   if (!project) notFound();
 
-  const { data: milestones } = await supabase
-    .from("project_milestones")
-    .select("id, title, status, target_date, scheduled_start, scheduled_end, display_order")
-    .eq("project_id", id)
-    .order("display_order", { ascending: true });
+  const milestones = await loadGanttMilestones(supabase, id);
 
   return (
     <div className="px-6 md:px-10 lg:px-14 py-10 max-w-4xl">
@@ -64,7 +61,7 @@ export default async function ClientSchedulePage(props: { params: Promise<{ id: 
       )}
 
       <ProjectGantt
-        milestones={milestones ?? []}
+        milestones={milestones}
         projectStart={project.start_date}
         projectEnd={project.target_completion_date}
         dateMode="client"

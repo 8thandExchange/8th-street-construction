@@ -6,7 +6,30 @@ import { requireAdmin } from "@/lib/actions/admin-auth";
 function revalidate(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/schedule`);
   revalidatePath(`/admin/projects/${projectId}/milestones`);
+  revalidatePath(`/admin/projects/${projectId}/build`);
   revalidatePath(`/client/projects/${projectId}`);
+  revalidatePath(`/client/projects/${projectId}/schedule`);
+}
+
+export async function updateMilestoneDates(input: {
+  projectId: string;
+  milestoneId: string;
+  scheduled_start: string | null;
+  scheduled_end: string | null;
+}) {
+  const { supabase } = await requireAdmin();
+
+  const { error } = await supabase
+    .from("project_milestones")
+    .update({
+      scheduled_start: input.scheduled_start,
+      scheduled_end: input.scheduled_end,
+    })
+    .eq("id", input.milestoneId)
+    .eq("project_id", input.projectId);
+
+  if (error) throw new Error(error.message);
+  revalidate(input.projectId);
 }
 
 export async function updateMilestoneSchedule(formData: FormData) {
