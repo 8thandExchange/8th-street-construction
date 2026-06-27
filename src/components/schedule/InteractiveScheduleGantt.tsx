@@ -10,6 +10,7 @@ import {
 } from "react";
 import { updateMilestoneDates } from "@/lib/actions/schedule";
 import { buildGanttModel, type GanttMilestone } from "@/lib/schedule/gantt";
+import { GanttDependencyLines } from "@/components/schedule/GanttDependencyLines";
 import {
   addDays,
   formatDateISO,
@@ -69,6 +70,7 @@ const BAR_TONES: Record<string, { bar: string; fill: string; dot: string }> = {
 
 const TIMELINE_MIN_WIDTH = 680;
 const PHASE_COL_WIDTH = 240;
+const ROW_HEIGHT = 72;
 
 function toneFor(status: string) {
   return BAR_TONES[status] ?? BAR_TONES.pending;
@@ -412,6 +414,7 @@ export function InteractiveScheduleGantt({
               </div>
 
               <div className="relative">
+                <GanttDependencyLines bars={model.bars} rowHeight={ROW_HEIGHT} />
                 <div className="absolute inset-0 pointer-events-none" aria-hidden>
                   {model.months.map((month, index) => (
                     <div
@@ -517,6 +520,10 @@ export function InteractiveScheduleGantt({
         <span className="flex items-center gap-2 text-xs text-ink/55">
           <span className="w-4 h-2 rounded bg-copper/30 border border-copper/40" aria-hidden />
           Checklist progress fill
+        </span>
+        <span className="flex items-center gap-2 text-xs text-ink/55">
+          <span className="w-4 h-0.5 bg-ink/25" aria-hidden />
+          Dependency
         </span>
       </div>
     </section>

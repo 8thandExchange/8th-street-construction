@@ -1,5 +1,8 @@
 import { buildGanttModel, type GanttMilestone } from "@/lib/schedule/gantt";
+import { GanttDependencyLines } from "@/components/schedule/GanttDependencyLines";
 import { MILESTONE_STATUS_LABELS } from "@/lib/project/labels";
+
+const ROW_HEIGHT = 46;
 
 type ProjectGanttProps = {
   milestones: GanttMilestone[];
@@ -111,6 +114,7 @@ export function ProjectGantt({
 
           {/* Rows */}
           <div className="relative space-y-2.5">
+            <GanttDependencyLines bars={model.bars} rowHeight={ROW_HEIGHT} />
             {/* Month gridlines spanning all rows */}
             <div className="absolute left-[196px] right-0 top-0 bottom-0 pointer-events-none" aria-hidden>
               {model.months.map((mo, i) => (
@@ -196,6 +200,12 @@ export function ProjectGantt({
           <span className="flex items-center gap-2 text-xs text-ink/55">
             <span className="w-2.5 h-2.5 rounded-full bg-copper ring-2 ring-copper/30" aria-hidden />
             Today
+          </span>
+        )}
+        {model.bars.some((bar) => bar.predecessor_id) && (
+          <span className="flex items-center gap-2 text-xs text-ink/55">
+            <span className="w-4 h-0.5 bg-ink/25" aria-hidden />
+            Dependency
           </span>
         )}
       </div>

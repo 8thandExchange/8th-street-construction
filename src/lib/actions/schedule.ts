@@ -43,6 +43,7 @@ export async function updateMilestoneSchedule(formData: FormData) {
       scheduled_start: String(formData.get("scheduled_start") || "").trim() || null,
       scheduled_end: String(formData.get("scheduled_end") || "").trim() || null,
       target_date: String(formData.get("target_date") || "").trim() || null,
+      predecessor_id: String(formData.get("predecessor_id") || "").trim() || null,
     })
     .eq("id", id);
 

@@ -10,6 +10,7 @@ export type ScheduleMilestone = {
   scheduled_start: string | null;
   scheduled_end: string | null;
   display_order: number;
+  predecessor_id?: string | null;
 };
 
 export function ScheduleTimeline({
@@ -51,7 +52,7 @@ export function ScheduleTimeline({
           <form
             key={m.id}
             action={updateMilestoneSchedule}
-            className="p-5 border border-ink/15 bg-paper grid grid-cols-1 md:grid-cols-4 gap-3 items-end"
+            className="p-5 border border-ink/15 bg-paper grid grid-cols-1 md:grid-cols-5 gap-3 items-end"
           >
             <input type="hidden" name="project_id" value={projectId} />
             <input type="hidden" name="id" value={m.id} />
@@ -67,6 +68,23 @@ export function ScheduleTimeline({
             <div>
               <label className="field-label">Target (client)</label>
               <input type="date" name="target_date" defaultValue={m.target_date ?? ""} className="field-input" />
+            </div>
+            <div>
+              <label className="field-label">Depends on</label>
+              <select
+                name="predecessor_id"
+                defaultValue={m.predecessor_id ?? ""}
+                className="field-input"
+              >
+                <option value="">None</option>
+                {milestones
+                  .filter((option) => option.id !== m.id)
+                  .map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.title}
+                    </option>
+                  ))}
+              </select>
             </div>
             <button type="submit" className="h-10 px-4 border border-ink/25 font-mono text-[10px] uppercase">
               Update

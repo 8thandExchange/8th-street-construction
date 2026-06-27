@@ -2,7 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ProjectGantt } from "@/components/schedule/ProjectGantt";
+import { ScheduleDashboard } from "@/components/schedule/ScheduleDashboard";
 import { loadGanttMilestones } from "@/lib/schedule/load-gantt-milestones";
+import { computeScheduleSummary } from "@/lib/schedule/summary";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,11 @@ export default async function ClientSchedulePage(props: { params: Promise<{ id: 
   if (!project) notFound();
 
   const milestones = await loadGanttMilestones(supabase, id);
+  const summary = computeScheduleSummary(milestones, {
+    projectStart: project.start_date,
+    projectEnd: project.target_completion_date,
+    dateMode: "client",
+  });
 
   return (
     <div className="px-6 md:px-10 lg:px-14 py-10 max-w-4xl">
@@ -45,20 +52,11 @@ export default async function ClientSchedulePage(props: { params: Promise<{ id: 
         </p>
       </header>
 
-      {(project.start_date || project.target_completion_date) && (
-        <div className="mb-8 grid grid-cols-2 gap-3 max-w-md">
-          <div className="hub-metric">
-            <div className="eyebrow">Start</div>
-            <div className="font-display text-lg mt-2">{fmt(project.start_date) ?? "TBD"}</div>
-          </div>
-          <div className="hub-metric">
-            <div className="eyebrow">Target completion</div>
-            <div className="font-display text-lg mt-2">
-              {fmt(project.target_completion_date) ?? "TBD"}
-            </div>
-          </div>
-        </div>
-      )}
+      <ScheduleDashboard
+        summary={summary}
+        projectStartLabel={fmt(project.start_date) ?? "TBD"}
+        projectEndLabel={fmt(project.target_completion_date) ?? "TBD"}
+      />
 
       <ProjectGantt
         milestones={milestones}
