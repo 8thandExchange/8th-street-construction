@@ -1,8 +1,8 @@
 import { FEATURED_PROJECT } from "./featured-project";
 import { SITE_IMAGES } from "./site-images";
 
-/** Homepage hero background — drop hero-01.mp4 in public/video/ */
-export const HOME_HERO_VIDEO = "/video/hero-01.mp4";
+/** Homepage hero background — public/video/hero/hero-01.mp4 */
+export const HOME_HERO_VIDEO = "/video/hero/hero-01.mp4";
 
 export const HOME_HERO_POSTER = SITE_IMAGES.heroConstruction;
 export const HOME_HERO_POSTER_ALT = SITE_IMAGES.heroConstructionAlt;
