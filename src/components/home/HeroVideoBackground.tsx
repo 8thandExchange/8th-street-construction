@@ -17,17 +17,37 @@ export function HeroVideoBackground({
   posterAlt,
   className,
 }: HeroVideoBackgroundProps) {
-  const [showVideo, setShowVideo] = useState(false);
+  const [mode, setMode] = useState<"loading" | "video" | "poster">("loading");
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const narrow = window.matchMedia("(max-width: 767px)").matches;
-    setShowVideo(!reduced && !narrow);
-  }, []);
+    if (reduced) {
+      setMode("poster");
+      return;
+    }
+
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.muted = true;
+    video.playsInline = true;
+    video.src = src;
+
+    const showPoster = () => setMode("poster");
+    const showVideo = () => setMode("video");
+
+    video.addEventListener("loadeddata", showVideo);
+    video.addEventListener("error", showPoster);
+    video.load();
+
+    return () => {
+      video.removeEventListener("loadeddata", showVideo);
+      video.removeEventListener("error", showPoster);
+    };
+  }, [src]);
 
   return (
     <div className={cn("absolute inset-0", className)} aria-hidden>
-      {showVideo ? (
+      {mode === "video" ? (
         <video
           autoPlay
           muted

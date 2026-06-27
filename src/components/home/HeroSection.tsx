@@ -19,9 +19,9 @@ export function HeroSection() {
         posterAlt={HOME_HERO_POSTER_ALT}
       />
 
-      {/* Olde Eight–style scrim: readable copy over cinematic video */}
-      <div className="absolute inset-0 bg-gradient-to-r from-navy/95 via-navy/78 to-navy/45 md:from-navy/92 md:via-navy/72 md:to-navy/35" />
-      <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-navy/40" />
+      {/* Scrim — readable copy over video; lighter on the right so motion shows through */}
+      <div className="absolute inset-0 bg-gradient-to-r from-navy/92 via-navy/65 to-navy/25 md:from-navy/88 md:via-navy/55 md:to-navy/20" />
+      <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-transparent to-navy/30" />
       <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-navy via-navy/85 to-transparent pointer-events-none" />
 
       <BrandTexture kind="linen" opacity={0.1} />
