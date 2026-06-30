@@ -63,5 +63,16 @@ export async function POST(request: Request) {
     }
   }
 
+  // Stripe Billing invoicing events (standalone invoicing at /invoicing)
+  switch (event.type) {
+    case "invoice.paid":
+    case "invoice.payment_failed":
+    case "invoice.finalized":
+    case "invoice.voided":
+      break;
+    default:
+      break;
+  }
+
   return NextResponse.json({ received: true });
 }
