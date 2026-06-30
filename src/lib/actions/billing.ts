@@ -124,7 +124,7 @@ async function deliverInvoice(
         clientName:
           [client.first_name, client.last_name].filter(Boolean).join(" ") || client.email,
         payerMemo: isHabitat608Project(project.slug ?? "")
-          ? "Habitat for Humanity draw payment — ACH or card accepted."
+          ? "Habitat for Humanity draw payment — ACH bank transfer."
           : undefined,
       });
       mercuryPayLink = mercury ? getMercuryPayLink(mercury.slug) : null;

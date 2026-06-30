@@ -24,7 +24,7 @@ export async function createMercuryInvoice(
       payerMemo: input.payerMemo ?? null,
       internalNote: input.internalNote ?? null,
       sendEmailOption: input.sendEmailOption ?? "DontSend",
-      creditCardEnabled: input.creditCardEnabled ?? true,
+      creditCardEnabled: input.creditCardEnabled ?? false,
       achDebitEnabled: input.achDebitEnabled ?? true,
       useRealAccountNumber: false,
       ccEmails: input.ccEmails ?? [],

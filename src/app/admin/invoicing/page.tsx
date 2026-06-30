@@ -84,7 +84,7 @@ export default async function AdminInvoicingPage() {
       <BillingBrandHeader
         eyebrow="Invoicing"
         title="Send invoices"
-        description="Create one-off invoices for any job, or open a project's billing page for the full payment schedule."
+        description="Create and send invoices through Mercury — free ACH bank transfer for clients. Open a project's billing page for the full payment schedule."
       />
 
       <BillingStatusBanner

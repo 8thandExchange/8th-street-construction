@@ -85,7 +85,7 @@ export async function pushInvoiceToMercury(
     payerMemo: input.payerMemo ?? `Payment for ${input.projectTitle}`,
     internalNote: `Platform invoice ${input.invoiceId} · project ${input.projectId}`,
     sendEmailOption: "DontSend",
-    creditCardEnabled: true,
+    creditCardEnabled: false,
     achDebitEnabled: true,
   });
 

@@ -18,7 +18,7 @@ export function BillingStatusBanner({
     {
       label: "Mercury invoicing",
       detail: mercuryReady
-        ? "ACH & card payments via Mercury"
+        ? "Free ACH invoicing — primary payment rail"
         : "Add MERCURY_API_TOKEN + MERCURY_DESTINATION_ACCOUNT_ID",
       ok: mercuryReady,
     },
@@ -42,7 +42,7 @@ export function BillingStatusBanner({
           </p>
           <p className="mt-1 text-sm text-ink/70">
             {variant === "admin"
-              ? "Connect Mercury for professional invoicing; Stripe powers in-portal card checkout."
+              ? "Mercury handles invoicing and ACH payments at no extra cost. Stripe is optional for in-portal card checkout only."
               : "Your builder can enable online payment options for open invoices."}
           </p>
         </div>

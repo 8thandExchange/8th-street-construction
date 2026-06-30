@@ -18,7 +18,7 @@ export type InvoiceReadyEmailPayload = {
 export function invoiceReadyEmail(payload: InvoiceReadyEmailPayload) {
   const greeting = payload.firstName ? `Hi ${escapeHtml(payload.firstName)},` : "Hello,";
   const payNote = payload.mercuryPayUrl
-    ? "Pay securely by bank transfer (ACH) or card using the button below."
+    ? "Pay securely by bank transfer (ACH) using the button below."
     : payload.isHabitat
       ? "You can pay online through your client portal or arrange payment by check with your builder."
       : "You can pay online through your client portal.";

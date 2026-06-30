@@ -125,7 +125,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
         eyebrow="Client invoices"
         title="Progress billing"
         projectTitle={project.title}
-        description="What Habitat or the homeowner pays you — synced with Mercury for secure ACH and card payments."
+        description="What Habitat or the homeowner pays you — synced with Mercury for secure ACH bank transfer."
       />
 
       <BillingStatusBanner stripeReady={stripeReady} mercuryReady={mercuryReady} variant="admin" />

@@ -23,6 +23,20 @@ const nextConfig = {
       bodySizeLimit: "10mb",
     },
   },
+  async redirects() {
+    return [
+      {
+        source: "/invoicing/:path*",
+        destination: "/admin/invoicing",
+        permanent: false,
+      },
+      {
+        source: "/pay/invoice/:path*",
+        destination: "/admin/invoicing",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
