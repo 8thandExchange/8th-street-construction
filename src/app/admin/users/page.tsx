@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
   invitePortalUser,
@@ -8,6 +9,7 @@ import {
   approveAccessRequest,
   denyAccessRequest,
 } from "@/lib/actions/access-requests";
+
 export const dynamic = "force-dynamic";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -27,7 +29,7 @@ export default async function AdminUsersPage() {
   const [{ data: users }, { data: requests }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, email, role, first_name, last_name, must_change_password, created_at")
+      .select("id, email, role, first_name, last_name, must_change_password, portal_active, organization_name, created_at")
       .order("created_at", { ascending: true }),
     supabase
       .from("portal_access_requests")
@@ -194,6 +196,7 @@ export default async function AdminUsersPage() {
             <tr className="border-b border-ink/15 text-left">
               <th className="px-6 py-4 eyebrow">User</th>
               <th className="px-6 py-4 eyebrow">Role</th>
+              <th className="px-6 py-4 eyebrow">Portal</th>
               <th className="px-6 py-4 eyebrow text-right">Actions</th>
             </tr>
           </thead>
@@ -215,6 +218,29 @@ export default async function AdminUsersPage() {
                   <span className="text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border border-ink/20">
                     {ROLE_LABELS[u.role] || u.role}
                   </span>
+                </td>
+                <td className="px-6 py-4">
+                  {u.role === "client" ? (
+                    <div className="space-y-2">
+                      <span
+                        className={`text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 border ${
+                          u.portal_active
+                            ? "border-emerald-200 text-emerald-700 bg-emerald-50"
+                            : "border-stone-200 text-stone-500 bg-stone-50"
+                        }`}
+                      >
+                        {u.portal_active ? "Active" : "Suspended"}
+                      </span>
+                      <Link
+                        href={`/admin/users/${u.id}/access`}
+                        className="block text-[10px] font-mono uppercase text-copper hover:underline"
+                      >
+                        Project access →
+                      </Link>
+                    </div>
+                  ) : (
+                    <span className="text-stone-300 text-xs">—</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-right space-x-4">
                   <form

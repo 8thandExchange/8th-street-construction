@@ -1,5 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
-import { notFound, redirect } from "next/navigation";
+import { requireClientProjectAccess } from "@/lib/portal/access";
 import Link from "next/link";
 import { BuildingRegulationsPanel } from "@/components/project-hub/BuildingRegulationsPanel";
 import { PlanSignOffForm } from "@/components/project-hub/PlanSignOffForm";
@@ -19,19 +18,7 @@ function kindLabel(value: string) {
 
 export default async function ClientPlansPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login?redirect=/client");
-
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id, title, client_id, jurisdiction, location")
-    .eq("id", id)
-    .single();
-
-  if (!project || project.client_id !== user.id) notFound();
+  const { supabase, project } = await requireClientProjectAccess(id);
 
   const regulations = resolveJurisdiction(project.jurisdiction, project.location);
 

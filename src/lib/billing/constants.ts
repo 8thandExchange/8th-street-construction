@@ -1,5 +1,7 @@
 /** Draw schedule templates — percent must sum to 100 */
 
+import { isHabitatProject, type ProjectFundingType } from "@/lib/project/funding";
+
 export type DrawTemplateLine = {
   draw_number: number;
   title: string;
@@ -87,12 +89,19 @@ export const HABITAT_608_MACON = {
   clientContactEmail: "habitat@habitataugusta.org",
 } as const;
 
-export function isHabitat608Project(slug: string): boolean {
-  return slug === HABITAT_608_MACON.slug;
+export function getDrawTemplateForProject(
+  projectOrSlug:
+    | { funding_type?: ProjectFundingType | string | null; slug?: string | null }
+    | string
+): DrawTemplateLine[] {
+  const project =
+    typeof projectOrSlug === "string" ? { slug: projectOrSlug } : projectOrSlug;
+  return isHabitatProject(project) ? HABITAT_DRAW_TEMPLATE : LUXURY_DRAW_TEMPLATE;
 }
 
-export function getDrawTemplateForProject(slug: string): DrawTemplateLine[] {
-  return isHabitat608Project(slug) ? HABITAT_DRAW_TEMPLATE : LUXURY_DRAW_TEMPLATE;
+/** @deprecated Use isHabitatProject({ funding_type, slug }) */
+export function isHabitat608Project(slug: string): boolean {
+  return slug === HABITAT_608_MACON.slug;
 }
 
 export function formatMoney(amount: number): string {

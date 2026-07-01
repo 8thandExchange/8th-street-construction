@@ -8,8 +8,8 @@ const GROUPS = [
   {
     label: "Job",
     items: [
-      { href: "", label: "Master Board" },
-      { href: "/overview", label: "Job Details" },
+      { href: "", label: "Command Center" },
+      { href: "/overview", label: "Client & Funding" },
     ],
   },
   {

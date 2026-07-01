@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { getClientVisibleProjects } from "@/lib/portal/access";
+import { ProjectFundingBadge } from "@/components/project/ProjectFundingBadge";
+import { parseFundingType } from "@/lib/project/funding";
 
 export const dynamic = "force-dynamic";
 
@@ -18,22 +21,39 @@ export default async function ClientHome() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: projects } = await supabase
-    .from("projects")
-    .select("id, slug, title, subtitle, status, target_completion_date, location, start_date")
-    .eq("client_id", user!.id)
-    .neq("status", "archived")
-    .order("status", { ascending: true });
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("portal_active")
+    .eq("id", user!.id)
+    .single();
+
+  if (!profile?.portal_active) {
+    return (
+      <div className="px-6 md:px-10 lg:px-14 py-12 md:py-16 mx-auto max-w-7xl">
+        <h1 className="font-display text-display-md text-ink">Portal access paused</h1>
+        <p className="mt-4 text-base text-ink/70 max-w-2xl">
+          Your portal account is not active right now. Contact your project manager at{" "}
+          <a href="mailto:construction@8thandexchange.com" className="text-copper hover:underline">
+            construction@8thandexchange.com
+          </a>{" "}
+          if you believe this is an error.
+        </p>
+      </div>
+    );
+  }
+
+  const projects = await getClientVisibleProjects(user!.id);
 
   return (
     <div className="px-6 md:px-10 lg:px-14 py-12 md:py-16 mx-auto max-w-7xl">
       <span className="eyebrow">— Welcome</span>
       <h1 className="mt-2 font-display text-display-md text-ink">Your Projects</h1>
       <p className="mt-4 text-base text-ink/70 max-w-2xl">
-        Real-time visibility into the projects we're building with you — timelines, milestones, photo updates, documents, and messages.
+        Real-time visibility into the projects we&apos;re building with you — timelines,
+        milestones, photo updates, documents, and messages.
       </p>
 
-      {projects && projects.length > 0 ? (
+      {projects.length > 0 ? (
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
           {projects.map((p) => (
             <Link
@@ -41,13 +61,15 @@ export default async function ClientHome() {
               href={`/client/projects/${p.id}`}
               className="group block bg-paper border border-ink/15 p-8 hover:border-ink/40 transition-colors"
             >
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 gap-3">
                 <span className="text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border border-copper/50 text-copper">
                   {STATUS_LABELS[p.status]}
                 </span>
-                <span className="text-xs text-stone-300 font-mono">
-                  {p.location || "Augusta"}
-                </span>
+                <ProjectFundingBadge
+                  fundingType={parseFundingType(p.funding_type)}
+                  hudGrantYear={p.hud_grant_year}
+                  size="sm"
+                />
               </div>
               <h2 className="font-display text-2xl text-ink group-hover:text-copper transition-colors leading-snug">
                 {p.title}
@@ -64,7 +86,8 @@ export default async function ClientHome() {
       ) : (
         <div className="mt-12 border border-ink/15 p-12 text-center bg-paper">
           <p className="text-ink/50 italic">
-            No projects assigned to your account yet. Your project manager will add you to a project shortly.
+            No projects are shared with your account yet. Your builder will turn on portal access
+            when your project is ready.
           </p>
           <a
             href="mailto:construction@8thandexchange.com"

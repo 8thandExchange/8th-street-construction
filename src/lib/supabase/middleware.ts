@@ -45,7 +45,7 @@ export async function updateSession(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role, must_change_password")
+      .select("role, must_change_password, portal_active")
       .eq("id", user.id)
       .single();
 
@@ -59,6 +59,18 @@ export async function updateSession(request: NextRequest) {
     if (pathname.startsWith("/admin") && profile?.role !== "admin") {
       const url = request.nextUrl.clone();
       url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+
+    // Client portal master switch
+    if (
+      pathname.startsWith("/client") &&
+      profile?.role === "client" &&
+      profile.portal_active === false
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("error", "portal_suspended");
       return NextResponse.redirect(url);
     }
   }

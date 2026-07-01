@@ -2,24 +2,27 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadProjectForHub } from "@/lib/data/project-hub";
 import { loadJobMasterBoard } from "@/lib/data/company-dashboard";
-import {
-  HubAlertStrip,
-  HubActionRow,
-  ProgressRing,
-  HubMetric,
-} from "@/components/hub/HubUI";
-import { CostComparisonPanel } from "@/components/costs/CostComparisonPanel";
-import { computeProjectCostSummary } from "@/lib/estimate/summary";
+import { loadAdminCommandCenter } from "@/lib/data/project-dashboard";
+import { HubAlertStrip } from "@/components/hub/HubUI";
+import { CommandCenterHero } from "@/components/dashboard/CommandCenterHero";
+import { BudgetWaterfall } from "@/components/dashboard/BudgetWaterfall";
+import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
+import { ActionQueue } from "@/components/dashboard/ActionQueue";
+import { ScheduleStrip } from "@/components/dashboard/ScheduleStrip";
+import { QuickLinkGrid } from "@/components/dashboard/QuickLinkGrid";
 import { formatMoney } from "@/lib/billing/constants";
 import {
   PROJECT_STATUS_LABELS,
   PROJECT_STATUS_STYLES,
   TASK_STATUS_LABELS,
   TASK_STATUS_STYLES,
+  DRAW_STATUS_LABELS,
 } from "@/lib/project/labels";
-import { DRAW_STATUS_LABELS } from "@/lib/project/labels";
 import { InlineStatusSelect } from "@/components/admin/InlineStatusSelect";
 import { setProjectStatusAction, setTaskStatusAction } from "@/lib/actions/project-status";
+import type { DashboardAction } from "@/lib/data/project-dashboard";
+import { ProjectFundingBadge } from "@/components/project/ProjectFundingBadge";
+import { parseFundingType } from "@/lib/project/funding";
 
 const PROJECT_STATUS_OPTIONS = Object.entries(PROJECT_STATUS_LABELS).map(
   ([value, label]) => ({ value, label })
@@ -38,92 +41,170 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
   const { project, summary } = hub;
   const base = `/admin/projects/${id}`;
 
-  const costSummary = computeProjectCostSummary(
-    Number(project.estimated_cost ?? 0),
-    Number(project.contract_value ?? 0),
-    board.estimateLines,
-    board.awardedBids
-  );
+  const dashboard = await loadAdminCommandCenter(id, base, {
+    estimatedCost: Number(project.estimated_cost ?? 0),
+    clientContract: Number(project.contract_value ?? 0),
+    estimateLines: board.estimateLines,
+    awardedBids: board.awardedBids,
+  });
+
+  const actions: DashboardAction[] = [
+    ...summary.alerts
+      .filter((a): a is typeof a & { href: string } => Boolean(a.href))
+      .map((a) => ({
+        id: a.id,
+        severity: a.severity,
+        label: a.title,
+        hint: a.detail,
+        href: a.href,
+      })),
+    ...summary.nextActions.map((na, i) => ({
+      id: `next-${i}`,
+      severity: "info" as const,
+      label: na.label,
+      hint: na.hint,
+      href: na.href,
+    })),
+  ];
+
+  const timelineItems =
+    board.phaseProgress.length > 0
+      ? board.phaseProgress.map((p) => ({
+          id: p.phaseKey,
+          title: p.title,
+          status:
+            p.tasksPct >= 100
+              ? "completed"
+              : p.tasksDone > 0
+                ? "in_progress"
+                : "pending",
+          target_date: null as string | null,
+        }))
+      : await (async () => {
+          const { createClient } = await import("@/lib/supabase/server");
+          const supabase = await createClient();
+          const { data: milestones } = await supabase
+            .from("project_milestones")
+            .select("id, title, status, target_date")
+            .eq("project_id", id)
+            .order("display_order")
+            .limit(8);
+          return (milestones ?? []).map((m) => ({
+            id: m.id,
+            title: m.title,
+            status: m.status,
+            target_date: m.target_date,
+          }));
+        })();
+
+  const heroActions = [
+    { label: "Post update", href: `${base}/updates`, primary: true },
+    { label: "Field notes", href: `${base}/daily-logs` },
+    ...(board.client
+      ? [{ label: "Preview portal ↗", href: `/client/projects/${id}`, primary: false }]
+      : []),
+  ];
 
   return (
-    <div className="max-w-6xl">
+    <div className="max-w-7xl">
       <HubAlertStrip alerts={summary.alerts} />
 
-      <div className="grid lg:grid-cols-[auto_1fr] gap-8 mb-10 items-center">
-        <ProgressRing pct={board.progressPct} size={120} label="Done" />
-        <div>
-          <h2 className="font-display text-2xl text-ink">Job master board</h2>
-          <p className="mt-2 text-ink/60 leading-relaxed max-w-2xl">
-            One screen for <span className="text-ink font-medium">{project.title}</span> — what&apos;s
-            done, what&apos;s next, and all three money buckets.
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs font-mono uppercase text-stone-300">
-            <InlineStatusSelect
-              value={project.status}
-              options={PROJECT_STATUS_OPTIONS}
-              styles={PROJECT_STATUS_STYLES}
-              action={setProjectStatusAction}
-              hiddenFields={{ id }}
-              size="md"
-              aria-label="Change project status"
+      <CommandCenterHero
+        variant="admin"
+        title={project.title}
+        subtitle={
+          project.street_address
+            ? `${project.street_address}${project.location ? ` · ${project.location}` : ""}`
+            : project.location ?? undefined
+        }
+        progressPct={board.progressPct || summary.overallProgress}
+        progressLabel="Done"
+        statusControl={{
+          value: project.status,
+          options: PROJECT_STATUS_OPTIONS,
+          styles: PROJECT_STATUS_STYLES,
+          action: setProjectStatusAction,
+          hiddenFields: { id },
+        }}
+        stats={[
+          {
+            label: "Checklists",
+            value: board.tasksTotal ? `${board.tasksDone}/${board.tasksTotal}` : "—",
+          },
+          {
+            label: "Build phases",
+            value: `${summary.milestoneCompleted}/${summary.milestoneTotal}`,
+          },
+          {
+            label: "Open punch",
+            value: board.openPunch,
+            accent: board.openPunch > 0,
+          },
+          {
+            label: "Collected",
+            value: board.paidToUs ? formatMoney(board.paidToUs) : "—",
+            accent: board.paidToUs > 0,
+          },
+        ]}
+        actions={heroActions}
+        meta={
+          <div className="flex flex-wrap items-center gap-3 mt-1">
+            <ProjectFundingBadge
+              fundingType={parseFundingType((project as { funding_type?: string }).funding_type)}
+              slug={project.slug}
+              hudGrantYear={(project as { hud_grant_year?: number | null }).hud_grant_year}
+              size="sm"
             />
-            {project.street_address && (
-              <>
-                <span className="text-ink/15">·</span>
-                <span>{project.street_address}</span>
-              </>
+            {!project.client_id && (
+              <Link
+                href={`${base}/overview#client-funding`}
+                className="font-mono text-[10px] uppercase text-amber-300/90 hover:underline"
+              >
+                Assign client →
+              </Link>
             )}
           </div>
+        }
+      />
+
+      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+        <BudgetWaterfall
+          projectId={id}
+          cost={dashboard.costSummary}
+          billing={dashboard.billingSummary}
+          variant="admin"
+        />
+
+        <ActionQueue
+          actions={actions}
+          title="Needs attention"
+          emptyTitle="Job is on track"
+          emptyDescription="No urgent items. Post a field note or check in with the client when you're ready."
+        />
+      </div>
+
+      <div className="grid lg:grid-cols-5 gap-6 mb-6">
+        <div className="lg:col-span-3">
+          <ActivityFeed
+            activities={dashboard.activities}
+            viewAllHref={`${base}/daily-logs`}
+            emptyMessage="Field notes, updates, messages, and billing events will stream here as the job runs."
+          />
         </div>
-      </div>
 
-      <CostComparisonPanel projectId={id} summary={costSummary} />
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-12">
-        <HubMetric
-          label="Checklists"
-          value={board.tasksTotal ? `${board.tasksDone}/${board.tasksTotal}` : "—"}
-          sub={`${board.progressPct}% complete`}
-          href={`${base}/tasks`}
-        />
-        <HubMetric
-          label="Build phases"
-          value={`${summary.milestoneCompleted}/${summary.milestoneTotal}`}
-          sub="Client timeline steps"
-          href={`${base}/build`}
-        />
-        <HubMetric
-          label="Open punch items"
-          value={board.openPunch}
-          sub="Before handover"
-          href={`${base}/punch-list`}
-          accent={board.openPunch > 0}
-        />
-        <HubMetric
-          label="Invoices waiting"
-          value={board.unpaidInvoices}
-          sub={board.paidToUs ? `${formatMoney(board.paidToUs)} collected` : "Nothing collected yet"}
-          href={`${base}/billing`}
-          accent={board.unpaidInvoices > 0}
-        />
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-8 mb-12">
-        <section>
-          <div className="flex justify-between items-baseline mb-4">
-            <h3 className="eyebrow">What to do next</h3>
-            <Link href={`${base}/tasks`} className="font-mono text-[10px] uppercase text-copper">
-              All checklists →
-            </Link>
-          </div>
-          {summary.nextActions.length ? (
-            <HubActionRow items={summary.nextActions} />
-          ) : board.openTasks.length ? (
-            <ul className="hub-panel divide-y divide-ink/8">
-              {board.openTasks.map((t) => (
-                <li key={t.id} className="px-5 py-4 flex items-center justify-between gap-4 text-sm">
-                  <span className="text-ink">{t.title}</span>
-                  <span className="shrink-0">
+        <div className="lg:col-span-2 space-y-6">
+          <section className="dash-panel p-6">
+            <div className="flex justify-between items-baseline mb-4">
+              <h3 className="font-display text-lg text-ink">Open checklists</h3>
+              <Link href={`${base}/tasks`} className="font-mono text-[10px] uppercase text-copper">
+                All →
+              </Link>
+            </div>
+            {board.openTasks.length ? (
+              <ul className="divide-y divide-ink/8">
+                {board.openTasks.slice(0, 5).map((t) => (
+                  <li key={t.id} className="py-3 flex items-center justify-between gap-3 text-sm">
+                    <span className="text-ink truncate">{t.title}</span>
                     <InlineStatusSelect
                       value={t.status}
                       options={TASK_STATUS_OPTIONS}
@@ -132,165 +213,85 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
                       hiddenFields={{ id: t.id, project_id: id }}
                       aria-label={`Change status for ${t.title}`}
                     />
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="hub-panel p-8 text-sm text-ink/50 italic">
-              All caught up on open tasks. Post a daily log or send the client an update.
-            </div>
-          )}
-        </section>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-ink/45 italic">All checklist items complete.</p>
+            )}
+          </section>
 
-        <section>
-          <div className="flex justify-between items-baseline mb-4">
-            <h3 className="eyebrow">Build phase progress</h3>
-            <Link href={`${base}/build`} className="font-mono text-[10px] uppercase text-copper">
-              Build plan →
-            </Link>
-          </div>
-          {board.phaseProgress.length ? (
-            <ul className="space-y-2">
-              {board.phaseProgress.map((p) => (
-                <li key={p.phaseKey} className="hub-panel p-4">
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="font-medium text-ink">{p.title}</span>
-                    <span className="font-mono text-xs text-stone-300">
-                      {p.tasksDone}/{p.tasksTotal}
-                    </span>
-                  </div>
-                  <div className="h-1.5 bg-bone overflow-hidden">
-                    <div
-                      className="h-full bg-copper"
-                      style={{ width: `${p.tasksPct}%` }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="hub-panel p-8 text-sm text-ink/50">
-              <Link href={`${base}/build`} className="text-copper hover:underline">
-                Apply the build plan
-              </Link>{" "}
-              to get phase-by-phase tracking.
-            </div>
-          )}
-        </section>
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-8 mb-12">
-        <section>
-          <div className="flex justify-between items-baseline mb-4">
-            <h3 className="eyebrow">Client billing schedule</h3>
-            <Link href={`${base}/billing`} className="font-mono text-[10px] uppercase text-copper">
-              Money & invoices →
-            </Link>
-          </div>
-          {board.draws.length ? (
-            <ol className="hub-panel divide-y divide-ink/8">
-              {board.draws.map((d) => (
-                <li key={d.id} className="px-5 py-4 flex justify-between gap-4 text-sm">
-                  <div>
-                    <span className="font-mono text-xs text-stone-300">Payment {d.draw_number}</span>
-                    <p className="text-ink mt-1">{d.title}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-display text-lg">{formatMoney(Number(d.amount))}</p>
-                    <p className="text-[10px] font-mono uppercase text-stone-300 mt-1">
-                      {DRAW_STATUS_LABELS[d.status] ?? d.status}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <div className="hub-panel p-8 text-sm text-ink/50">
-              Set what Habitat pays you, then create the payment schedule in{" "}
-              <Link href={`${base}/billing`} className="text-copper hover:underline">
-                Money & Invoices
-              </Link>
-              .
-            </div>
-          )}
-        </section>
-
-        <section className="hub-panel p-6">
-          <span className="eyebrow">Client portal</span>
-          {board.client ? (
-            <div className="mt-4 space-y-3">
-              <p className="font-medium text-ink text-lg">
+          {board.client && (
+            <section className="dash-panel p-6">
+              <span className="eyebrow">Client portal</span>
+              <p className="mt-3 font-medium text-ink text-lg">
                 {[board.client.first_name, board.client.last_name].filter(Boolean).join(" ") ||
                   board.client.email}
               </p>
               <p className="text-sm text-ink/55">{board.client.email}</p>
-              <div className="flex flex-wrap gap-3 pt-4">
-                <Link
-                  href={`${base}/messages`}
-                  className="h-10 px-4 border border-ink/20 font-mono text-[10px] uppercase hover:bg-ink hover:text-bone"
-                >
-                  Messages
-                </Link>
-                <Link
-                  href={`${base}/updates`}
-                  className="h-10 px-4 border border-ink/20 font-mono text-[10px] uppercase hover:bg-ink hover:text-bone"
-                >
-                  Post update
-                </Link>
-                <Link
-                  href={`/client/projects/${id}`}
-                  target="_blank"
-                  className="h-10 px-4 bg-ink text-bone font-mono text-[10px] uppercase"
-                >
-                  Preview portal ↗
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <p className="mt-4 text-sm text-ink/55 leading-relaxed">
-              Link Habitat Augusta (or the homeowner) in{" "}
-              <Link href={`${base}/overview`} className="text-copper hover:underline">
-                Job Details
-              </Link>{" "}
-              so they can see progress, messages, and invoices.
-            </p>
+              <Link
+                href={`${base}/messages`}
+                className="inline-flex mt-4 h-9 items-center px-4 border border-ink/20 font-mono text-[10px] uppercase hover:bg-ink hover:text-bone transition-colors"
+              >
+                Messages →
+              </Link>
+            </section>
           )}
-        </section>
+        </div>
       </div>
 
-      {board.recentLogs.length > 0 && (
-        <section className="mb-10">
+      <div className="mb-6">
+        <ScheduleStrip
+          milestones={timelineItems}
+          href={`${base}/schedule`}
+          title="Build timeline"
+        />
+      </div>
+
+      {board.draws.length > 0 && (
+        <section className="dash-panel p-6 md:p-8 mb-6">
           <div className="flex justify-between items-baseline mb-4">
-            <h3 className="eyebrow">Recent field notes</h3>
-            <Link href={`${base}/daily-logs`} className="font-mono text-[10px] uppercase text-copper">
-              Daily logs →
+            <h3 className="font-display text-lg text-ink">Client billing schedule</h3>
+            <Link href={`${base}/billing`} className="font-mono text-[10px] uppercase text-copper">
+              Money & invoices →
             </Link>
           </div>
-          <ul className="hub-panel divide-y divide-ink/8">
-            {board.recentLogs.map((log) => (
-              <li key={log.id} className="px-5 py-4 text-sm">
-                <span className="font-mono text-xs text-stone-300">{log.log_date}</span>
-                <p className="text-ink/70 mt-1 line-clamp-2">{log.summary}</p>
+          <ol className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {board.draws.map((d) => (
+              <li
+                key={d.id}
+                className="p-4 border border-ink/8 bg-bone/30 flex justify-between gap-4"
+              >
+                <div>
+                  <span className="font-mono text-[10px] text-stone-300 uppercase">
+                    Draw {d.draw_number}
+                  </span>
+                  <p className="text-sm text-ink mt-1">{d.title}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="font-display text-lg">{formatMoney(Number(d.amount))}</p>
+                  <p className="text-[10px] font-mono uppercase text-stone-300 mt-0.5">
+                    {DRAW_STATUS_LABELS[d.status] ?? d.status}
+                  </p>
+                </div>
               </li>
             ))}
-          </ul>
+          </ol>
         </section>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: "Cost plan", href: `${base}/costs` },
-          { label: "Sub quotes", href: `${base}/bid-requests` },
-          { label: "Schedule", href: `${base}/schedule` },
-          { label: "Files", href: `${base}/documents` },
-        ].map((link) => (
-          <Link key={link.href} href={link.href} className="hub-metric block hover:border-copper/40">
-            <div className="eyebrow">{link.label}</div>
-            <div className="text-sm text-copper mt-3 font-mono text-[10px] uppercase">Open →</div>
-          </Link>
-        ))}
-      </div>
+      <QuickLinkGrid
+        links={[
+          { label: "Cost plan", href: `${base}/costs`, description: "Our estimate" },
+          { label: "Sub quotes", href: `${base}/bid-requests`, description: "Bid leveling" },
+          { label: "Schedule", href: `${base}/schedule`, description: "Gantt view" },
+          { label: "Files", href: `${base}/documents`, description: "Plans & permits" },
+          { label: "Selections", href: `${base}/selections`, description: "Finishes" },
+          { label: "Change orders", href: `${base}/change-orders`, description: "Scope changes" },
+          { label: "Punch list", href: `${base}/punch-list`, description: "Closeout items" },
+          { label: "Job details", href: `${base}/overview`, description: "Settings" },
+        ]}
+      />
     </div>
   );
 }

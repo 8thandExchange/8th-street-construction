@@ -7,13 +7,14 @@ import {
 import {
   formatMoney,
   getDrawTemplateForProject,
-  isHabitat608Project,
 } from "@/lib/billing/constants";
+import { isHabitatProject, type ProjectFundingType } from "@/lib/project/funding";
 import type { BillingSetupStep } from "@/lib/billing/summary";
 
 type BillingSetupWizardProps = {
   projectId: string;
   projectSlug: string;
+  fundingType?: ProjectFundingType | string | null;
   projectTitle: string;
   step: BillingSetupStep;
   contractValue: number;
@@ -27,6 +28,7 @@ type BillingSetupWizardProps = {
 export function BillingSetupWizard({
   projectId,
   projectSlug,
+  fundingType,
   projectTitle,
   step,
   contractValue,
@@ -36,8 +38,9 @@ export function BillingSetupWizard({
   stripeReady,
   mercuryReady = false,
 }: BillingSetupWizardProps) {
-  const isHabitat = isHabitat608Project(projectSlug);
-  const template = getDrawTemplateForProject(projectSlug);
+  const project = { slug: projectSlug, funding_type: fundingType };
+  const isHabitat = isHabitatProject(project);
+  const template = getDrawTemplateForProject(project);
 
   return (
     <>

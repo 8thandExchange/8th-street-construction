@@ -39,7 +39,7 @@ export async function loadProjectForHub(projectId: string) {
   const { data: project } = await supabase
     .from("projects")
     .select(
-      "id, slug, title, subtitle, status, category, location, street_address, client_id, project_manager_id, start_date, target_completion_date, contract_value, estimated_cost, hero_image_url, playbook_applied_at, playbook_id"
+      "id, slug, title, subtitle, status, category, location, street_address, client_id, client_portal_enabled, project_manager_id, start_date, target_completion_date, contract_value, estimated_cost, hero_image_url, playbook_applied_at, playbook_id, funding_type, hud_grant_year, hud_program_notes"
     )
     .eq("id", projectId)
     .single();
@@ -139,8 +139,17 @@ export async function loadProjectForHub(projectId: string) {
       severity: "info",
       title: "No client assigned",
       detail: "Link a portal user so they can see timeline, selections, and pay draws.",
-      href: `${base}/overview`,
+      href: `${base}/overview#client-funding`,
       actionLabel: "Assign client",
+    });
+  } else if (!(project as { client_portal_enabled?: boolean }).client_portal_enabled) {
+    alerts.push({
+      id: "portal-off",
+      severity: "warning",
+      title: "Client portal access is off",
+      detail: "Client is linked but cannot see this project until you turn portal access on.",
+      href: `${base}/overview#client-funding`,
+      actionLabel: "Enable access",
     });
   }
 

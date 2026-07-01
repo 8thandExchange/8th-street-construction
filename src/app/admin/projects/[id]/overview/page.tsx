@@ -8,6 +8,7 @@ import {
   addProjectImage,
 } from "@/lib/actions/project-overview";
 import { listJurisdictions } from "@/lib/building-regulations/registry";
+import { ClientAssignmentPanel } from "@/components/project/ClientAssignmentPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
 
   const { data: clients } = await supabase
     .from("profiles")
-    .select("id, email, first_name, last_name")
+    .select("id, email, first_name, last_name, organization_name, organization_slug")
     .eq("role", "client")
     .order("email");
 
@@ -37,8 +38,44 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
     .eq("active", true)
     .order("display_order");
 
+  const { data: memberRows } = await supabase
+    .from("project_portal_members")
+    .select(
+      "profile_id, portal_enabled, profiles:profile_id(email, first_name, last_name, organization_name)"
+    )
+    .eq("project_id", project.id);
+
+  const portalMembers = (memberRows ?? []).map((row) => {
+    const raw = row.profiles;
+    const p = (Array.isArray(raw) ? raw[0] : raw) as {
+      email: string;
+      first_name: string | null;
+      last_name: string | null;
+      organization_name: string | null;
+    } | null;
+    return {
+      profile_id: row.profile_id,
+      portal_enabled: row.portal_enabled,
+      email: p?.email ?? "",
+      first_name: p?.first_name ?? null,
+      last_name: p?.last_name ?? null,
+      organization_name: p?.organization_name ?? null,
+    };
+  });
+
   return (
     <div className="max-w-4xl">
+      <ClientAssignmentPanel
+        projectId={project.id}
+        clientId={project.client_id}
+        clientPortalEnabled={Boolean(project.client_portal_enabled)}
+        fundingType={project.funding_type ?? "private"}
+        hudGrantYear={project.hud_grant_year}
+        hudProgramNotes={project.hud_program_notes}
+        clients={clients ?? []}
+        portalMembers={portalMembers}
+      />
+
       <form
         action={async (fd) => {
           "use server";
@@ -133,20 +170,6 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
               defaultValue={project.target_completion_date?.slice(0, 10) ?? ""}
               className="field-input"
             />
-          </div>
-          <div>
-            <label className="field-label">Portal client (Habitat / homeowner)</label>
-            <select name="client_id" className="field-input" defaultValue={project.client_id ?? ""}>
-              <option value="">— None —</option>
-              {(clients ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {[c.first_name, c.last_name].filter(Boolean).join(" ") || c.email}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-ink/50 mt-2">
-              They can see updates, messages, and invoices in the client portal.
-            </p>
           </div>
           <div>
             <label className="field-label">What the client pays us ($)</label>

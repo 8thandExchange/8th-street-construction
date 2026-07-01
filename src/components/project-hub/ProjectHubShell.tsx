@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ProjectHubNav } from "./ProjectHubNav";
 import { PROJECT_STATUS_LABELS } from "@/lib/project/labels";
+import { ProjectFundingBadge } from "@/components/project/ProjectFundingBadge";
+import type { ProjectFundingType } from "@/lib/project/funding";
 
 type ProjectHubShellProps = {
   project: {
@@ -9,6 +11,8 @@ type ProjectHubShellProps = {
     slug: string;
     status: string;
     location: string | null;
+    funding_type?: ProjectFundingType | string | null;
+    hud_grant_year?: number | null;
   };
   children: React.ReactNode;
 };
@@ -26,11 +30,17 @@ export function ProjectHubShell({ project, children }: ProjectHubShellProps) {
           </Link>
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <span className="eyebrow">— Master Board</span>
+              <span className="eyebrow">— Command Center</span>
               <h1 className="mt-1 font-display text-display-md text-ink leading-tight">
                 {project.title}
               </h1>
               <div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-mono tracking-wider text-stone-300">
+                <ProjectFundingBadge
+                  fundingType={project.funding_type}
+                  slug={project.slug}
+                  hudGrantYear={project.hud_grant_year}
+                  size="sm"
+                />
                 <span className="uppercase">
                   {PROJECT_STATUS_LABELS[project.status] || project.status}
                 </span>

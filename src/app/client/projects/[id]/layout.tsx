@@ -1,7 +1,8 @@
-import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { ClientProjectNav } from "@/components/client/ClientProjectNav";
+import { ProjectFundingBadge } from "@/components/project/ProjectFundingBadge";
+import { requireClientProjectAccess } from "@/lib/portal/access";
+import { parseFundingType } from "@/lib/project/funding";
 
 export const dynamic = "force-dynamic";
 
@@ -13,15 +14,7 @@ export default async function ClientProjectLayout({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id, title, subtitle, status, location")
-    .eq("id", id)
-    .single();
-
-  if (!project) notFound();
+  const { project } = await requireClientProjectAccess(id);
 
   return (
     <div className="min-h-full">
@@ -36,6 +29,14 @@ export default async function ClientProjectLayout({
           <h1 className="mt-3 font-display text-2xl md:text-3xl text-ink leading-tight">
             {project.title}
           </h1>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <ProjectFundingBadge
+              fundingType={parseFundingType(project.funding_type)}
+              slug={project.slug}
+              hudGrantYear={project.hud_grant_year}
+              size="md"
+            />
+          </div>
           {project.subtitle && (
             <p className="mt-1 text-ink/55 text-sm">{project.subtitle}</p>
           )}

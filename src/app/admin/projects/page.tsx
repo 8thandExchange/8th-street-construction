@@ -4,6 +4,8 @@ import Link from "next/link";
 import { formatMoney } from "@/lib/billing/constants";
 import { PROJECT_STATUS_LABELS, PROJECT_STATUS_STYLES } from "@/lib/project/labels";
 import { InlineStatusSelect } from "@/components/admin/InlineStatusSelect";
+import { FundingTypeDot } from "@/components/project/ProjectFundingBadge";
+import { FUNDING_TYPE_SHORT, parseFundingType } from "@/lib/project/funding";
 import { setProjectStatusAction } from "@/lib/actions/project-status";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +19,7 @@ export default async function AdminProjects() {
   const { data: projects } = await supabase
     .from("projects")
     .select(
-      "id, slug, title, category, status, updated_at, contract_value, estimated_cost, playbook_applied_at, client_id"
+      "id, slug, title, category, status, updated_at, contract_value, estimated_cost, playbook_applied_at, client_id, funding_type, hud_grant_year"
     )
     .order("updated_at", { ascending: false });
 
@@ -71,12 +73,18 @@ export default async function AdminProjects() {
                   <td className="px-6 py-4">
                     <Link
                       href={`/admin/projects/${p.id}`}
-                      className="block font-medium text-ink hover:text-copper"
+                      className="flex items-start gap-3 group"
                     >
-                      {p.title}
+                      <FundingTypeDot fundingType={p.funding_type} slug={p.slug} />
+                      <span className="block font-medium text-ink group-hover:text-copper">
+                        {p.title}
+                      </span>
                     </Link>
-                    <div className="text-xs text-stone-300 font-mono mt-1">
+                    <div className="text-xs text-stone-300 font-mono mt-1 pl-5">
                       {PROJECT_CATEGORY_LABELS[p.category]}
+                      {parseFundingType(p.funding_type) !== "private" && (
+                        <> · {FUNDING_TYPE_SHORT[parseFundingType(p.funding_type)]}</>
+                      )}
                       {!p.client_id && " · No client linked"}
                       {!p.hasCostPlan && p.status !== "completed" && " · No cost plan"}
                     </div>

@@ -636,3 +636,418 @@ a:has(.hub-metric):hover .hub-metric {
   color: rgb(var(--color-bone));
   border-color: rgb(var(--color-ink));
 }
+
+/* =====================================================================
+   Command center dashboard — Mercury-inspired operational UI
+   ===================================================================== */
+.dash-panel {
+  background: rgb(var(--color-paper));
+  border: 1px solid rgba(10, 15, 20, 0.1);
+  box-shadow: 0 1px 2px rgba(10, 15, 20, 0.04);
+}
+
+.dash-hero {
+  background: linear-gradient(135deg, rgb(var(--color-ink)) 0%, #1a2332 50%, #2a241c 100%);
+  border: 1px solid rgba(245, 240, 232, 0.08);
+  box-shadow:
+    0 4px 24px rgba(10, 15, 20, 0.12),
+    0 1px 3px rgba(10, 15, 20, 0.08);
+}
+
+.dash-hero-glow {
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  background:
+    radial-gradient(circle at 15% 25%, rgb(201, 166, 107) 0%, transparent 45%),
+    radial-gradient(circle at 85% 75%, rgb(245, 240, 232) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+.dash-hero-stat {
+  padding: 1rem 1.25rem;
+  background: rgba(245, 240, 232, 0.06);
+  border: 1px solid rgba(245, 240, 232, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+.dash-hero-stat-accent {
+  background: rgba(184, 111, 62, 0.15);
+  border-color: rgba(184, 111, 62, 0.35);
+}
+
+.dash-hero-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  padding: 0 1.25rem;
+  background: rgb(var(--color-bone));
+  color: rgb(var(--color-ink));
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+.dash-hero-btn-primary:hover {
+  background: rgb(var(--color-copper));
+  color: rgb(var(--color-bone));
+}
+
+.dash-hero-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  padding: 0 1.25rem;
+  border: 1px solid rgba(245, 240, 232, 0.25);
+  color: rgb(var(--color-bone));
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.dash-hero-btn-secondary:hover {
+  background: rgba(245, 240, 232, 0.1);
+  border-color: rgba(245, 240, 232, 0.45);
+}
+
+.dash-quick-link {
+  display: block;
+  padding: 1.25rem 1.5rem;
+  background: rgb(var(--color-paper));
+  border: 1px solid rgba(10, 15, 20, 0.1);
+  transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dash-quick-link:hover {
+  border-color: rgba(181, 69, 27, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(10, 15, 20, 0.06);
+}
+
+/* =====================================================================
+   Project funding badges & client assignment
+   ===================================================================== */
+.client-assignment-panel {
+  background: linear-gradient(160deg, #0a0f14 0%, #122033 45%, #1a2332 100%);
+  border: 1px solid rgba(245, 240, 232, 0.1);
+  box-shadow: 0 8px 32px rgba(10, 15, 20, 0.15);
+}
+
+.client-assignment-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 2rem 2rem 1.5rem;
+  border-bottom: 1px solid rgba(245, 240, 232, 0.08);
+}
+
+.client-assignment-body {
+  padding: 2rem;
+}
+
+.funding-badge {
+  position: relative;
+  display: inline-flex;
+  overflow: hidden;
+  font-family: var(--font-mono), monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.funding-badge-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.funding-badge-sm {
+  padding: 0.35rem 0.65rem;
+  font-size: 9px;
+}
+
+.funding-badge-md {
+  padding: 0.5rem 0.875rem;
+  font-size: 10px;
+}
+
+.funding-badge-lg {
+  padding: 0.75rem 1.125rem;
+  font-size: 11px;
+}
+
+.funding-badge-hud {
+  background: linear-gradient(135deg, #0c4a6e 0%, #134e4a 40%, #1e3a5f 100%);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  color: rgb(254, 243, 199);
+  box-shadow:
+    0 0 24px rgba(20, 184, 166, 0.2),
+    0 0 48px rgba(251, 191, 36, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.funding-badge-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(251, 191, 36, 0.15) 50%,
+    transparent 60%
+  );
+  animation: funding-shimmer 4s ease-in-out infinite;
+}
+
+@keyframes funding-shimmer {
+  0%,
+  100% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+}
+
+.funding-badge-habitat {
+  background: linear-gradient(135deg, #14532d 0%, #166534 50%, #15803d 100%);
+  border: 1px solid rgba(134, 239, 172, 0.35);
+  color: rgb(220, 252, 231);
+  box-shadow: 0 4px 16px rgba(22, 101, 52, 0.25);
+}
+
+.funding-badge-icon {
+  font-size: 1.1em;
+  opacity: 0.9;
+}
+
+.funding-badge-icon.habitat {
+  color: rgb(187, 247, 208);
+}
+
+.funding-badge-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  line-height: 1.2;
+}
+
+.funding-badge-label {
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
+
+.funding-badge-sub {
+  font-size: 0.85em;
+  opacity: 0.65;
+  letter-spacing: 0.1em;
+}
+
+.funding-type-card {
+  display: block;
+  padding: 1.25rem;
+  border: 1px solid rgba(245, 240, 232, 0.12);
+  background: rgba(10, 15, 20, 0.35);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.funding-type-card:hover {
+  border-color: rgba(245, 240, 232, 0.25);
+  background: rgba(10, 15, 20, 0.5);
+}
+
+.funding-type-card-active {
+  border-color: rgba(184, 111, 62, 0.55);
+  background: rgba(184, 111, 62, 0.08);
+  box-shadow: 0 0 0 1px rgba(184, 111, 62, 0.2);
+}
+
+.funding-card-hud.funding-type-card-active {
+  border-color: rgba(251, 191, 36, 0.5);
+  background: linear-gradient(135deg, rgba(12, 74, 110, 0.4) 0%, rgba(19, 78, 74, 0.3) 100%);
+  box-shadow: 0 0 24px rgba(20, 184, 166, 0.15);
+}
+
+.funding-type-card-title {
+  display: block;
+  font-family: var(--font-display), serif;
+  font-size: 1.125rem;
+  color: rgb(var(--color-bone));
+}
+
+.funding-type-card-desc {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: rgba(245, 240, 232, 0.5);
+  line-height: 1.5;
+}
+
+.funding-type-card-tag {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 9px;
+  font-family: var(--font-mono), monospace;
+  letter-spacing: 0.14em;
+  color: rgb(251, 191, 36);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+.hud-requirements-panel {
+  padding: 1.5rem;
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  background: linear-gradient(135deg, rgba(12, 74, 110, 0.25) 0%, rgba(10, 15, 20, 0.4) 100%);
+}
+
+.funding-quick-btn-habitat {
+  display: inline-flex;
+  height: 2.75rem;
+  align-items: center;
+  padding: 0 1.25rem;
+  background: linear-gradient(135deg, #166534 0%, #15803d 100%);
+  color: rgb(220, 252, 231);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border: 1px solid rgba(134, 239, 172, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.funding-quick-btn-habitat:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(22, 101, 52, 0.35);
+}
+
+.funding-save-btn {
+  display: inline-flex;
+  height: 2.75rem;
+  align-items: center;
+  padding: 0 1.5rem;
+  background: rgb(var(--color-bone));
+  color: rgb(var(--color-ink));
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition: background 0.25s ease;
+}
+
+.funding-save-btn:hover {
+  background: rgb(var(--color-copper));
+  color: rgb(var(--color-bone));
+}
+
+.funding-clear-btn {
+  display: inline-flex;
+  height: 2.75rem;
+  align-items: center;
+  padding: 0 1.25rem;
+  border: 1px solid rgba(245, 240, 232, 0.2);
+  color: rgba(245, 240, 232, 0.55);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.funding-clear-btn:hover {
+  border-color: rgba(245, 240, 232, 0.4);
+  color: rgb(var(--color-bone));
+}
+
+/* Portal access toggles */
+.portal-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(245, 240, 232, 0.12);
+  background: rgba(10, 15, 20, 0.25);
+  cursor: pointer;
+}
+
+.portal-toggle-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.portal-toggle-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(var(--color-bone));
+}
+
+.portal-toggle-desc {
+  font-size: 0.75rem;
+  color: rgba(245, 240, 232, 0.45);
+  line-height: 1.4;
+  max-width: 28rem;
+}
+
+.portal-toggle-switch {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.portal-toggle-track {
+  display: block;
+  width: 2.75rem;
+  height: 1.5rem;
+  background: rgba(245, 240, 232, 0.15);
+  border: 1px solid rgba(245, 240, 232, 0.2);
+  border-radius: 9999px;
+  transition: background 0.25s ease, border-color 0.25s ease;
+  position: relative;
+}
+
+.portal-toggle-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1.125rem;
+  height: 1.125rem;
+  background: rgb(var(--color-bone));
+  border-radius: 9999px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.portal-toggle-input:checked + .portal-toggle-track {
+  background: rgba(16, 185, 129, 0.35);
+  border-color: rgba(52, 211, 153, 0.5);
+}
+
+.portal-toggle-input:checked + .portal-toggle-track::after {
+  transform: translateX(1.25rem);
+  background: rgb(167, 243, 208);
+}
+
+.portal-toggle-input:focus-visible + .portal-toggle-track {
+  outline: 2px solid rgba(251, 191, 36, 0.6);
+  outline-offset: 2px;
+}
+
+.dash-panel .portal-toggle-row {
+  border-color: rgba(10, 15, 20, 0.1);
+  background: rgb(var(--color-paper));
+}
+
+.dash-panel .portal-toggle-label {
+  color: rgb(var(--color-ink));
+}
+
+.dash-panel .portal-toggle-desc {
+  color: rgba(10, 15, 20, 0.45);
+}

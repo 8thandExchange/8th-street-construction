@@ -52,6 +52,8 @@ export type ConsultationStatus =
 
 export type AccessRequestStatus = "pending" | "approved" | "denied";
 
+export type ProjectFundingType = "private" | "habitat" | "hud_home";
+
 export interface Profile {
   id: string;
   role: UserRole;
@@ -60,8 +62,11 @@ export interface Profile {
   email: string;
   phone: string | null;
   company: string | null;
+  organization_name: string | null;
+  organization_slug: string | null;
   avatar_url: string | null;
   must_change_password: boolean;
+  portal_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -117,7 +122,11 @@ export interface Project {
   square_footage: number | null;
   budget_range: string | null;
   client_id: string | null;
+  client_portal_enabled: boolean;
   project_manager_id: string | null;
+  funding_type: ProjectFundingType;
+  hud_grant_year: number | null;
+  hud_program_notes: string | null;
   start_date: string | null;
   target_completion_date: string | null;
   actual_completion_date: string | null;
@@ -129,6 +138,15 @@ export interface Project {
   created_at: string;
   updated_at: string;
   published_at: string | null;
+}
+
+export interface ProjectPortalMember {
+  id: string;
+  project_id: string;
+  profile_id: string;
+  portal_enabled: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ProjectImage {

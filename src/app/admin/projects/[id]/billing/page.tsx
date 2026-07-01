@@ -10,7 +10,7 @@ import { DrawTimeline } from "@/components/billing/DrawTimeline";
 import { CustomInvoiceForm } from "@/components/billing/CustomInvoiceForm";
 import { InvoiceList } from "@/components/billing/InvoiceList";
 import { updateContractValue, createDraw } from "@/lib/actions/billing";
-import { isHabitat608Project } from "@/lib/billing/constants";
+import { isHabitatProject } from "@/lib/project/funding";
 import {
   computeBillingSummary,
   getBillingSetupStep,
@@ -57,7 +57,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title, slug, contract_value, client_id")
+    .select("id, title, slug, contract_value, client_id, funding_type")
     .eq("id", id)
     .single();
 
@@ -110,7 +110,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
 
   const summary = computeBillingSummary(contractValue, changeOrderTotal, drawList);
   const setupStep = getBillingSetupStep(contractValue, drawList.length);
-  const isHabitat = isHabitat608Project(project.slug);
+  const isHabitat = isHabitatProject(project);
   const stripeReady = stripeConfigured();
   const mercuryReady = mercuryConfigured();
 
@@ -141,6 +141,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
       <BillingSetupWizard
         projectId={id}
         projectSlug={project.slug}
+        fundingType={project.funding_type}
         projectTitle={project.title}
         step={setupStep}
         contractValue={contractValue}

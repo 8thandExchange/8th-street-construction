@@ -15,7 +15,7 @@ export default async function ProjectHubLayout({
   const supabase = await createClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title, slug, status, location")
+    .select("id, title, slug, status, location, funding_type, hud_grant_year")
     .eq("id", id)
     .single();
 
