@@ -15,6 +15,7 @@ import {
   MessageSquareQuote,
   Settings,
   ShieldCheck,
+  Sparkles,
   UserRound,
   Users,
   X,
@@ -29,7 +30,10 @@ const NAV_GROUPS: {
 }[] = [
   {
     label: null,
-    items: [{ href: "/admin", label: "Company Home", icon: LayoutDashboard, exact: true }],
+    items: [
+      { href: "/admin", label: "Company Home", icon: LayoutDashboard, exact: true },
+      { href: "/admin/assistant", label: "Assistant", icon: Sparkles },
+    ],
   },
   {
     label: "Pipeline",
