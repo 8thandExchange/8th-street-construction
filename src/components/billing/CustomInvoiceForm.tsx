@@ -248,7 +248,7 @@ export function CustomInvoiceForm({
             type="button"
             disabled={pending}
             onClick={() => submit(true)}
-            className="h-11 px-6 bg-copper text-bone font-mono text-[10px] tracking-[0.16em] uppercase hover:bg-copper-400 transition-colors disabled:opacity-50"
+            className="app-btn app-btn-accent"
           >
             {pending ? "Working…" : "Send invoice"}
           </button>
@@ -256,7 +256,7 @@ export function CustomInvoiceForm({
             type="button"
             disabled={pending}
             onClick={() => submit(false)}
-            className="h-11 px-6 border border-ink/25 font-mono text-[10px] tracking-[0.16em] uppercase hover:bg-ink hover:text-bone transition-colors disabled:opacity-50"
+            className="h-11 px-6 app-btn app-btn-secondary"
           >
             Save draft
           </button>

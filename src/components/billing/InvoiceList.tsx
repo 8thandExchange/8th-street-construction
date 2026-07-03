@@ -50,7 +50,7 @@ export function InvoiceList({ projectId, invoices }: InvoiceListProps) {
                       <input type="hidden" name="invoice_id" value={inv.id} />
                       <button
                         type="submit"
-                        className="h-10 px-4 bg-copper text-bone font-mono text-[10px] tracking-[0.14em] uppercase hover:bg-copper-400 transition-colors"
+                        className="h-10 px-4 app-btn app-btn-accent"
                       >
                         Send invoice
                       </button>
@@ -69,7 +69,7 @@ export function InvoiceList({ projectId, invoices }: InvoiceListProps) {
                       <input type="hidden" name="invoice_id" value={inv.id} />
                       <button
                         type="submit"
-                        className="h-10 px-4 border border-ink/20 text-ink font-mono text-[10px] tracking-[0.14em] uppercase hover:bg-ink hover:text-bone transition-colors"
+                        className="h-10 px-4 app-btn app-btn-secondary"
                       >
                         Mark as paid
                       </button>

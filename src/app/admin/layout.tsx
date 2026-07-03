@@ -21,9 +21,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (profile?.role !== "admin") redirect("/");
 
   return (
-    <div className="flex bg-bone min-h-screen">
+    <div className="app-shell min-h-screen lg:flex">
       <AdminSidebar userEmail={profile.email} />
-      <main className="flex-1 overflow-x-auto">{children}</main>
+      <main className="min-w-0 flex-1">{children}</main>
     </div>
   );
 }

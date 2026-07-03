@@ -44,10 +44,10 @@ export default async function AdminTestimonials() {
     .order("created_at", { ascending: false });
 
   return (
-    <div className="p-8 md:p-12 max-w-5xl">
+    <div className="p-4 md:p-8 lg:p-10 max-w-5xl">
       <div className="mb-10">
         <span className="eyebrow">— Social proof</span>
-        <h1 className="mt-2 font-display text-display-md text-ink">Testimonials</h1>
+        <h1 className="mt-2 app-h1">Testimonials</h1>
       </div>
 
       {/* Add new */}
@@ -86,7 +86,7 @@ export default async function AdminTestimonials() {
         </div>
         <button
           type="submit"
-          className="self-start inline-flex h-11 items-center px-5 bg-ink text-bone hover:bg-copper font-mono text-[11px] tracking-[0.2em] uppercase transition-colors duration-500"
+          className="self-start inline-flex h-11 items-center px-5 app-btn app-btn-primary"
         >
           + Add Testimonial
         </button>
@@ -98,7 +98,7 @@ export default async function AdminTestimonials() {
             <div key={t.id} className="bg-paper border border-ink/15 p-6">
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div className="flex-1">
-                  <p className="font-display text-lg text-ink leading-snug mb-3">
+                  <p className="app-h2 leading-snug mb-3">
                     "{t.quote}"
                   </p>
                   <div className="text-sm text-ink">
@@ -108,7 +108,7 @@ export default async function AdminTestimonials() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`inline-block text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border ${
+                    className={`inline-block app-badge border !text-[11px] ${
                       t.published
                         ? "border-emerald-500/50 text-emerald-600"
                         : "border-stone-300 text-stone-300"

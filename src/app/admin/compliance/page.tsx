@@ -43,10 +43,10 @@ export default async function CompanyCompliancePage() {
   const expiring = rows.filter((r) => r.computed === "expiring_soon").length;
 
   return (
-    <div className="p-8 md:p-12 max-w-5xl">
+    <div className="p-4 md:p-8 lg:p-10 max-w-5xl">
       <div className="mb-10">
         <span className="eyebrow">— Company</span>
-        <h1 className="mt-2 font-display text-display-md text-ink">Compliance & Renewals</h1>
+        <h1 className="mt-2 app-h1">Compliance & Renewals</h1>
         <p className="mt-3 text-ink/65 max-w-2xl leading-relaxed">
           Licenses, insurance, bonds, and registrations for 8th Street Construction across Georgia
           and South Carolina. Set expiry dates — the system emails admins on a daily schedule at 60,
@@ -82,7 +82,7 @@ export default async function CompanyCompliancePage() {
           >
             <button
               type="submit"
-              className="h-11 px-5 bg-copper text-bone font-mono text-[10px] tracking-[0.2em] uppercase"
+              className="app-btn app-btn-accent"
             >
               Initialize GA + SC Checklist
             </button>
@@ -96,7 +96,7 @@ export default async function CompanyCompliancePage() {
         >
           <button
             type="submit"
-            className="h-11 px-5 border border-ink/25 font-mono text-[10px] tracking-[0.2em] uppercase"
+            className="h-11 px-5 app-btn app-btn-secondary"
           >
             Send Reminders Now
           </button>
@@ -131,7 +131,7 @@ export default async function CompanyCompliancePage() {
                   </span>
                 )}
                 <span
-                  className={`text-[10px] font-mono uppercase tracking-wider px-2 py-1 border ${STATUS_STYLES[item.computed] ?? STATUS_STYLES.pending}`}
+                  className={`app-badge border !text-[11px] ${STATUS_STYLES[item.computed] ?? STATUS_STYLES.pending}`}
                 >
                   {item.computed.replace("_", " ")}
                 </span>
@@ -217,7 +217,7 @@ export default async function CompanyCompliancePage() {
                 <input type="hidden" name="renewal_cycle" value={item.renewal_cycle ?? ""} />
                 <button
                   type="submit"
-                  className="h-10 px-4 bg-ink text-bone font-mono text-[10px] uppercase md:col-span-2 w-fit"
+                  className="h-10 px-4 app-btn app-btn-primary"
                 >
                   Save & Recalculate Status
                 </button>
@@ -243,7 +243,7 @@ export default async function CompanyCompliancePage() {
       </div>
 
       <section className="border border-ink/15 p-8 bg-paper">
-        <h2 className="font-display text-xl text-ink mb-4">Add compliance item</h2>
+        <h2 className="app-h2 !text-[16px] mb-4">Add compliance item</h2>
         <form
           action={async (fd) => {
             "use server";
@@ -298,7 +298,7 @@ export default async function CompanyCompliancePage() {
           <input type="hidden" name="renewal_urgent_days" value={14} />
           <button
             type="submit"
-            className="h-11 px-5 bg-ink text-bone font-mono text-[10px] uppercase md:col-span-2 w-fit"
+            className="h-11 px-5 app-btn app-btn-primary"
           >
             Add Item
           </button>

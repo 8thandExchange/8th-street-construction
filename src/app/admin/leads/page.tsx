@@ -29,11 +29,11 @@ export default async function AdminLeads(
   const { data: leads } = await query;
 
   return (
-    <div className="p-8 md:p-12">
+    <div className="p-4 md:p-8 lg:p-10">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
           <span className="eyebrow">— Inbox</span>
-          <h1 className="mt-2 font-display text-display-md text-ink">Leads</h1>
+          <h1 className="mt-2 app-h1">Leads</h1>
         </div>
         <div className="text-sm text-stone-300 font-mono tracking-wider">
           {leads?.length ?? 0} {status ? `${LEAD_STATUS_LABELS[status]}` : "total"}
@@ -46,8 +46,8 @@ export default async function AdminLeads(
           href="/admin/leads"
           className={`inline-flex items-center px-3 h-8 font-mono text-[11px] tracking-[0.18em] uppercase border transition-colors ${
             !status
-              ? "bg-ink text-bone border-ink"
-              : "border-ink/20 text-ink/70 hover:border-ink"
+              ? "app-btn app-btn-primary !h-8 !px-3.5 !text-[12.5px]"
+              : "app-btn app-btn-secondary !h-8 !px-3.5 !text-[12.5px]"
           }`}
         >
           All
@@ -58,8 +58,8 @@ export default async function AdminLeads(
             href={`/admin/leads?status=${s}`}
             className={`inline-flex items-center px-3 h-8 font-mono text-[11px] tracking-[0.18em] uppercase border transition-colors ${
               status === s
-                ? "bg-ink text-bone border-ink"
-                : "border-ink/20 text-ink/70 hover:border-ink"
+                ? "app-btn app-btn-primary !h-8 !px-3.5 !text-[12.5px]"
+                : "app-btn app-btn-secondary !h-8 !px-3.5 !text-[12.5px]"
             }`}
           >
             {LEAD_STATUS_LABELS[s]}
@@ -68,22 +68,22 @@ export default async function AdminLeads(
       </div>
 
       {leads && leads.length > 0 ? (
-        <div className="bg-paper border border-ink/15">
-          <table className="w-full">
+        <div className="app-card overflow-hidden overflow-x-auto">
+          <table className="app-table">
             <thead>
-              <tr className="border-b border-ink/15 text-left">
-                <th className="px-6 py-4 eyebrow">Name</th>
-                <th className="px-6 py-4 eyebrow hidden md:table-cell">Email</th>
-                <th className="px-6 py-4 eyebrow hidden lg:table-cell">Project</th>
-                <th className="px-6 py-4 eyebrow">Status</th>
-                <th className="px-6 py-4 eyebrow text-right">Received</th>
-                <th className="px-6 py-4 eyebrow text-right">Actions</th>
+              <tr>
+                <th className="">Name</th>
+                <th className="hidden md:table-cell">Email</th>
+                <th className="hidden lg:table-cell">Project</th>
+                <th className="">Status</th>
+                <th className="!text-right">Received</th>
+                <th className="!text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-ink/10">
+            <tbody>
               {leads.map((lead) => (
-                <tr key={lead.id} className="hover:bg-bone/50 cursor-pointer">
-                  <td className="px-6 py-4">
+                <tr key={lead.id} className="cursor-pointer">
+                  <td className="px-4 py-3">
                     <Link
                       href={`/admin/leads/${lead.id}`}
                       className="block font-medium text-ink hover:text-copper"
@@ -94,27 +94,27 @@ export default async function AdminLeads(
                       <div className="text-xs text-stone-300 font-mono mt-1">{lead.phone}</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-ink/70 hidden md:table-cell">
+                  <td className="px-4 py-3 text-sm text-ink/70 hidden md:table-cell">
                     <a href={`mailto:${lead.email}`} className="hover:text-copper">
                       {lead.email}
                     </a>
                   </td>
-                  <td className="px-6 py-4 text-sm text-ink/60 hidden lg:table-cell">
+                  <td className="px-4 py-3 text-sm text-ink/60 hidden lg:table-cell">
                     {lead.project_type ? PROJECT_CATEGORY_LABELS[lead.project_type] : "—"}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     <span
-                      className={`inline-block text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border ${
+                      className={`inline-block app-badge border !text-[11px] ${
                         LEAD_STATUS_COLORS[lead.status]
                       }`}
                     >
                       {LEAD_STATUS_LABELS[lead.status]}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right text-xs text-stone-300 font-mono">
+                  <td className="px-4 py-3 text-right text-xs text-stone-300 font-mono">
                     {new Date(lead.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-4 py-3 text-right">
                     <form action={deleteLead} className="inline-block">
                       <input type="hidden" name="id" value={lead.id} />
                       <DeleteLeadButton

@@ -192,7 +192,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
             </div>
             <button
               type="submit"
-              className="h-10 px-4 bg-ink text-bone font-mono text-[10px] uppercase"
+              className="h-10 px-4 app-btn app-btn-primary"
             >
               Update
             </button>
@@ -232,7 +232,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
             <input type="date" name="scheduled_date" className="field-input" />
             <button
               type="submit"
-              className="sm:col-span-2 h-10 px-4 bg-ink text-bone font-mono text-[10px] uppercase w-fit"
+              className="sm:col-span-2 h-10 px-4 app-btn app-btn-primary"
             >
               Add payment
             </button>

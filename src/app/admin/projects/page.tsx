@@ -40,37 +40,37 @@ export default async function AdminProjects() {
   );
 
   return (
-    <div className="p-8 md:p-12">
+    <div className="p-4 md:p-8 lg:p-10">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
           <span className="eyebrow">— All jobs</span>
-          <h1 className="mt-2 font-display text-display-md text-ink">Projects</h1>
+          <h1 className="mt-2 app-h1">Projects</h1>
           <p className="mt-2 text-sm text-ink/55">Tap any row to open the job master board.</p>
         </div>
         <Link
           href="/admin/projects/new"
-          className="inline-flex h-12 items-center px-6 bg-ink text-bone hover:bg-copper font-mono text-[11px] tracking-[0.2em] uppercase transition-colors"
+          className="app-btn app-btn-primary"
         >
           + New Project
         </Link>
       </div>
 
       {enriched.length > 0 ? (
-        <div className="bg-paper border border-ink/15 overflow-x-auto">
-          <table className="w-full min-w-[720px]">
+        <div className="app-card overflow-hidden overflow-x-auto">
+          <table className="app-table min-w-[720px]">
             <thead>
-              <tr className="border-b border-ink/15 text-left">
-                <th className="px-6 py-4 eyebrow">Job</th>
-                <th className="px-6 py-4 eyebrow">Progress</th>
-                <th className="px-6 py-4 eyebrow hidden md:table-cell">Our cost plan</th>
-                <th className="px-6 py-4 eyebrow hidden md:table-cell">Client pays</th>
-                <th className="px-6 py-4 eyebrow">Status</th>
+              <tr>
+                <th className="">Job</th>
+                <th className="">Progress</th>
+                <th className="hidden md:table-cell">Our cost plan</th>
+                <th className="hidden md:table-cell">Client pays</th>
+                <th className="">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-ink/10">
+            <tbody>
               {enriched.map((p) => (
                 <tr key={p.id} className="hover:bg-bone/50">
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     <Link
                       href={`/admin/projects/${p.id}`}
                       className="flex items-start gap-3 group"
@@ -89,7 +89,7 @@ export default async function AdminProjects() {
                       {!p.hasCostPlan && p.status !== "completed" && " · No cost plan"}
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     {p.playbook_applied_at && p.total > 0 ? (
                       <div>
                         <div className="font-mono text-sm text-ink">{p.pct}%</div>
@@ -101,13 +101,13 @@ export default async function AdminProjects() {
                       <span className="text-stone-300 text-sm">—</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm hidden md:table-cell">
+                  <td className="px-4 py-3 text-sm hidden md:table-cell">
                     {p.estimated_cost ? formatMoney(Number(p.estimated_cost)) : "—"}
                   </td>
-                  <td className="px-6 py-4 text-sm hidden md:table-cell">
+                  <td className="px-4 py-3 text-sm hidden md:table-cell">
                     {p.contract_value ? formatMoney(Number(p.contract_value)) : "—"}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     <InlineStatusSelect
                       value={p.status}
                       options={PROJECT_STATUS_OPTIONS}
@@ -127,7 +127,7 @@ export default async function AdminProjects() {
           <p className="text-ink/50 mb-6">No projects yet.</p>
           <Link
             href="/admin/projects/new"
-            className="inline-flex h-12 items-center px-6 bg-ink text-bone hover:bg-copper font-mono text-[11px] uppercase"
+            className="app-btn app-btn-primary"
           >
             Create your first project
           </Link>

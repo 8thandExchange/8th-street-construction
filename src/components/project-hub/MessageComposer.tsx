@@ -26,7 +26,7 @@ export function MessageComposer({ projectId }: { projectId: string }) {
       />
       <button
         type="submit"
-        className="inline-flex h-10 items-center px-5 bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
+        className="app-btn app-btn-primary"
       >
         Send Message
       </button>

@@ -18,10 +18,10 @@ export default async function SubcontractorsPage() {
     .eq("role", "subcontractor");
 
   return (
-    <div className="p-8 md:p-12 max-w-4xl">
+    <div className="p-4 md:p-8 lg:p-10 max-w-4xl">
       <div className="mb-10">
         <span className="eyebrow">— Vendors</span>
-        <h1 className="mt-2 font-display text-display-md text-ink">Subcontractors</h1>
+        <h1 className="mt-2 app-h1">Subcontractors</h1>
         <p className="mt-3 text-ink/65">
           Directory for RFQ invitations. Link a portal user profile to enable bid submission.
         </p>
@@ -68,7 +68,7 @@ export default async function SubcontractorsPage() {
             Preferred vendor
           </label>
         </div>
-        <button type="submit" className="h-10 px-5 bg-ink text-bone font-mono text-[10px] uppercase">
+        <button type="submit" className="h-10 px-5 app-btn app-btn-primary">
           Add
         </button>
       </form>

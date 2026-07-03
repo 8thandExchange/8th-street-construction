@@ -44,10 +44,10 @@ export default async function AdminConsultations() {
     .order("created_at", { ascending: false });
 
   return (
-    <div className="p-8 md:p-12">
+    <div className="p-4 md:p-8 lg:p-10">
       <div className="mb-10">
         <span className="eyebrow">— Bookings</span>
-        <h1 className="mt-2 font-display text-display-md text-ink">Consultations</h1>
+        <h1 className="mt-2 app-h1">Consultations</h1>
       </div>
 
       {consultations && consultations.length > 0 ? (
@@ -57,11 +57,11 @@ export default async function AdminConsultations() {
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
-                    <h3 className="font-display text-2xl text-ink">
+                    <h3 className="app-h1 !text-[18px]">
                       {c.first_name} {c.last_name}
                     </h3>
                     <span
-                      className={`inline-block text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border ${STATUS_COLORS[c.status]}`}
+                      className={`inline-block app-badge border !text-[11px] ${STATUS_COLORS[c.status]}`}
                     >
                       {STATUS_LABELS[c.status]}
                     </span>
@@ -129,7 +129,7 @@ export default async function AdminConsultations() {
                     </select>
                     <button
                       type="submit"
-                      className="w-full inline-flex h-10 items-center justify-center bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
+                      className="w-full inline-flex h-10 items-center justify-center app-btn app-btn-primary"
                     >
                       Update
                     </button>
@@ -139,7 +139,7 @@ export default async function AdminConsultations() {
                     <ConvertToProjectButton
                       label="Convert to Project →"
                       confirmText={`Create a project from ${c.first_name} ${c.last_name}'s consultation?`}
-                      className="w-full inline-flex h-10 items-center justify-center bg-copper text-bone hover:bg-copper-400 disabled:opacity-60 disabled:cursor-wait font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
+                      className="app-btn app-btn-accent w-full"
                     />
                   </form>
                 </div>

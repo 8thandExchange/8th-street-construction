@@ -49,7 +49,7 @@ export default async function UserPortalAccessPage(props: { params: Promise<{ id
     profile.email;
 
   return (
-    <div className="p-8 md:p-12 max-w-3xl">
+    <div className="p-4 md:p-8 lg:p-10 max-w-3xl">
       <Link
         href="/admin/users"
         className="text-xs font-mono tracking-[0.18em] uppercase text-stone-300 hover:text-ink"
@@ -57,7 +57,7 @@ export default async function UserPortalAccessPage(props: { params: Promise<{ id
         ← Portal Users
       </Link>
 
-      <h1 className="mt-4 font-display text-display-md text-ink">{displayName}</h1>
+      <h1 className="mt-4 app-h1">{displayName}</h1>
       <p className="mt-2 text-sm text-ink/55 font-mono">{profile.email}</p>
 
       <form action={setProfilePortalActive} className="mt-8 dash-panel p-6">
@@ -70,7 +70,7 @@ export default async function UserPortalAccessPage(props: { params: Promise<{ id
         />
         <button
           type="submit"
-          className="mt-4 inline-flex h-10 items-center px-5 bg-ink text-bone font-mono text-[10px] uppercase tracking-wider hover:bg-copper transition-colors"
+          className="mt-4 app-btn app-btn-primary"
         >
           Save account access
         </button>
@@ -106,7 +106,7 @@ export default async function UserPortalAccessPage(props: { params: Promise<{ id
                 >
                   <div>
                     <p className="font-medium text-ink">{p.title}</p>
-                    <p className="text-[10px] font-mono uppercase text-stone-300 mt-1">
+                    <p className="app-label mt-1">
                       {STATUS_LABELS[p.status] ?? p.status} · No access
                     </p>
                   </div>
@@ -116,7 +116,7 @@ export default async function UserPortalAccessPage(props: { params: Promise<{ id
                     <input type="hidden" name="portal_enabled" value="true" />
                     <button
                       type="submit"
-                      className="font-mono text-[10px] uppercase text-copper hover:underline"
+                      className="app-label !text-copper hover:underline"
                     >
                       Grant access →
                     </button>
@@ -137,7 +137,7 @@ export default async function UserPortalAccessPage(props: { params: Promise<{ id
                   >
                     {p.title}
                   </Link>
-                  <p className="text-[10px] font-mono uppercase text-stone-300 mt-1">
+                  <p className="app-label mt-1">
                     {STATUS_LABELS[p.status] ?? p.status}
                     {isPrimary ? " · Primary client" : " · Additional viewer"}
                   </p>
@@ -153,7 +153,7 @@ export default async function UserPortalAccessPage(props: { params: Promise<{ id
                   />
                   <button
                     type="submit"
-                    className="font-mono text-[10px] uppercase text-copper hover:underline"
+                    className="app-label !text-copper hover:underline"
                   >
                     Save
                   </button>

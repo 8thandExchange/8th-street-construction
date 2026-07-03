@@ -80,7 +80,7 @@ export default async function AdminInvoicingPage() {
   });
 
   return (
-    <div className="p-8 md:p-12 max-w-6xl">
+    <div className="p-4 md:p-8 lg:p-10 max-w-6xl">
       <BillingBrandHeader
         eyebrow="Invoicing"
         title="Send invoices"

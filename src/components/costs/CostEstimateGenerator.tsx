@@ -57,7 +57,7 @@ export function CostEstimateGenerator({
           type="button"
           onClick={generate}
           disabled={working}
-          className="h-10 px-5 bg-ink text-bone font-mono text-[10px] tracking-[0.16em] uppercase hover:bg-copper transition-colors disabled:opacity-50"
+          className="h-10 px-5 app-btn app-btn-primary"
         >
           {working ? "Working…" : draft ? "Regenerate" : "Draft with AI"}
         </button>
@@ -103,14 +103,14 @@ export function CostEstimateGenerator({
               type="button"
               onClick={apply}
               disabled={working}
-              className="h-10 px-5 bg-copper text-bone font-mono text-[10px] tracking-[0.16em] uppercase hover:bg-copper-400 transition-colors disabled:opacity-50"
+              className="h-10 px-5 app-btn app-btn-accent"
             >
               Create cost plan
             </button>
             <button
               type="button"
               onClick={() => setDraft(null)}
-              className="h-10 px-5 border border-ink/20 font-mono text-[10px] uppercase"
+              className="h-10 px-5 app-btn app-btn-secondary"
             >
               Discard
             </button>

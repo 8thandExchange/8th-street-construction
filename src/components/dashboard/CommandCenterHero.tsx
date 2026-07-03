@@ -33,21 +33,21 @@ export function CommandCenterHero({
   statusControl,
 }: CommandCenterHeroProps) {
   return (
-    <section className="dash-hero relative overflow-hidden mb-8">
-      <div className="dash-hero-glow" aria-hidden />
+    <section className="app-card relative overflow-hidden mb-8">
+      
       <div className="relative px-6 md:px-8 py-8 md:py-10">
         <div className="grid lg:grid-cols-[auto_1fr_auto] gap-8 items-center">
-          <ProgressRing pct={progressPct} size={128} label={progressLabel} tone="light" />
+          <ProgressRing pct={progressPct} size={120} label={progressLabel} tone="dark" />
 
           <div className="min-w-0">
-            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper-300/90">
+            <p className="app-label !text-copper">
               {variant === "admin" ? "Command center" : "Your project"}
             </p>
-            <h2 className="mt-2 font-display text-2xl md:text-3xl lg:text-4xl text-bone leading-tight truncate">
+            <h2 className="mt-2 app-h1 !text-[24px] md:!text-[28px] leading-tight truncate">
               {title}
             </h2>
             {subtitle && (
-              <p className="mt-2 text-bone/60 text-sm md:text-base max-w-xl">{subtitle}</p>
+              <p className="mt-2 app-muted text-sm md:text-[15px] max-w-xl">{subtitle}</p>
             )}
             {meta && <div className="mt-3">{meta}</div>}
             {statusControl && (
@@ -74,8 +74,8 @@ export function CommandCenterHero({
                   target={a.href.startsWith("http") || a.label.includes("↗") ? "_blank" : undefined}
                   className={
                     a.primary
-                      ? "dash-hero-btn-primary"
-                      : "dash-hero-btn-secondary"
+                      ? "app-btn app-btn-primary"
+                      : "app-btn app-btn-secondary"
                   }
                 >
                   {a.label}
@@ -89,10 +89,10 @@ export function CommandCenterHero({
           {stats.map((s) => (
             <div
               key={s.label}
-              className={`dash-hero-stat ${s.accent ? "dash-hero-stat-accent" : ""}`}
+              className={`app-inset p-4 ${s.accent ? "hub-metric-accent" : ""}`}
             >
-              <p className="text-[10px] font-mono uppercase tracking-wider text-bone/45">{s.label}</p>
-              <p className="mt-1 font-display text-xl md:text-2xl text-bone">{s.value}</p>
+              <p className="text-[10px] font-mono uppercase tracking-wider text-navy/45">{s.label}</p>
+              <p className="mt-1 font-display text-xl md:text-2xl text-navy">{s.value}</p>
             </div>
           ))}
         </div>

@@ -16,7 +16,7 @@ export function BillingBrandHeader({
   projectTitle,
 }: BillingBrandHeaderProps) {
   return (
-    <header className="relative overflow-hidden border border-ink/10 mb-10">
+    <header className="app-card relative overflow-hidden mb-8">
       <div className="bg-navy px-6 md:px-8 py-7 md:py-8">
         <div className="flex flex-wrap items-center justify-between gap-6">
           <Link href="/" className="shrink-0" aria-label={`${BRAND.name} home`}>
@@ -30,18 +30,18 @@ export function BillingBrandHeader({
             />
           </Link>
           <div className="text-right hidden sm:block">
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-parchment/50">
+            <p className="app-label !text-parchment/60">
               {BRAND.tagline}
             </p>
-            <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-parchment/35 mt-1">
+            <p className="app-label !text-parchment/40 !text-[10px] mt-1">
               {BRAND.parent}
             </p>
           </div>
         </div>
       </div>
-      <div className="bg-gradient-to-br from-paper via-bone/40 to-parchment px-6 md:px-8 py-8 md:py-10">
-        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper">{eyebrow}</p>
-        <h2 className="mt-2 font-display text-2xl md:text-3xl text-ink tracking-tight leading-snug">
+      <div className="bg-white px-6 md:px-8 py-7 md:py-8">
+        <p className="app-label !text-copper">{eyebrow}</p>
+        <h2 className="mt-2 app-h1">
           {title}
         </h2>
         {projectTitle && (
@@ -51,7 +51,6 @@ export function BillingBrandHeader({
           <p className="mt-3 text-[15px] text-ink/60 leading-relaxed max-w-2xl">{description}</p>
         )}
       </div>
-      <div className="h-1 bg-gradient-to-r from-copper via-copper/40 to-transparent" aria-hidden />
     </header>
   );
 }

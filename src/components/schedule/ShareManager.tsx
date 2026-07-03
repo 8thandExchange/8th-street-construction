@@ -67,7 +67,7 @@ export function ShareManager({
             </div>
             <button
               type="submit"
-              className="h-11 px-6 bg-ink text-bone font-mono text-[10px] tracking-[0.18em] uppercase hover:bg-copper transition-colors"
+              className="h-11 px-6 app-btn app-btn-primary"
             >
               Turn on sharing
             </button>
@@ -82,7 +82,7 @@ export function ShareManager({
                 <button
                   type="button"
                   onClick={copy}
-                  className="h-10 px-4 border border-ink/20 font-mono text-[10px] uppercase tracking-wider text-ink hover:bg-ink hover:text-bone transition-colors"
+                  className="h-10 px-4 app-btn app-btn-secondary"
                 >
                   {copied ? "Copied ✓" : "Copy link"}
                 </button>
@@ -113,7 +113,7 @@ export function ShareManager({
                 </div>
                 <button
                   type="submit"
-                  className="h-10 px-4 border border-ink/25 font-mono text-[10px] uppercase tracking-wider"
+                  className="h-10 px-4 app-btn app-btn-secondary"
                 >
                   Update
                 </button>
@@ -124,7 +124,7 @@ export function ShareManager({
                   <input type="hidden" name="project_id" value={projectId} />
                   <button
                     type="submit"
-                    className="h-10 px-4 border border-ink/20 font-mono text-[10px] uppercase tracking-wider text-ink/70 hover:bg-ink hover:text-bone transition-colors"
+                    className="h-10 px-4 app-btn app-btn-secondary"
                     title="Creates a new link and invalidates the old one"
                   >
                     New link

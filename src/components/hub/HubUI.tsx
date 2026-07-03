@@ -40,7 +40,7 @@ export function HubEmptyState({
       {actionHref && actionLabel && (
         <Link
           href={actionHref}
-          className="inline-flex mt-8 h-11 items-center px-6 bg-ink text-bone font-mono text-[10px] tracking-[0.2em] uppercase transition-colors hover:bg-copper"
+          className="app-btn app-btn-primary mt-8"
         >
           {actionLabel}
         </Link>
@@ -62,9 +62,9 @@ export function HubAlertStrip({ alerts }: { alerts: HubAlert[] }) {
   if (!alerts.length) return null;
 
   const styles = {
-    critical: "border-red-200/80 bg-red-50/90 text-red-900",
-    warning: "border-amber-200/80 bg-amber-50/90 text-amber-950",
-    info: "border-ink/10 bg-paper text-ink/80",
+    critical: "border-red-200/70 bg-red-50 text-red-900",
+    warning: "border-amber-200/70 bg-amber-50 text-amber-950",
+    info: "border-navy/10 bg-white text-navy/80",
   };
 
   return (
@@ -72,7 +72,7 @@ export function HubAlertStrip({ alerts }: { alerts: HubAlert[] }) {
       {alerts.map((a) => (
         <div
           key={a.id}
-          className={`flex flex-wrap items-center justify-between gap-4 px-5 py-4 border ${styles[a.severity]}`}
+          className={`flex flex-wrap items-center justify-between gap-4 rounded-[10px] border px-5 py-3.5 shadow-sm ${styles[a.severity]}`}
         >
           <div>
             <div className="text-sm font-medium">{a.title}</div>
@@ -126,7 +126,7 @@ export function ProgressRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="rgb(184,111,62)"
+          stroke="rgb(181,69,27)"
           strokeWidth={6}
           strokeLinecap="round"
           strokeDasharray={c}
@@ -135,7 +135,7 @@ export function ProgressRing({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`font-display text-2xl ${text}`}>{pct}%</span>
+        <span className={`app-num text-xl font-medium ${text}`}>{pct}%</span>
         {label && (
           <span className={`text-[9px] font-mono uppercase tracking-wider ${sub} mt-0.5`}>
             {label}
@@ -160,12 +160,10 @@ export function HubMetric({
   accent?: boolean;
 }) {
   const inner = (
-    <div
-      className={`hub-metric ${accent ? "hub-metric-accent" : ""} h-full`}
-    >
-      <div className="eyebrow">{label}</div>
-      <div className="font-display text-3xl text-ink mt-3 leading-none">{value}</div>
-      {sub && <div className="text-xs font-mono text-stone-300 mt-2 tracking-wide">{sub}</div>}
+    <div className={`hub-metric app-card-hover ${accent ? "hub-metric-accent" : ""} h-full p-5`}>
+      <div className="app-label">{label}</div>
+      <div className="app-num text-[24px] font-medium text-navy mt-3 leading-none">{value}</div>
+      {sub && <div className="app-muted text-xs mt-2">{sub}</div>}
     </div>
   );
   if (href) return <Link href={href}>{inner}</Link>;
@@ -178,12 +176,12 @@ export function HubActionRow({
   items: { href: string; label: string; hint?: string }[];
 }) {
   return (
-    <ul className="divide-y divide-ink/8 border border-ink/10 bg-paper">
+    <ul className="app-card divide-y divide-navy/[0.06] overflow-hidden">
       {items.map((item) => (
         <li key={item.href}>
           <Link
             href={item.href}
-            className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-bone/60 transition-colors group"
+            className="flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-navy/[0.025] transition-colors group"
           >
             <div>
               <span className="text-sm text-ink group-hover:text-copper transition-colors">

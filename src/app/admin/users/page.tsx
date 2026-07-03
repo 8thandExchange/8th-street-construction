@@ -41,9 +41,9 @@ export default async function AdminUsersPage() {
   const pendingCount = (requests ?? []).filter((r) => r.status === "pending").length;
 
   return (
-    <div className="p-8 md:p-12 max-w-4xl">
+    <div className="p-4 md:p-8 lg:p-10 max-w-4xl">
       <span className="eyebrow">— Access Control</span>
-      <h1 className="mt-2 font-display text-display-md text-ink">Portal Users</h1>
+      <h1 className="mt-2 app-h1">Portal Users</h1>
       <p className="mt-4 text-ink/65 max-w-2xl leading-relaxed">
         Grant access with a temporary password — users sign in at{" "}
         <code className="text-xs">/login</code>, then set their own password on first login.
@@ -97,7 +97,7 @@ export default async function AdminUsersPage() {
                         </select>
                         <button
                           type="submit"
-                          className="h-9 px-4 bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.15em] uppercase whitespace-nowrap"
+                          className="h-9 px-4 app-btn app-btn-primary"
                         >
                           Approve & Send Login
                         </button>
@@ -160,7 +160,7 @@ export default async function AdminUsersPage() {
         </div>
         <button
           type="submit"
-          className="inline-flex h-11 items-center px-5 bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
+          className="inline-flex h-11 items-center px-5 app-btn app-btn-primary"
         >
           Grant Access & Email Password
         </button>
@@ -191,19 +191,19 @@ export default async function AdminUsersPage() {
       )}
 
       <div className="mt-12 bg-paper border border-ink/15">
-        <table className="w-full text-sm">
+        <table className="app-table">
           <thead>
-            <tr className="border-b border-ink/15 text-left">
-              <th className="px-6 py-4 eyebrow">User</th>
-              <th className="px-6 py-4 eyebrow">Role</th>
-              <th className="px-6 py-4 eyebrow">Portal</th>
-              <th className="px-6 py-4 eyebrow text-right">Actions</th>
+            <tr>
+              <th className="">User</th>
+              <th className="">Role</th>
+              <th className="">Portal</th>
+              <th className="!text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-ink/10">
+          <tbody>
             {(users ?? []).map((u) => (
               <tr key={u.id}>
-                <td className="px-6 py-4">
+                <td className="px-4 py-3">
                   <div className="font-medium text-ink">
                     {[u.first_name, u.last_name].filter(Boolean).join(" ") || u.email}
                   </div>
@@ -214,12 +214,12 @@ export default async function AdminUsersPage() {
                     </div>
                   )}
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-4 py-3">
                   <span className="text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border border-ink/20">
                     {ROLE_LABELS[u.role] || u.role}
                   </span>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-4 py-3">
                   {u.role === "client" ? (
                     <div className="space-y-2">
                       <span
@@ -242,7 +242,7 @@ export default async function AdminUsersPage() {
                     <span className="text-stone-300 text-xs">—</span>
                   )}
                 </td>
-                <td className="px-6 py-4 text-right space-x-4">
+                <td className="px-4 py-3 text-right space-x-4">
                   <form
                     action={async (fd) => {
                       "use server";

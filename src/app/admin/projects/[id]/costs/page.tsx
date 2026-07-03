@@ -66,7 +66,7 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
             <input type="hidden" name="project_id" value={id} />
             <button
               type="submit"
-              className="h-11 px-6 bg-copper text-bone font-mono text-[10px] uppercase tracking-wider"
+              className="app-btn app-btn-accent"
             >
               Import cost plan from permit set
             </button>
@@ -76,14 +76,14 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
 
       {lineList.length > 0 && (
         <section className="mb-12">
-          <h3 className="font-display text-xl text-ink mb-1">Line by line</h3>
+          <h3 className="app-h2 !text-[16px] mb-1">Line by line</h3>
           <p className="text-sm text-ink/55 mb-6">
             Our guess vs what subs actually quoted. Green means the quote came in under our plan.
           </p>
           <div className="border border-ink/10 overflow-hidden">
-            <table className="w-full text-sm">
+            <table className="app-table">
               <thead>
-                <tr className="bg-bone/60 text-left text-[10px] font-mono uppercase text-stone-300">
+                <tr className="bg-bone/60 text-left app-label">
                   <th className="px-4 py-3">Trade</th>
                   <th className="px-4 py-3 text-right">Our plan</th>
                   <th className="px-4 py-3 text-right">Sub quote</th>
@@ -176,7 +176,7 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
                 </div>
                 <button
                   type="submit"
-                  className="h-10 px-4 bg-ink text-bone font-mono text-[10px] uppercase"
+                  className="h-10 px-4 app-btn app-btn-primary"
                 >
                   Save
                 </button>
@@ -200,7 +200,7 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
               step="1"
             />
           </div>
-          <button type="submit" className="h-10 px-4 bg-ink text-bone font-mono text-[10px] uppercase">
+          <button type="submit" className="h-10 px-4 app-btn app-btn-primary">
             Update total
           </button>
         </form>
@@ -216,7 +216,7 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
       <div className="mt-10">
         <Link
           href={`/admin/projects/${id}`}
-          className="font-mono text-[10px] uppercase text-copper hover:underline"
+          className="app-label !text-copper hover:underline"
         >
           ← Back to master board
         </Link>

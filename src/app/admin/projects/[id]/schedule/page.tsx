@@ -56,7 +56,7 @@ export default async function ProjectSchedulePage(props: { params: Promise<{ id:
     <div className="max-w-6xl space-y-10">
       <div>
         <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper">Build</p>
-        <h2 className="mt-2 font-display text-2xl md:text-3xl text-ink">Schedule</h2>
+        <h2 className="mt-2 app-h1">Schedule</h2>
         <p className="mt-2 text-sm text-ink/60 max-w-2xl leading-relaxed">
           Drag phase bars to reschedule, preview the client view, and share a password-protected
           progress page.

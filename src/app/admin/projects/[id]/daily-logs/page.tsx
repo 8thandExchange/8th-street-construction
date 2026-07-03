@@ -24,7 +24,7 @@ export default async function ProjectDailyLogsPage(props: {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="font-display text-2xl text-ink">Daily Logs</h2>
+      <h2 className="app-h1 !text-[18px]">Daily Logs</h2>
       <p className="mt-2 text-sm text-ink/60 max-w-xl">
         Field notes for {project.title} — weather, crew, work completed, and issues. One entry per
         calendar day.

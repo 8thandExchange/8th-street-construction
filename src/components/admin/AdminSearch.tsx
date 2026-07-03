@@ -94,10 +94,10 @@ export function AdminSearch() {
         onFocus={() => results.length > 0 && setOpen(true)}
         placeholder="Search jobs, leads…"
         aria-label="Search jobs, leads, and consultations"
-        className="w-full bg-bone/10 border border-bone/20 text-bone placeholder:text-bone/40 px-3 py-2 text-sm focus:outline-none focus:border-copper/60"
+        className="w-full !py-1.5 text-sm"
       />
       {open && (
-        <div className="absolute left-3 right-3 mt-1 z-30 bg-paper border border-ink/20 shadow-xl max-h-96 overflow-y-auto">
+        <div className="absolute left-3 right-3 mt-1 z-30 app-card !shadow-lg max-h-96 overflow-hidden overflow-y-auto">
           {loading && results.length === 0 ? (
             <div className="px-3 py-3 text-xs text-ink/50 font-mono">Searching…</div>
           ) : results.length === 0 ? (

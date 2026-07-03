@@ -33,10 +33,10 @@ export default async function AdminSettings() {
     .order("key");
 
   return (
-    <div className="p-8 md:p-12 max-w-4xl">
+    <div className="p-4 md:p-8 lg:p-10 max-w-4xl">
       <div className="mb-10">
         <span className="eyebrow">— Configuration</span>
-        <h1 className="mt-2 font-display text-display-md text-ink">Site Settings</h1>
+        <h1 className="mt-2 app-h1">Site Settings</h1>
         <p className="mt-4 text-sm text-ink/65 max-w-2xl">
           Edit global site content with friendly controls. Text, numbers, and
           on/off toggles save automatically as valid values; structured settings
@@ -53,7 +53,7 @@ export default async function AdminSettings() {
           >
             <input type="hidden" name="key" value={setting.key} />
             <div className="flex items-baseline justify-between mb-4">
-              <h2 className="font-display text-xl text-ink capitalize">
+              <h2 className="app-h2 !text-[16px] capitalize">
                 {setting.key.replace(/_/g, " ")}
               </h2>
               <span className="text-xs text-stone-300 font-mono">
@@ -63,7 +63,7 @@ export default async function AdminSettings() {
             <SettingField value={setting.value} />
             <button
               type="submit"
-              className="mt-4 inline-flex h-10 items-center px-5 bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
+              className="mt-4 app-btn app-btn-primary"
             >
               Save
             </button>

@@ -22,7 +22,7 @@ export function NewPlanSetForm({ projectId }: { projectId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-11 items-center px-5 bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
+        className="inline-flex h-11 items-center px-5 app-btn app-btn-primary"
       >
         + New Plan Set
       </button>
@@ -142,7 +142,7 @@ export function NewPlanSetForm({ projectId }: { projectId: string }) {
         <button
           type="submit"
           disabled={!files.length}
-          className="h-10 px-5 bg-ink text-bone disabled:opacity-40 font-mono text-[10px] tracking-[0.2em] uppercase"
+          className="h-10 px-5 app-btn app-btn-primary"
         >
           Create Plan Set
         </button>
@@ -152,7 +152,7 @@ export function NewPlanSetForm({ projectId }: { projectId: string }) {
             setOpen(false);
             setFiles([]);
           }}
-          className="h-10 px-5 border border-ink/20 font-mono text-[10px] uppercase"
+          className="h-10 px-5 app-btn app-btn-secondary"
         >
           Cancel
         </button>

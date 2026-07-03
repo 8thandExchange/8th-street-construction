@@ -58,7 +58,7 @@ export default async function ProjectPlansPage(props: { params: Promise<{ id: st
     <div className="max-w-4xl">
       <div className="flex items-start justify-between gap-6 mb-8">
         <div>
-          <h2 className="font-display text-2xl text-ink">Plans & Renderings</h2>
+          <h2 className="app-h1 !text-[18px]">Plans & Renderings</h2>
           <p className="text-sm text-ink/60 mt-2">
             Versioned plan packages with client sign-off records and local AHJ requirements.
           </p>
@@ -76,7 +76,7 @@ export default async function ProjectPlansPage(props: { params: Promise<{ id: st
             <article key={ps.id} className="bg-paper border border-ink/15 p-8">
               <div className="flex flex-wrap items-center gap-3 mb-3">
                 <span className="font-mono text-xs text-stone-300">v{ps.version}</span>
-                <h3 className="font-display text-xl text-ink">{ps.title}</h3>
+                <h3 className="app-h2 !text-[16px]">{ps.title}</h3>
                 <span
                   className={`text-[9px] font-mono tracking-[0.15em] uppercase px-1.5 py-0.5 border ${PLAN_SET_STATUS_STYLES[ps.status]}`}
                 >

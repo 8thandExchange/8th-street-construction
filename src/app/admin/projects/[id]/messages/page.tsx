@@ -28,7 +28,7 @@ export default async function ProjectMessagesPage(props: { params: Promise<{ id:
 
   return (
     <div className="max-w-2xl">
-      <h2 className="font-display text-2xl text-ink mb-2">Messages</h2>
+      <h2 className="app-h1 !text-[18px] mb-2">Messages</h2>
       <p className="text-sm text-ink/60 mb-8">
         Thread with your client on {project.title}.
       </p>

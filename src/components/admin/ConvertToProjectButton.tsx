@@ -25,7 +25,7 @@ export function ConvertToProjectButton({
       }}
       className={
         className ??
-        "inline-flex h-12 w-full items-center justify-center px-6 bg-copper text-bone hover:bg-copper-400 disabled:opacity-60 disabled:cursor-wait font-mono text-[11px] tracking-[0.2em] uppercase transition-colors"
+        "app-btn app-btn-accent w-full !h-10"
       }
     >
       {pending ? "Creating project…" : label}

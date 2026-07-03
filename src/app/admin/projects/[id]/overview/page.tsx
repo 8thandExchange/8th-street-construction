@@ -81,7 +81,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
           "use server";
           await updateProject(fd);
         }}
-        className="bg-paper border border-ink/15 p-8 md:p-12 mb-10"
+        className="bg-paper border border-ink/15 p-4 md:p-8 lg:p-10 mb-10"
       >
         <input type="hidden" name="id" value={project.id} />
         <span className="eyebrow">— Project Details</span>
@@ -194,15 +194,15 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
         <div className="mt-10 pt-6 border-t border-ink/15">
           <button
             type="submit"
-            className="inline-flex h-12 items-center px-6 bg-ink text-bone hover:bg-copper font-mono text-[11px] tracking-[0.2em] uppercase transition-colors"
+            className="app-btn app-btn-primary"
           >
             Save Changes
           </button>
         </div>
       </form>
 
-      <div className="bg-paper border border-ink/15 p-8 md:p-12">
-        <h2 className="font-display text-2xl text-ink mb-2">Gallery Images</h2>
+      <div className="bg-paper border border-ink/15 p-4 md:p-8 lg:p-10">
+        <h2 className="app-h1 !text-[18px] mb-2">Gallery Images</h2>
         {images && images.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
             {images.map((img) => (
@@ -225,7 +225,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
                 >
                   <input type="hidden" name="image_id" value={img.id} />
                   <input type="hidden" name="project_id" value={project.id} />
-                  <button type="submit" className="text-[10px] font-mono uppercase text-stone-300">
+                  <button type="submit" className="app-label">
                     Remove
                   </button>
                 </form>
@@ -242,7 +242,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
         >
           <input type="hidden" name="project_id" value={project.id} />
           <input name="public_url" required className="field-input" placeholder="Image public URL" />
-          <button type="submit" className="self-start h-11 px-5 bg-ink text-bone font-mono text-[10px] uppercase">
+          <button type="submit" className="self-start h-11 px-5 app-btn app-btn-primary">
             + Add Image
           </button>
         </form>

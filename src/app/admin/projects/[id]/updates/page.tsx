@@ -24,7 +24,7 @@ export default async function ProjectUpdatesPage(props: { params: Promise<{ id: 
     <div className="max-w-3xl">
       <div className="flex items-start justify-between gap-6 mb-8">
         <div>
-          <h2 className="font-display text-2xl text-ink">Progress Updates</h2>
+          <h2 className="app-h1 !text-[18px]">Progress Updates</h2>
           <p className="text-sm text-ink/60 mt-2">
             Share field photos and notes — clients see these in their portal.
           </p>
@@ -46,7 +46,7 @@ export default async function ProjectUpdatesPage(props: { params: Promise<{ id: 
                 <time className="text-xs font-mono text-stone-300 uppercase tracking-wider">
                   {new Date(u.created_at).toLocaleDateString()}
                 </time>
-                <h3 className="font-display text-xl text-ink mt-2">{u.title}</h3>
+                <h3 className="app-h2 !text-[16px] mt-2">{u.title}</h3>
               </div>
               <form
                 action={async (fd) => {
@@ -57,7 +57,7 @@ export default async function ProjectUpdatesPage(props: { params: Promise<{ id: 
                 <input type="hidden" name="project_id" value={id} />
                 <button
                   type="submit"
-                  className="text-[10px] font-mono uppercase text-stone-300 hover:text-red-600"
+                  className="app-label hover:text-red-600"
                 >
                   Delete
                 </button>

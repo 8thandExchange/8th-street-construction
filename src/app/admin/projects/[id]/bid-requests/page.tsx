@@ -35,7 +35,7 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
 
   return (
     <div className="max-w-4xl">
-      <h2 className="font-display text-2xl text-ink mb-2">Sub quotes</h2>
+      <h2 className="app-h1 !text-[18px] mb-2">Sub quotes</h2>
       <p className="text-sm text-ink/60 mb-6 max-w-2xl leading-relaxed">
         Quotes from subcontractors for {project.title}. Subs don&apos;t need to log in — enter quotes
         from email or scan the PDF. Compare against our cost plan on{" "}
@@ -104,7 +104,7 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
             )}
           </div>
         </div>
-        <button type="submit" className="h-10 px-5 bg-ink text-bone font-mono text-[10px] uppercase">
+        <button type="submit" className="h-10 px-5 app-btn app-btn-primary">
           Send RFQ
         </button>
       </form>
@@ -114,7 +114,7 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
           <section key={rfq.id} className="border border-ink/15 bg-paper p-6">
             <div className="flex flex-wrap justify-between gap-3 mb-4">
               <div>
-                <h3 className="font-display text-xl text-ink">{rfq.title}</h3>
+                <h3 className="app-h2 !text-[16px]">{rfq.title}</h3>
                 <div className="text-xs font-mono text-stone-300 mt-1 uppercase">
                   {rfq.trade} · {rfq.status}
                 </div>
@@ -128,16 +128,16 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
                 >
                   <input type="hidden" name="project_id" value={id} />
                   <input type="hidden" name="bid_request_id" value={rfq.id} />
-                  <button type="submit" className="text-[10px] font-mono uppercase text-stone-300">
+                  <button type="submit" className="app-label">
                     Close RFQ
                   </button>
                 </form>
               )}
             </div>
             <p className="text-sm text-ink/70 whitespace-pre-wrap mb-6">{rfq.scope_of_work}</p>
-            <table className="w-full text-sm">
+            <table className="app-table">
               <thead>
-                <tr className="text-left text-[10px] font-mono uppercase text-stone-300 border-b border-ink/10">
+                <tr className="text-left app-label border-b border-ink/10">
                   <th className="pb-2">Subcontractor</th>
                   <th className="pb-2">Bid</th>
                   <th className="pb-2">Status</th>

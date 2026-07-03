@@ -101,7 +101,7 @@ export function DrawTimeline({ projectId, draws }: DrawTimelineProps) {
                       <input type="hidden" name="draw_id" value={d.id} />
                       <button
                         type="submit"
-                        className="h-11 px-6 bg-copper text-bone font-mono text-[10px] tracking-[0.16em] uppercase hover:bg-copper-400 transition-colors shadow-sm"
+                        className="app-btn app-btn-accent"
                       >
                         Send invoice
                       </button>

@@ -5,7 +5,7 @@ import { createProjectWithPlaybook } from "@/lib/actions/project-create";
 
 export default function NewProjectPage() {
   return (
-    <div className="p-8 md:p-12 max-w-4xl">
+    <div className="p-4 md:p-8 lg:p-10 max-w-4xl">
       <div className="mb-6">
         <Link
           href="/admin/projects"
@@ -16,7 +16,7 @@ export default function NewProjectPage() {
       </div>
       <div className="mb-10">
         <span className="eyebrow">— New Job</span>
-        <h1 className="mt-2 font-display text-display-md text-ink">Start a Build</h1>
+        <h1 className="mt-2 app-h1">Start a Build</h1>
         <p className="mt-3 text-ink/65 max-w-xl">
           Creates the project and optionally seeds a state residential playbook — Georgia or South
           Carolina — with 11 phases and 70+ checklist items from pre-construction through warranty.
@@ -25,7 +25,7 @@ export default function NewProjectPage() {
 
       <form
         action={createProjectWithPlaybook}
-        className="bg-paper border border-ink/15 p-8 md:p-12 space-y-8"
+        className="bg-paper border border-ink/15 p-4 md:p-8 lg:p-10 space-y-8"
       >
         <ProjectFormFields
           autoSlugFromTitle
@@ -82,13 +82,13 @@ export default function NewProjectPage() {
         <div className="pt-6 border-t border-ink/15 flex gap-3">
           <button
             type="submit"
-            className="inline-flex h-12 items-center px-6 bg-ink text-bone hover:bg-copper font-mono text-[11px] tracking-[0.2em] uppercase transition-colors"
+            className="app-btn app-btn-primary"
           >
             Create & Open Build System
           </button>
           <Link
             href="/admin/projects"
-            className="inline-flex h-12 items-center px-6 border border-ink/30 font-mono text-[11px] tracking-[0.2em] uppercase"
+            className="inline-flex h-12 items-center px-6 app-btn app-btn-secondary"
           >
             Cancel
           </Link>

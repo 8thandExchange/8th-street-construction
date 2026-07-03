@@ -110,7 +110,7 @@ export function AiScheduleGenerator({
             type="button"
             onClick={generate}
             disabled={working}
-            className="h-11 px-5 bg-ink text-bone font-mono text-[10px] tracking-[0.16em] uppercase hover:bg-copper transition-colors disabled:opacity-50"
+            className="h-11 px-5 app-btn app-btn-primary"
           >
             {working ? "Working…" : phases ? "Regenerate" : "Generate with AI"}
           </button>
@@ -146,14 +146,14 @@ export function AiScheduleGenerator({
                 type="button"
                 onClick={apply}
                 disabled={working}
-                className="h-10 px-5 bg-copper text-bone font-mono text-[10px] tracking-[0.16em] uppercase hover:bg-copper-400 transition-colors disabled:opacity-50"
+                className="h-10 px-5 app-btn app-btn-accent"
               >
                 Apply to schedule
               </button>
               <button
                 type="button"
                 onClick={() => setPhases(null)}
-                className="h-10 px-5 border border-ink/20 font-mono text-[10px] uppercase"
+                className="h-10 px-5 app-btn app-btn-secondary"
               >
                 Discard
               </button>
@@ -188,7 +188,7 @@ export function AiScheduleGenerator({
               type="button"
               onClick={slip}
               disabled={working}
-              className="h-10 px-5 border border-ink/25 font-mono text-[10px] uppercase hover:bg-ink hover:text-bone transition-colors disabled:opacity-50"
+              className="h-10 px-5 app-btn app-btn-secondary"
             >
               Shift phases
             </button>
