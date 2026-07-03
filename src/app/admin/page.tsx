@@ -13,10 +13,10 @@ export default async function AdminDashboard() {
   const totalAlerts = jobs.reduce((s, j) => s + j.alertCount, 0) + complianceAlerts.length;
 
   return (
-    <div className="p-8 md:p-12 max-w-6xl">
+    <div className="p-4 md:p-8 lg:p-10 max-w-6xl">
       <div className="mb-10">
         <span className="eyebrow">— Good morning</span>
-        <h1 className="mt-2 font-display text-display-md text-ink">Company Home</h1>
+        <h1 className="mt-2 app-h1">Company Home</h1>
         <p className="mt-3 text-ink/60 max-w-2xl leading-relaxed">
           Every active job at a glance. Tap a job to open its master board — checklists, money, and
           what needs attention today.
@@ -56,8 +56,8 @@ export default async function AdminDashboard() {
       {complianceAlerts.length > 0 && (
         <div className="hub-panel p-6 mb-10 border-amber-200/80">
           <div className="flex justify-between items-baseline mb-4">
-            <h2 className="font-display text-lg text-ink">Licenses & insurance</h2>
-            <Link href="/admin/compliance" className="font-mono text-[10px] uppercase text-copper">
+            <h2 className="app-h2">Licenses & insurance</h2>
+            <Link href="/admin/compliance" className="app-label !text-copper">
               Manage →
             </Link>
           </div>
@@ -75,8 +75,8 @@ export default async function AdminDashboard() {
       )}
 
       <div className="mb-6 flex justify-between items-baseline">
-        <h2 className="font-display text-2xl text-ink">Active jobs</h2>
-        <Link href="/admin/projects" className="font-mono text-[10px] uppercase text-copper">
+        <h2 className="app-h1 !text-[18px]">Active jobs</h2>
+        <Link href="/admin/projects" className="app-label !text-copper">
           All projects →
         </Link>
       </div>
@@ -100,14 +100,14 @@ export default async function AdminDashboard() {
                 <ProgressRing pct={job.progressPct} size={88} label="Done" />
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-3">
-                    <h3 className="font-display text-xl text-ink group-hover:text-copper transition-colors">
+                    <h3 className="app-h2 !text-[16px] group-hover:text-copper transition-colors">
                       {job.title}
                     </h3>
-                    <span className="text-[10px] font-mono uppercase text-stone-300">
+                    <span className="app-label">
                       {PROJECT_STATUS_LABELS[job.status] || job.status}
                     </span>
                     {job.alertCount > 0 && (
-                      <span className="text-[10px] font-mono uppercase px-2 py-0.5 border border-amber-300 text-amber-900 bg-amber-50">
+                      <span className="app-badge app-badge-amber">
                         {job.alertCount} need{job.alertCount === 1 ? "s" : ""} attention
                       </span>
                     )}
@@ -117,32 +117,32 @@ export default async function AdminDashboard() {
                   )}
                   <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <p className="text-[10px] font-mono uppercase text-stone-300">Checklists</p>
+                      <p className="app-label">Checklists</p>
                       <p className="font-medium text-ink mt-0.5">
                         {job.tasksTotal ? `${job.tasksDone}/${job.tasksTotal}` : "—"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-mono uppercase text-stone-300">Our cost plan</p>
+                      <p className="app-label">Our cost plan</p>
                       <p className="font-medium text-ink mt-0.5">
                         {job.estimatedCost ? formatMoney(job.estimatedCost) : "Not set"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-mono uppercase text-stone-300">Client pays us</p>
+                      <p className="app-label">Client pays us</p>
                       <p className="font-medium text-ink mt-0.5">
                         {job.clientContract ? formatMoney(job.clientContract) : "Not set"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-mono uppercase text-stone-300">Collected</p>
+                      <p className="app-label">Collected</p>
                       <p className="font-medium text-ink mt-0.5">
                         {job.paidToUs ? formatMoney(job.paidToUs) : "$0"}
                       </p>
                     </div>
                   </div>
                 </div>
-                <span className="font-mono text-[10px] uppercase text-copper shrink-0 self-center">
+                <span className="app-label !text-copper shrink-0 self-center">
                   Open master board →
                 </span>
               </div>

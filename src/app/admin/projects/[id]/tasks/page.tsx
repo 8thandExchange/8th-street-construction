@@ -106,7 +106,7 @@ export default async function ProjectTasksPage(props: { params: Promise<{ id: st
     <div className="max-w-3xl">
       <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
         <div>
-          <h2 className="font-display text-2xl text-ink">Phase Checklists</h2>
+          <h2 className="app-h1 !text-[18px]">Phase Checklists</h2>
           <p className="text-sm text-ink/60 mt-2">
             {done}/{total} complete
             {customCount > 0 && ` · ${customCount} custom`}

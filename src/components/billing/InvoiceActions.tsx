@@ -25,7 +25,7 @@ export function InvoiceActions({ mercuryPayUrl, pdfUrl, variant }: InvoiceAction
           <button
             type="button"
             onClick={copyPayLink}
-            className="h-9 px-4 border border-ink/15 font-mono text-[10px] uppercase tracking-wider text-ink hover:bg-ink hover:text-bone transition-colors"
+            className="h-9 px-4 app-btn app-btn-secondary"
           >
             {copied ? "Copied ✓" : "Copy pay link"}
           </button>
@@ -44,7 +44,7 @@ export function InvoiceActions({ mercuryPayUrl, pdfUrl, variant }: InvoiceAction
           href={pdfUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="h-9 inline-flex items-center px-4 border border-ink/15 font-mono text-[10px] uppercase tracking-wider text-ink hover:bg-ink hover:text-bone transition-colors"
+          className="h-9 inline-flex items-center px-4 app-btn app-btn-secondary"
         >
           Download PDF
         </a>

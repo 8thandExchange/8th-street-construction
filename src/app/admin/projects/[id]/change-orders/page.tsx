@@ -24,7 +24,7 @@ export default async function ProjectChangeOrdersPage(props: {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="font-display text-2xl text-ink mb-2">Change Orders</h2>
+      <h2 className="app-h1 !text-[18px] mb-2">Change Orders</h2>
       <p className="text-sm text-ink/60 mb-8">
         Document scope changes. Send to client for approval — approved orders update contract
         value.
@@ -62,7 +62,7 @@ export default async function ProjectChangeOrdersPage(props: {
         </label>
         <button
           type="submit"
-          className="inline-flex h-10 items-center px-5 bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.2em] uppercase"
+          className="app-btn app-btn-primary"
         >
           Create
         </button>
@@ -73,7 +73,7 @@ export default async function ProjectChangeOrdersPage(props: {
           <li key={co.id} className="p-6 bg-paper border border-ink/15">
             <div className="flex flex-wrap items-center gap-3 mb-2">
               <span className="font-mono text-xs text-stone-300">#{co.number}</span>
-              <h3 className="font-display text-lg text-ink">{co.title}</h3>
+              <h3 className="app-h2">{co.title}</h3>
               <span
                 className={`text-[9px] font-mono tracking-[0.15em] uppercase px-1.5 py-0.5 border ${CHANGE_ORDER_STATUS_STYLES[co.status]}`}
               >
@@ -100,7 +100,7 @@ export default async function ProjectChangeOrdersPage(props: {
                 <input type="hidden" name="project_id" value={id} />
                 <button
                   type="submit"
-                  className="text-[10px] font-mono uppercase text-stone-300 hover:text-red-600"
+                  className="app-label hover:text-red-600"
                 >
                   Delete draft
                 </button>

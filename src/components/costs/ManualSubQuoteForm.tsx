@@ -25,7 +25,7 @@ export function ManualSubQuoteForm({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="h-11 px-5 bg-copper text-bone font-mono text-[10px] tracking-[0.18em] uppercase hover:bg-copper-400 transition-colors"
+        className="app-btn app-btn-accent"
       >
         + Enter sub quote (no login needed)
       </button>
@@ -135,14 +135,14 @@ export function ManualSubQuoteForm({
         <button
           type="submit"
           disabled={pending}
-          className="h-10 px-5 bg-ink text-bone font-mono text-[10px] uppercase disabled:opacity-50"
+          className="h-10 px-5 app-btn app-btn-primary"
         >
           {pending ? "Saving…" : "Save quote"}
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="h-10 px-5 border border-ink/20 font-mono text-[10px] uppercase"
+          className="h-10 px-5 app-btn app-btn-secondary"
         >
           Cancel
         </button>

@@ -59,7 +59,7 @@ export function InlineStatusSelect({
           value={current}
           onChange={onChange}
           disabled={pending}
-          className={`appearance-none cursor-pointer border font-mono uppercase tracking-[0.1em] rounded-none pr-6 transition-colors focus:outline-none focus:ring-1 focus:ring-copper/40 ${badgeClass} ${sizeClass} ${
+          className={`appearance-none cursor-pointer border rounded-full font-medium !text-[12px] normal-case pr-6 transition-colors focus:outline-none focus:ring-1 focus:ring-copper/40 ${badgeClass} ${sizeClass} ${
             pending ? "opacity-60 cursor-wait" : "hover:brightness-95"
           }`}
         >

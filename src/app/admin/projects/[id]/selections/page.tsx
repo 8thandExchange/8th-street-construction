@@ -37,7 +37,7 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
 
   return (
     <div className="max-w-3xl">
-      <h2 className="font-display text-2xl text-ink mb-2">Selections & Allowances</h2>
+      <h2 className="app-h1 !text-[18px] mb-2">Selections & Allowances</h2>
       <p className="text-sm text-ink/60 mb-6">
         Track finish selections, allowances, and deadlines. Client-visible items appear in their
         portal for approval.
@@ -45,11 +45,11 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
       <div className="grid grid-cols-2 gap-4 mb-8">
         <div className="p-5 border border-ink/15 bg-paper">
           <div className="eyebrow">Allowances</div>
-          <div className="font-display text-2xl text-ink mt-1">${allowanceTotal.toLocaleString()}</div>
+          <div className="app-h1 !text-[18px] mt-1">${allowanceTotal.toLocaleString()}</div>
         </div>
         <div className="p-5 border border-ink/15 bg-paper">
           <div className="eyebrow">Selected</div>
-          <div className="font-display text-2xl text-ink mt-1">${selectedTotal.toLocaleString()}</div>
+          <div className="app-h1 !text-[18px] mt-1">${selectedTotal.toLocaleString()}</div>
           {allowanceTotal > 0 && (
             <div className="text-xs font-mono text-stone-300 mt-1">
               {selectedTotal > allowanceTotal ? "Over allowance" : "Within budget"}
@@ -117,7 +117,7 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
           <input type="checkbox" name="client_visible" defaultChecked className="accent-copper" />
           Visible to client
         </label>
-        <button type="submit" className="h-10 px-5 bg-ink text-bone font-mono text-[10px] uppercase">
+        <button type="submit" className="h-10 px-5 app-btn app-btn-primary">
           Add Selection
         </button>
       </form>
@@ -200,7 +200,7 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
                 />
                 Client visible
               </label>
-              <button type="submit" className="h-9 px-4 bg-ink text-bone font-mono text-[10px] uppercase">
+              <button type="submit" className="h-9 px-4 app-btn app-btn-primary">
                 Save
               </button>
             </form>

@@ -20,28 +20,25 @@ type ProjectHubShellProps = {
 export function ProjectHubShell({ project, children }: ProjectHubShellProps) {
   return (
     <div className="min-h-full">
-      <header className="border-b border-ink/10 bg-paper/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="px-6 md:px-10 lg:px-12 pt-8 pb-4">
+      <header className="sticky top-14 lg:top-0 z-10 border-b border-navy/[0.08] bg-white/85 backdrop-blur-md">
+        <div className="px-4 md:px-8 lg:px-10 pt-6 pb-3">
           <Link
             href="/admin/projects"
-            className="text-xs font-mono tracking-[0.18em] uppercase text-stone-300 hover:text-ink"
+            className="app-muted text-[13px] font-medium hover:text-copper transition-colors"
           >
             ← All Projects
           </Link>
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <span className="eyebrow">— Command Center</span>
-              <h1 className="mt-1 font-display text-display-md text-ink leading-tight">
-                {project.title}
-              </h1>
-              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-mono tracking-wider text-stone-300">
+              <h1 className="mt-2 app-h1 !text-[26px]">{project.title}</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs app-muted">
                 <ProjectFundingBadge
                   fundingType={project.funding_type}
                   slug={project.slug}
                   hudGrantYear={project.hud_grant_year}
                   size="sm"
                 />
-                <span className="uppercase">
+                <span className="app-badge app-badge-neutral">
                   {PROJECT_STATUS_LABELS[project.status] || project.status}
                 </span>
                 {project.location && (
@@ -56,7 +53,7 @@ export function ProjectHubShell({ project, children }: ProjectHubShellProps) {
               <Link
                 href={`/projects/${project.slug}`}
                 target="_blank"
-                className="inline-flex h-10 items-center px-4 border border-ink/30 text-ink hover:bg-ink hover:text-bone font-mono text-[11px] tracking-[0.2em] uppercase transition-colors"
+                className="app-btn app-btn-secondary"
               >
                 View Live ↗
               </Link>
@@ -67,7 +64,7 @@ export function ProjectHubShell({ project, children }: ProjectHubShellProps) {
           </div>
         </div>
       </header>
-      <div className="px-6 md:px-10 lg:px-12 py-8 md:py-10">{children}</div>
+      <div className="px-4 md:px-8 lg:px-10 py-6 md:py-8">{children}</div>
     </div>
   );
 }

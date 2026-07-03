@@ -21,14 +21,14 @@ export function PlanSignOffForm({
         <button
           type="button"
           onClick={() => setMode("approve")}
-          className="h-11 px-6 bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.2em] uppercase"
+          className="h-11 px-6 app-btn app-btn-primary"
         >
           Sign Off on Plans
         </button>
         <button
           type="button"
           onClick={() => setMode("revision")}
-          className="h-11 px-6 border border-ink/30 font-mono text-[10px] tracking-[0.2em] uppercase hover:border-amber-400 hover:text-amber-800"
+          className="h-11 px-6 app-btn app-btn-secondary"
         >
           Request Revisions
         </button>
@@ -60,14 +60,14 @@ export function PlanSignOffForm({
         <div className="flex gap-3">
           <button
             type="submit"
-            className="h-10 px-5 bg-ink text-bone font-mono text-[10px] tracking-[0.2em] uppercase"
+            className="h-10 px-5 app-btn app-btn-primary"
           >
             Submit Revision Request
           </button>
           <button
             type="button"
             onClick={() => setMode(null)}
-            className="h-10 px-5 border border-ink/20 font-mono text-[10px] uppercase"
+            className="h-10 px-5 app-btn app-btn-secondary"
           >
             Cancel
           </button>
@@ -109,14 +109,14 @@ export function PlanSignOffForm({
       <div className="flex gap-3">
         <button
           type="submit"
-          className="h-10 px-5 bg-ink text-bone font-mono text-[10px] tracking-[0.2em] uppercase"
+          className="h-10 px-5 app-btn app-btn-primary"
         >
           Confirm Sign-Off
         </button>
         <button
           type="button"
           onClick={() => setMode(null)}
-          className="h-10 px-5 border border-ink/20 font-mono text-[10px] uppercase"
+          className="h-10 px-5 app-btn app-btn-secondary"
         >
           Cancel
         </button>

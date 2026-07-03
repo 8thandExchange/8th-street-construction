@@ -11,13 +11,17 @@ interface StatCardProps {
 export function StatCard({ label, value, hint, href, accent }: StatCardProps) {
   const inner = (
     <div
-      className={`p-8 border ${
-        accent ? "border-copper/40 bg-copper/5" : "border-ink/15 bg-paper"
-      } h-full flex flex-col justify-between min-h-[140px] transition-colors hover:border-ink/40`}
+      className={`app-card app-card-hover flex h-full min-h-[112px] flex-col justify-between p-5 ${
+        accent ? "!border-copper/30 !bg-copper/[0.04]" : ""
+      }`}
     >
-      <div className="eyebrow">{label}</div>
-      <div className="font-display text-display-md leading-none mt-4">{value}</div>
-      {hint && <div className="text-xs text-stone-300 font-mono tracking-wider mt-3">{hint}</div>}
+      <div className="app-label">{label}</div>
+      <div>
+        <div className={`app-num text-[26px] font-medium leading-none ${accent ? "text-copper" : "text-navy"}`}>
+          {value}
+        </div>
+        {hint && <div className="app-muted mt-2 text-xs">{hint}</div>}
+      </div>
     </div>
   );
 

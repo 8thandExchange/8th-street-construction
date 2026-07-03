@@ -32,7 +32,7 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
   const leadName = `${lead.first_name} ${lead.last_name}`;
 
   return (
-    <div className="p-8 md:p-12 max-w-5xl">
+    <div className="p-4 md:p-8 lg:p-10 max-w-5xl">
       <div className="mb-6">
         <Link
           href="/admin/leads"
@@ -45,10 +45,10 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-10">
         <div>
           <span className="eyebrow">— Lead</span>
-          <h1 className="mt-2 font-display text-display-md text-ink">{leadName}</h1>
+          <h1 className="mt-2 app-h1">{leadName}</h1>
           <div className="mt-3 flex items-center gap-3">
             <span
-              className={`text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border ${
+              className={`app-badge border !text-[11px] ${
                 LEAD_STATUS_COLORS[lead.status]
               }`}
             >
@@ -147,7 +147,7 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
 
             <button
               type="submit"
-              className="inline-flex h-12 items-center justify-center px-6 bg-ink text-bone hover:bg-copper font-mono text-[11px] tracking-[0.2em] uppercase transition-colors duration-500"
+              className="inline-flex h-12 items-center justify-center px-6 app-btn app-btn-primary"
             >
               Save Changes
             </button>
@@ -207,7 +207,7 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
               </div>
               <button
                 type="submit"
-                className="inline-flex h-12 items-center justify-center bg-ink text-bone hover:bg-copper font-mono text-[11px] tracking-[0.2em] uppercase transition-colors duration-500"
+                className="inline-flex h-12 items-center justify-center app-btn app-btn-primary"
               >
                 Save Status
               </button>

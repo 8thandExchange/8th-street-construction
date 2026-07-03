@@ -46,16 +46,16 @@ export default async function ProjectBuildSystemPage(props: {
   return (
     <div className="max-w-4xl">
       <div className="mb-8">
-        <h2 className="font-display text-2xl text-ink">Build System</h2>
+        <h2 className="app-h1 !text-[18px]">Build System</h2>
         <p className="mt-3 text-ink/65 leading-relaxed max-w-2xl">
           {activePlaybook.description}
         </p>
       </div>
 
       {!applied ? (
-        <div className="bg-navy text-bone p-8 md:p-10 mb-10">
+        <div className="rounded-[10px] bg-navy text-bone p-6 md:p-8 mb-8 shadow-md">
           <span className="eyebrow-copper">— Get started</span>
-          <h3 className="mt-4 font-display text-xl">Apply a state residential playbook</h3>
+          <h3 className="mt-4 app-h2 !text-[16px]">Apply a state residential playbook</h3>
           <p className="mt-3 text-bone/70 text-sm leading-relaxed max-w-xl">
             Georgia and South Carolina each have a full pre-con → warranty sequence — permits,
             inspections, lien waivers, CO, and closeout — so every home runs the same proven
@@ -68,12 +68,12 @@ export default async function ProjectBuildSystemPage(props: {
                 Playbook
               </label>
               <PlaybookSelect
-                className="w-full bg-bone/10 border border-bone/20 text-bone px-3 py-2.5 text-sm"
+                className="w-full !bg-bone/10 !border-bone/25 !text-bone rounded-[7px] px-3 py-2.5 text-sm"
               />
             </div>
             <button
               type="submit"
-              className="inline-flex h-12 items-center px-6 bg-copper text-bone hover:bg-copper-400 font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
+              className="app-btn app-btn-accent !h-10 !px-5"
             >
               Apply Playbook to This Project
             </button>
@@ -92,7 +92,7 @@ export default async function ProjectBuildSystemPage(props: {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
             <div className="p-6 border border-ink/15 bg-paper">
               <div className="eyebrow">Overall</div>
-              <div className="font-display text-3xl text-ink mt-2">{overallPct}%</div>
+              <div className="app-h1 mt-2">{overallPct}%</div>
               <div className="text-xs font-mono text-stone-300 mt-1">
                 {doneTasks}/{totalTasks} tasks
               </div>
@@ -116,19 +116,19 @@ export default async function ProjectBuildSystemPage(props: {
           <div className="flex flex-wrap gap-3 mb-8">
             <Link
               href={`/admin/projects/${id}/tasks`}
-              className="inline-flex h-11 items-center px-5 bg-ink text-bone font-mono text-[10px] tracking-[0.2em] uppercase"
+              className="inline-flex h-11 items-center px-5 app-btn app-btn-primary"
             >
               Open Checklists →
             </Link>
             <Link
               href={`/admin/projects/${id}/daily-logs`}
-              className="inline-flex h-11 items-center px-5 border border-ink/25 font-mono text-[10px] tracking-[0.2em] uppercase"
+              className="inline-flex h-11 items-center px-5 app-btn app-btn-secondary"
             >
               Daily Logs
             </Link>
             <Link
               href={`/admin/projects/${id}/milestones`}
-              className="inline-flex h-11 items-center px-5 border border-ink/25 font-mono text-[10px] tracking-[0.2em] uppercase"
+              className="inline-flex h-11 items-center px-5 app-btn app-btn-secondary"
             >
               Client Timeline
             </Link>

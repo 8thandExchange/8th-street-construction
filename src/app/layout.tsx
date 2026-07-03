@@ -1,30 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, DM_Sans, JetBrains_Mono } from "next/font/google";
+// Self-hosted brand-guide fonts (no build-time Google Fonts dependency).
+// Display/serif: Source Serif 4 · UI sans: DM Sans · Labels: Barlow Condensed · Data: JetBrains Mono
+import "@fontsource-variable/source-serif-4";
+import "@fontsource-variable/source-serif-4/wght-italic.css";
+import "@fontsource-variable/dm-sans";
+import "@fontsource-variable/jetbrains-mono";
+import "@fontsource/barlow-condensed/400.css";
+import "@fontsource/barlow-condensed/500.css";
+import "@fontsource/barlow-condensed/600.css";
 import "./globals.css";
 import { LeadConnectorChat } from "@/components/site/LeadConnectorChat";
 import { BRAND, brandPhoneTel } from "@/lib/brand/assets";
-
-const display = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const sans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  variable: "--font-sans",
-  display: "swap",
-});
-
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-mono",
-  display: "swap",
-});
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://8thstreetconstruction.com";
 
@@ -115,7 +101,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    <html lang="en">
       <body>
         <script
           type="application/ld+json"

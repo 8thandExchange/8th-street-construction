@@ -7,6 +7,12 @@
    Editorial-luxury meets industrial craft.
    ===================================================================== */
 :root {
+  /* Brand-guide type system — self-hosted via @fontsource */
+  --font-display: "Source Serif 4 Variable";
+  --font-sans: "DM Sans Variable";
+  --font-mono: "JetBrains Mono Variable";
+  --font-label: "Barlow Condensed";
+
   --color-bone: 242 236 224;
   --color-parchment: 242 236 224;
   --color-paper: 232 223 208;
@@ -1050,4 +1056,380 @@ a:has(.hub-metric):hover .hub-metric {
 
 .dash-panel .portal-toggle-desc {
   color: rgba(10, 15, 20, 0.45);
+}
+
+/* =====================================================================
+   APP LAYER — Mercury-grade operational UI
+   Light, data-first, quiet. Brand palette mapped to a neutral system:
+   canvas Paper · surfaces white · text Midnight Navy · muted Steel ·
+   single accent Brick. Rounded corners and soft shadows are intentional
+   and scoped to .app-shell only. The public site keeps its editorial
+   square-edged language.
+   ===================================================================== */
+.app-shell {
+  --app-canvas: 250 247 240;        /* Paper #FAF7F0 */
+  --app-surface: 255 255 255;
+  --app-surface-2: 248 245 238;
+  --app-ink: 16 28 42;              /* Midnight Navy */
+  --app-muted: 90 102 114;          /* Steel */
+  --app-line: 16 28 42;             /* used at low alpha */
+  --app-accent: 181 69 27;          /* Brick */
+  --app-green: 21 115 71;
+  --app-green-bg: 224 242 233;
+  --app-amber: 146 94 14;
+  --app-amber-bg: 250 240 218;
+  --app-red: 165 44 32;
+  --app-red-bg: 249 229 226;
+  --app-blue: 34 82 128;
+  --app-blue-bg: 226 237 247;
+
+  --app-radius: 10px;
+  --app-radius-sm: 7px;
+  --app-shadow: 0 1px 2px rgba(16, 28, 42, 0.05), 0 1px 3px rgba(16, 28, 42, 0.04);
+  --app-shadow-md: 0 2px 8px rgba(16, 28, 42, 0.07), 0 1px 2px rgba(16, 28, 42, 0.05);
+  --app-shadow-lg: 0 12px 32px rgba(16, 28, 42, 0.12), 0 2px 8px rgba(16, 28, 42, 0.06);
+
+  background: rgb(var(--app-canvas));
+  color: rgb(var(--app-ink));
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* --- Surfaces ------------------------------------------------------- */
+.app-card {
+  background: rgb(var(--app-surface));
+  border: 1px solid rgba(var(--app-line), 0.08);
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow);
+}
+
+.app-card-hover {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.app-card-hover:hover {
+  border-color: rgba(var(--app-line), 0.16);
+  box-shadow: var(--app-shadow-md);
+}
+
+.app-inset {
+  background: rgb(var(--app-surface-2));
+  border: 1px solid rgba(var(--app-line), 0.06);
+  border-radius: var(--app-radius-sm);
+}
+
+/* --- Type ------------------------------------------------------------ */
+.app-h1 {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: rgb(var(--app-ink));
+}
+
+.app-h2 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: rgb(var(--app-ink));
+}
+
+.app-label {
+  font-family: var(--font-label), sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(var(--app-muted));
+}
+
+.app-muted {
+  color: rgb(var(--app-muted));
+}
+
+.app-num {
+  font-family: var(--font-mono), monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* --- Sidebar ---------------------------------------------------------- */
+.app-sidebar {
+  background: rgb(var(--app-surface));
+  border-right: 1px solid rgba(var(--app-line), 0.08);
+}
+
+.app-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: var(--app-radius-sm);
+  font-size: 13.5px;
+  font-weight: 450;
+  color: rgba(var(--app-ink), 0.72);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.app-nav-item:hover {
+  background: rgba(var(--app-line), 0.05);
+  color: rgb(var(--app-ink));
+}
+
+.app-nav-item-active,
+.app-nav-item-active:hover {
+  background: rgba(var(--app-accent), 0.09);
+  color: rgb(var(--app-accent));
+  font-weight: 500;
+}
+
+.app-nav-group {
+  font-family: var(--font-label), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(var(--app-muted), 0.75);
+  padding: 0 10px;
+  margin: 18px 0 6px;
+}
+
+/* --- Tables ----------------------------------------------------------- */
+.app-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.app-table thead th {
+  font-family: var(--font-label), sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgb(var(--app-muted));
+  text-align: left;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(var(--app-line), 0.09);
+  white-space: nowrap;
+}
+
+.app-table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(var(--app-line), 0.06);
+  color: rgba(var(--app-ink), 0.88);
+  vertical-align: middle;
+}
+
+.app-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.app-table tbody tr {
+  transition: background 0.12s ease;
+}
+
+.app-table tbody tr:hover {
+  background: rgba(var(--app-line), 0.025);
+}
+
+.app-td-num {
+  font-family: var(--font-mono), monospace;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* --- Badges ----------------------------------------------------------- */
+.app-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.app-badge-green { background: rgb(var(--app-green-bg)); color: rgb(var(--app-green)); }
+.app-badge-amber { background: rgb(var(--app-amber-bg)); color: rgb(var(--app-amber)); }
+.app-badge-red   { background: rgb(var(--app-red-bg));   color: rgb(var(--app-red)); }
+.app-badge-blue  { background: rgb(var(--app-blue-bg));  color: rgb(var(--app-blue)); }
+.app-badge-neutral { background: rgba(var(--app-line), 0.07); color: rgb(var(--app-muted)); }
+.app-badge-accent  { background: rgba(var(--app-accent), 0.1); color: rgb(var(--app-accent)); }
+
+.app-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* --- Buttons ----------------------------------------------------------- */
+.app-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--app-radius-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+
+.app-btn-primary {
+  background: rgb(var(--app-ink));
+  color: #fff;
+}
+
+.app-btn-primary:hover { background: rgba(var(--app-ink), 0.88); }
+
+.app-btn-accent {
+  background: rgb(var(--app-accent));
+  color: #fff;
+}
+
+.app-btn-accent:hover { background: #9c3a15; }
+
+.app-btn-secondary {
+  background: rgb(var(--app-surface));
+  border: 1px solid rgba(var(--app-line), 0.14);
+  color: rgb(var(--app-ink));
+  box-shadow: var(--app-shadow);
+}
+
+.app-btn-secondary:hover { border-color: rgba(var(--app-line), 0.28); }
+
+.app-btn-ghost {
+  color: rgb(var(--app-muted));
+}
+
+.app-btn-ghost:hover {
+  background: rgba(var(--app-line), 0.05);
+  color: rgb(var(--app-ink));
+}
+
+/* --- Inputs ------------------------------------------------------------ */
+.app-shell input[type="text"],
+.app-shell input[type="email"],
+.app-shell input[type="number"],
+.app-shell input[type="search"],
+.app-shell input[type="date"],
+.app-shell input[type="password"],
+.app-shell input[type="tel"],
+.app-shell input[type="url"],
+.app-shell select,
+.app-shell textarea {
+  background: rgb(var(--app-surface));
+  border: 1px solid rgba(var(--app-line), 0.14);
+  border-radius: var(--app-radius-sm);
+  font-size: 13.5px;
+  color: rgb(var(--app-ink));
+  padding: 8px 11px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.app-shell input:focus,
+.app-shell select:focus,
+.app-shell textarea:focus {
+  outline: none;
+  border-color: rgba(var(--app-accent), 0.55);
+  box-shadow: 0 0 0 3px rgba(var(--app-accent), 0.12);
+}
+
+.app-shell input::placeholder,
+.app-shell textarea::placeholder {
+  color: rgba(var(--app-muted), 0.7);
+}
+
+/* --- Progress / meters --------------------------------------------------- */
+.app-meter {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(var(--app-line), 0.08);
+  overflow: hidden;
+}
+
+.app-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: rgb(var(--app-accent));
+  transition: width 0.4s var(--ease-editorial);
+}
+
+.app-meter-green > span { background: rgb(var(--app-green)); }
+
+/* --- Scrollbars (desktop, subtle) ---------------------------------------- */
+.app-shell ::-webkit-scrollbar { width: 10px; height: 10px; }
+.app-shell ::-webkit-scrollbar-thumb {
+  background: rgba(var(--app-line), 0.14);
+  border-radius: 999px;
+  border: 3px solid rgb(var(--app-canvas));
+}
+.app-shell ::-webkit-scrollbar-track { background: transparent; }
+
+/* --- Legacy admin class remaps (hub panels inherit the app language) ------ */
+.app-shell .hub-panel,
+.app-shell .dash-panel {
+  background: rgb(var(--app-surface));
+  border: 1px solid rgba(var(--app-line), 0.08);
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow);
+}
+
+.app-shell .hub-metric {
+  background: rgb(var(--app-surface));
+  border: 1px solid rgba(var(--app-line), 0.08);
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow);
+}
+
+.app-shell a:has(.hub-metric):hover .hub-metric {
+  border-color: rgba(var(--app-line), 0.18);
+  box-shadow: var(--app-shadow-md);
+}
+
+.app-shell .hub-metric-accent {
+  border-color: rgba(var(--app-accent), 0.3);
+  background: rgba(var(--app-accent), 0.05);
+}
+
+.app-shell .eyebrow {
+  font-family: var(--font-label), sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+}
+
+.app-shell .hub-nav-pill {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  border: none;
+  background: transparent;
+  border-radius: var(--app-radius-sm);
+  padding: 6px 12px;
+  color: rgb(var(--app-muted));
+}
+
+.app-shell .hub-nav-pill:hover {
+  background: rgba(var(--app-line), 0.05);
+  color: rgb(var(--app-ink));
+}
+
+.app-shell .hub-nav-pill-active,
+.app-shell .hub-nav-pill-active:hover {
+  background: rgba(var(--app-accent), 0.09);
+  color: rgb(var(--app-accent));
 }

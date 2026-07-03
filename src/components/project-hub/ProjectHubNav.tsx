@@ -53,9 +53,7 @@ export function ProjectHubNav({ projectId }: { projectId: string }) {
       <div className="flex gap-5 md:gap-8 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
         {GROUPS.map((group) => (
           <div key={group.label} className="shrink-0">
-            <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-stone-300 mb-2 px-1">
-              {group.label}
-            </div>
+            <div className="app-nav-group !m-0 !mb-1.5 !px-1">{group.label}</div>
             <div className="flex gap-1">
               {group.items.map((tab) => {
                 const href = `${base}${tab.href}`;

@@ -19,7 +19,7 @@ export default async function BasePlansPage() {
   return (
     <div className="max-w-5xl">
       <div className="mb-8">
-        <h1 className="font-display text-3xl text-ink">Standard House Plans</h1>
+        <h1 className="app-h1">Standard House Plans</h1>
         <p className="text-sm text-ink/60 mt-2 max-w-2xl">
           Company catalog of base models. Upload PDFs here or assign a base plan to each lot on the
           project overview. When lot-specific revisions are ready, create a versioned plan set on

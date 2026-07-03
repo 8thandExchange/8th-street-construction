@@ -31,7 +31,7 @@ export function NewUpdateForm({ projectId }: { projectId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-11 items-center px-5 bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
+        className="inline-flex h-11 items-center px-5 app-btn app-btn-primary"
       >
         + Post Update
       </button>
@@ -122,14 +122,14 @@ export function NewUpdateForm({ projectId }: { projectId: string }) {
       <div className="flex gap-3">
         <button
           type="submit"
-          className="h-10 px-5 bg-ink text-bone font-mono text-[10px] tracking-[0.2em] uppercase"
+          className="h-10 px-5 app-btn app-btn-primary"
         >
           Publish
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="h-10 px-5 border border-ink/20 font-mono text-[10px] uppercase"
+          className="h-10 px-5 app-btn app-btn-secondary"
         >
           Cancel
         </button>

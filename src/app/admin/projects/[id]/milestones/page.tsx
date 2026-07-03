@@ -15,7 +15,7 @@ export default async function ProjectMilestonesPage(props: { params: Promise<{ i
 
   return (
     <div>
-      <h2 className="font-display text-2xl text-ink mb-2">Project Timeline</h2>
+      <h2 className="app-h1 !text-[18px] mb-2">Project Timeline</h2>
       <MilestoneBoard projectId={id} initial={(milestones ?? []) as MilestoneRow[]} />
     </div>
   );

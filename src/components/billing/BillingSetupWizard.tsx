@@ -87,7 +87,7 @@ export function BillingSetupWizard({
                     </div>
                     <button
                       type="submit"
-                      className="h-11 px-5 bg-ink text-bone font-mono text-[10px] tracking-[0.18em] uppercase hover:bg-copper transition-colors"
+                      className="h-11 px-5 app-btn app-btn-primary"
                     >
                       Save amount
                     </button>
@@ -136,7 +136,7 @@ export function BillingSetupWizard({
                           <input type="hidden" name="project_id" value={projectId} />
                           <button
                             type="submit"
-                            className="h-11 px-6 bg-copper text-bone font-mono text-[10px] tracking-[0.18em] uppercase"
+                            className="app-btn app-btn-accent"
                           >
                             Use Habitat 5-payment schedule
                           </button>
@@ -146,7 +146,7 @@ export function BillingSetupWizard({
                         <input type="hidden" name="project_id" value={projectId} />
                         <button
                           type="submit"
-                          className="h-11 px-6 border border-ink/25 font-mono text-[10px] tracking-[0.18em] uppercase"
+                          className="h-11 px-6 app-btn app-btn-secondary"
                         >
                           Create {template.length}-payment schedule
                         </button>
@@ -168,7 +168,7 @@ export function BillingSetupWizard({
           </div>
           <Link
             href={`/admin/projects/${projectId}/overview`}
-            className="shrink-0 h-10 px-5 border border-ink/20 font-mono text-[10px] uppercase hover:bg-ink hover:text-bone"
+            className="shrink-0 h-10 px-5 app-btn app-btn-secondary"
           >
             Job Details →
           </Link>

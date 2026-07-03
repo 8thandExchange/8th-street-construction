@@ -41,7 +41,7 @@ export function ScheduleTimeline({
             className="field-input"
           />
         </div>
-        <button type="submit" className="md:col-span-2 h-10 px-4 bg-ink text-bone font-mono text-[10px] uppercase w-fit">
+        <button type="submit" className="md:col-span-2 h-10 px-4 app-btn app-btn-primary">
           Save project dates
         </button>
       </form>
@@ -86,7 +86,7 @@ export function ScheduleTimeline({
                   ))}
               </select>
             </div>
-            <button type="submit" className="h-10 px-4 border border-ink/25 font-mono text-[10px] uppercase">
+            <button type="submit" className="h-10 px-4 app-btn app-btn-secondary">
               Update
             </button>
           </form>

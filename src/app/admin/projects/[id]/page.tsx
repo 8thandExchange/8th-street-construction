@@ -195,8 +195,8 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
         <div className="lg:col-span-2 space-y-6">
           <section className="dash-panel p-6">
             <div className="flex justify-between items-baseline mb-4">
-              <h3 className="font-display text-lg text-ink">Open checklists</h3>
-              <Link href={`${base}/tasks`} className="font-mono text-[10px] uppercase text-copper">
+              <h3 className="app-h2">Open checklists</h3>
+              <Link href={`${base}/tasks`} className="app-label !text-copper">
                 All →
               </Link>
             </div>
@@ -231,7 +231,7 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
               <p className="text-sm text-ink/55">{board.client.email}</p>
               <Link
                 href={`${base}/messages`}
-                className="inline-flex mt-4 h-9 items-center px-4 border border-ink/20 font-mono text-[10px] uppercase hover:bg-ink hover:text-bone transition-colors"
+                className="inline-flex mt-4 h-9 items-center px-4 app-btn app-btn-secondary"
               >
                 Messages →
               </Link>
@@ -251,8 +251,8 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
       {board.draws.length > 0 && (
         <section className="dash-panel p-6 md:p-8 mb-6">
           <div className="flex justify-between items-baseline mb-4">
-            <h3 className="font-display text-lg text-ink">Client billing schedule</h3>
-            <Link href={`${base}/billing`} className="font-mono text-[10px] uppercase text-copper">
+            <h3 className="app-h2">Client billing schedule</h3>
+            <Link href={`${base}/billing`} className="app-label !text-copper">
               Money & invoices →
             </Link>
           </div>
@@ -269,8 +269,8 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
                   <p className="text-sm text-ink mt-1">{d.title}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="font-display text-lg">{formatMoney(Number(d.amount))}</p>
-                  <p className="text-[10px] font-mono uppercase text-stone-300 mt-0.5">
+                  <p className="app-num text-lg font-medium">{formatMoney(Number(d.amount))}</p>
+                  <p className="app-label mt-0.5">
                     {DRAW_STATUS_LABELS[d.status] ?? d.status}
                   </p>
                 </div>

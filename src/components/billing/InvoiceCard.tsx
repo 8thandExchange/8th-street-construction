@@ -47,10 +47,8 @@ export function InvoiceCard({
   const lineItems = invoice.line_items ?? [];
 
   return (
-    <article className="group relative overflow-hidden border border-ink/10 bg-paper transition-shadow hover:shadow-[0_12px_40px_-24px_rgba(26,26,26,0.35)]">
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-copper/80 via-copper/30 to-transparent" />
-
-      <div className="p-6 md:p-7">
+    <article className="app-card app-card-hover group relative overflow-hidden">
+      <div className="p-5 md:p-6">
         <div className="flex items-start justify-between gap-4 mb-1">
           <Image
             src="/img/logo-icon.svg"
@@ -60,39 +58,33 @@ export function InvoiceCard({
             className="opacity-35 shrink-0 mt-1"
             aria-hidden
           />
-          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-stone-400 text-right">
-            8th Street Construction
-          </p>
+          <p className="app-label text-right">8th Street Construction</p>
         </div>
 
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="font-mono text-[11px] tracking-wider text-stone-400">
+              <span className="app-num text-xs app-muted">
                 {invoice.invoice_number}
               </span>
-              <span
-                className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 border ${statusStyle}`}
-              >
+              <span className={`app-badge ${isPaid ? "app-badge-green" : invoice.status === "overdue" ? "app-badge-red" : "app-badge-blue"}`}>
                 {statusLabel}
               </span>
               {invoice.mercury_status && invoice.mercury_status !== "Unpaid" && !isPaid && (
-                <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 border border-violet-200 bg-violet-50 text-violet-700">
-                  Mercury · {invoice.mercury_status}
-                </span>
+                <span className="app-badge app-badge-neutral">Mercury · {invoice.mercury_status}</span>
               )}
             </div>
 
-            <h4 className="mt-3 font-display text-xl text-ink leading-snug">
+            <h4 className="mt-3 app-h2 !text-[16px] leading-snug">
               {invoice.title ?? "Invoice"}
             </h4>
 
-            <p className="mt-3 font-display text-3xl md:text-4xl text-ink tracking-tight">
+            <p className="mt-3 app-num text-[28px] md:text-[32px] font-medium text-navy tracking-tight">
               {formatMoney(Number(invoice.total))}
             </p>
 
             {!isPaid && invoice.due_date && (
-              <p className="mt-2 text-xs font-mono text-stone-400">
+              <p className="mt-2 text-xs app-muted app-num">
                 Due {formatDueDate(invoice.due_date)}
               </p>
             )}
@@ -111,7 +103,7 @@ export function InvoiceCard({
                     href={mercuryUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-11 items-center justify-center px-6 bg-ink text-bone font-mono text-[10px] tracking-[0.16em] uppercase hover:bg-copper transition-colors"
+                    className="app-btn app-btn-accent !h-10 !px-6"
                   >
                     Pay securely
                   </a>
@@ -138,18 +130,16 @@ export function InvoiceCard({
         </div>
 
         {lineItems.length > 0 && (
-          <div className="mt-6 pt-5 border-t border-ink/8">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-400 mb-3">
-              Line items
-            </p>
+          <div className="mt-5 pt-4 border-t border-navy/[0.07]">
+            <p className="app-label mb-3">Line items</p>
             <ul className="space-y-2">
               {lineItems.map((li, i) => (
                 <li
                   key={i}
-                  className="flex justify-between gap-4 text-sm text-ink/75 py-1.5 border-b border-ink/5 last:border-0"
+                  className="flex justify-between gap-4 text-sm text-navy/80 py-1.5 border-b border-navy/[0.05] last:border-0"
                 >
                   <span>{li.description}</span>
-                  <span className="font-mono text-ink shrink-0">{formatMoney(Number(li.amount))}</span>
+                  <span className="app-num text-navy shrink-0">{formatMoney(Number(li.amount))}</span>
                 </li>
               ))}
             </ul>

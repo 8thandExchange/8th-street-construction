@@ -91,14 +91,14 @@ function AddTaskForm({
       <div className="flex gap-2">
         <button
           type="submit"
-          className="h-9 px-4 bg-ink text-bone font-mono text-[10px] uppercase tracking-wider"
+          className="h-9 px-4 app-btn app-btn-primary"
         >
           Add Task
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="h-9 px-4 border border-ink/20 font-mono text-[10px] uppercase"
+          className="h-9 px-4 app-btn app-btn-secondary"
         >
           Cancel
         </button>
@@ -188,14 +188,14 @@ function TaskRowItem({
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="h-8 px-3 bg-ink text-bone font-mono text-[10px] uppercase"
+                className="h-8 px-3 app-btn app-btn-primary"
               >
                 Save
               </button>
               <button
                 type="button"
                 onClick={() => setEditing(false)}
-                className="h-8 px-3 border border-ink/20 font-mono text-[10px] uppercase"
+                className="h-8 px-3 app-btn app-btn-secondary"
               >
                 Cancel
               </button>

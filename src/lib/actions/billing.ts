@@ -12,6 +12,7 @@ import {
   isHabitat608Project,
   type DrawTemplateLine,
 } from "@/lib/billing/constants";
+import { allocateDrawAmounts } from "@/lib/billing/draws";
 import { mercuryConfigured } from "@/lib/mercury/config";
 import { getMercuryPayLink, pushInvoiceToMercury } from "@/lib/mercury/service";
 import { markInvoicePaidLocally } from "@/lib/mercury/sync";
@@ -157,13 +158,13 @@ async function insertDrawSchedule(
   contractValue: number,
   template: DrawTemplateLine[]
 ) {
-  const rows = template.map((d) => ({
+  const rows = allocateDrawAmounts(contractValue, template).map((d) => ({
     project_id: projectId,
     draw_number: d.draw_number,
     title: d.title,
     description: d.description,
     percent_of_contract: d.percent,
-    amount: Math.round((contractValue * d.percent) / 100),
+    amount: d.amount,
     status: "scheduled" as const,
   }));
 

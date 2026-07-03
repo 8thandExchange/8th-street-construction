@@ -26,7 +26,7 @@ export default async function ProjectDocumentsPage(props: { params: Promise<{ id
     <div className="max-w-3xl">
       <div className="flex items-start justify-between gap-6 mb-8">
         <div>
-          <h2 className="font-display text-2xl text-ink">Documents</h2>
+          <h2 className="app-h1 !text-[18px]">Documents</h2>
           <p className="text-sm text-ink/60 mt-2">
             Private storage — clients download via signed links.
           </p>
@@ -65,7 +65,7 @@ export default async function ProjectDocumentsPage(props: { params: Promise<{ id
                 <input type="hidden" name="project_id" value={id} />
                 <button
                   type="submit"
-                  className="text-[10px] font-mono uppercase text-stone-300 hover:text-red-600"
+                  className="app-label hover:text-red-600"
                 >
                   Delete
                 </button>

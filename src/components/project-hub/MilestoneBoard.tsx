@@ -172,7 +172,7 @@ export function MilestoneBoard({
             setShowNew(true);
             setEditing(null);
           }}
-          className="inline-flex h-10 items-center px-4 bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
+          className="app-btn app-btn-primary"
         >
           + Milestone
         </button>
@@ -243,7 +243,7 @@ export function MilestoneBoard({
           <div className="flex gap-3">
             <button
               type="submit"
-              className="h-10 px-5 bg-ink text-bone font-mono text-[10px] tracking-[0.2em] uppercase"
+              className="h-10 px-5 app-btn app-btn-primary"
             >
               {editing ? "Save" : "Create"}
             </button>
@@ -253,7 +253,7 @@ export function MilestoneBoard({
                 setShowNew(false);
                 setEditing(null);
               }}
-              className="h-10 px-5 border border-ink/20 font-mono text-[10px] uppercase"
+              className="h-10 px-5 app-btn app-btn-secondary"
             >
               Cancel
             </button>

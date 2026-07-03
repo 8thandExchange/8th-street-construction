@@ -26,7 +26,7 @@ export default async function ProjectPunchListPage(props: { params: Promise<{ id
 
   return (
     <div className="max-w-3xl">
-      <h2 className="font-display text-2xl text-ink mb-2">Punch List</h2>
+      <h2 className="app-h1 !text-[18px] mb-2">Punch List</h2>
       <p className="text-sm text-ink/60 mb-4">
         Closeout deficiencies — {open} open, {done} complete. Client can view items in their portal.
       </p>
@@ -69,7 +69,7 @@ export default async function ProjectPunchListPage(props: { params: Promise<{ id
             <textarea name="description" rows={2} className="field-input" placeholder="Notes" />
           </div>
         </div>
-        <button type="submit" className="h-10 px-5 bg-ink text-bone font-mono text-[10px] uppercase">
+        <button type="submit" className="h-10 px-5 app-btn app-btn-primary">
           Add Item
         </button>
       </form>
