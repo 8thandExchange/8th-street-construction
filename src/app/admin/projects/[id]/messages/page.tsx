@@ -1,12 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import { MessageComposer } from "@/components/project-hub/MessageComposer";
+import {
+  LiveMessageThread,
+  type ThreadMessage,
+} from "@/components/project-hub/LiveMessageThread";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProjectMessagesPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { data: project } = await supabase.from("projects").select("id, title").eq("id", id).single();
   if (!project) notFound();
@@ -26,49 +33,43 @@ export default async function ProjectMessagesPage(props: { params: Promise<{ id:
     : { data: [] };
   const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
 
+  const adminAuthorIds = [
+    ...new Set([
+      ...(user ? [user.id] : []),
+      ...(profiles ?? []).filter((p) => p.role === "admin").map((p) => p.id),
+    ]),
+  ];
+
+  const thread: ThreadMessage[] = (messages ?? []).map((m) => {
+    const p = byId.get(m.author_id);
+    const isAdmin = p?.role === "admin";
+    return {
+      id: m.id,
+      body: m.body,
+      created_at: m.created_at,
+      author_id: m.author_id,
+      author_name:
+        [p?.first_name, p?.last_name].filter(Boolean).join(" ") ||
+        (isAdmin ? "Team" : "Client"),
+      own_side: Boolean(isAdmin),
+    };
+  });
+
   return (
     <div className="max-w-2xl">
       <h2 className="app-h1 !text-[18px] mb-2">Messages</h2>
       <p className="text-sm text-ink/60 mb-8">
-        Thread with your client on {project.title}.
+        Thread with your client on {project.title}. Client replies appear live and also hit
+        your email.
       </p>
 
-      <div className="bg-paper border border-ink/15 p-6 md:p-8 min-h-[320px] flex flex-col">
-        <div className="flex-1 space-y-4 max-h-[480px] overflow-y-auto">
-          {(messages ?? []).map((m) => {
-            const p = byId.get(m.author_id);
-            const isAdmin = p?.role === "admin";
-            const name =
-              [p?.first_name, p?.last_name].filter(Boolean).join(" ") ||
-              (isAdmin ? "Team" : "Client");
-            return (
-              <div
-                key={m.id}
-                className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[85%] px-4 py-3 ${
-                    isAdmin
-                      ? "bg-navy text-bone"
-                      : "bg-bone border border-ink/10 text-ink"
-                  }`}
-                >
-                  <div className="text-[9px] font-mono tracking-[0.15em] uppercase opacity-60 mb-1">
-                    {name} · {new Date(m.created_at).toLocaleString()}
-                  </div>
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{m.body}</p>
-                </div>
-              </div>
-            );
-          })}
-          {!messages?.length && (
-            <p className="text-ink/50 italic text-sm text-center py-12">
-              No messages yet. Start the conversation below.
-            </p>
-          )}
-        </div>
-        <MessageComposer projectId={id} />
-      </div>
+      <LiveMessageThread
+        projectId={id}
+        initialMessages={thread}
+        viewer="admin"
+        ownAuthorIds={adminAuthorIds}
+        emptyText="No messages yet. Start the conversation below."
+      />
     </div>
   );
 }

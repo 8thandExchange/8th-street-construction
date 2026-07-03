@@ -115,10 +115,10 @@ export function NewUpdateForm({ projectId }: { projectId: string }) {
           </p>
         )}
       </div>
-      <label className="flex items-center gap-3 cursor-pointer">
-        <input type="checkbox" name="notify_client" className="w-5 h-5 accent-copper" />
-        <span className="text-sm text-ink">Email client when published</span>
-      </label>
+      <p className="text-xs text-ink/60">
+        Your client is automatically notified by email (and text, when enabled) the moment
+        this publishes.
+      </p>
       <div className="flex gap-3">
         <button
           type="submit"

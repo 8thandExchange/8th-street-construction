@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendChangeOrderEmail } from "@/lib/email/project-notify";
+import {
+  sendChangeOrderDecisionAdminEmail,
+  sendChangeOrderEmail,
+} from "@/lib/email/project-notify";
+import { sendAdminSms, sendSms } from "@/lib/sms/ghl";
 
 function revalidateProject(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/change-orders`);
@@ -61,7 +65,7 @@ export async function createChangeOrder(formData: FormData) {
     if (project?.client_id) {
       const { data: client } = await admin
         .from("profiles")
-        .select("email, first_name")
+        .select("email, phone, first_name")
         .eq("id", project.client_id)
         .single();
       if (client?.email) {
@@ -74,6 +78,11 @@ export async function createChangeOrder(formData: FormData) {
           projectId,
         });
       }
+      await sendSms({
+        phone: client?.phone,
+        firstName: client?.first_name ?? undefined,
+        message: `8th Street Construction: change order #${number} on ${project.title} needs your review — approve or decline in your portal.`,
+      });
     }
   }
 
@@ -98,7 +107,7 @@ export async function clientRespondChangeOrder(formData: FormData) {
 
   const { data: co } = await supabase
     .from("change_orders")
-    .select("id, status, cost_impact, project_id")
+    .select("id, status, cost_impact, project_id, number, title")
     .eq("id", id)
     .single();
 
@@ -133,6 +142,25 @@ export async function clientRespondChangeOrder(formData: FormData) {
       })
       .eq("id", projectId);
   }
+
+  // The builder always hears about the client's decision.
+  const { data: projectMeta } = await supabase
+    .from("projects")
+    .select("title")
+    .eq("id", projectId)
+    .single();
+  const projectTitle = projectMeta?.title ?? "your project";
+  await sendChangeOrderDecisionAdminEmail({
+    projectTitle,
+    projectId,
+    coNumber: Number(co.number),
+    coTitle: co.title ?? "Change order",
+    decision,
+    costImpact: co.cost_impact != null ? Number(co.cost_impact) : null,
+  });
+  await sendAdminSms(
+    `8th Street portal: change order #${co.number} ${decision === "approved" ? "APPROVED" : "DECLINED"} by client on ${projectTitle}.`
+  );
 
   revalidateProject(projectId);
   return { ok: true };
