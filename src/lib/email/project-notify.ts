@@ -59,7 +59,7 @@ export async function sendChangeOrderEmail(payload: {
   });
 }
 
-async function adminNotifyEmails() {
+export async function adminNotifyEmails() {
   const admin = createAdminClient();
   const { data } = await admin.from("profiles").select("email").eq("role", "admin");
   const emails = (data ?? []).map((p) => p.email).filter(Boolean) as string[];
@@ -159,5 +159,81 @@ export async function sendNewMessageEmail(payload: {
     subject: `New message — ${payload.projectTitle}`,
     html: `<p>You have a new message on <strong>${payload.projectTitle}</strong>.</p><p><a href="${url}">Open conversation →</a></p>`,
     text: `New message on ${payload.projectTitle}: ${url}`,
+  });
+}
+
+export async function sendClientMessageAdminEmail(payload: {
+  projectTitle: string;
+  projectId: string;
+  preview: string;
+}) {
+  const client = resend();
+  if (!client) return { skipped: true };
+
+  const url = `${SITE}/admin/projects/${payload.projectId}/messages`;
+  const to = await adminNotifyEmails();
+  return client.emails.send({
+    from: FROM,
+    to,
+    subject: `Client message — ${payload.projectTitle}`,
+    html: `
+      <p>Your client sent a message on <strong>${payload.projectTitle}</strong>:</p>
+      <blockquote style="border-left:3px solid #ccc;margin:12px 0;padding-left:12px;color:#444">${payload.preview.replace(/\n/g, "<br>")}</blockquote>
+      <p><a href="${url}">Reply in the portal →</a></p>
+    `,
+    text: `Client message on ${payload.projectTitle}: "${payload.preview}"\nReply: ${url}`,
+  });
+}
+
+export async function sendChangeOrderDecisionAdminEmail(payload: {
+  projectTitle: string;
+  projectId: string;
+  coNumber: number;
+  coTitle: string;
+  decision: "approved" | "rejected";
+  costImpact: number | null;
+}) {
+  const client = resend();
+  if (!client) return { skipped: true };
+
+  const url = `${SITE}/admin/projects/${payload.projectId}/change-orders`;
+  const to = await adminNotifyEmails();
+  const verb = payload.decision === "approved" ? "APPROVED" : "DECLINED";
+  const costLine =
+    payload.decision === "approved" && payload.costImpact
+      ? `<p>Contract value was automatically adjusted by the cost impact.</p>`
+      : "";
+  return client.emails.send({
+    from: FROM,
+    to,
+    subject: `Change order #${payload.coNumber} ${verb} — ${payload.projectTitle}`,
+    html: `
+      <p>The client <strong>${verb.toLowerCase()}</strong> change order <strong>#${payload.coNumber}: ${payload.coTitle}</strong> on <strong>${payload.projectTitle}</strong>.</p>
+      ${costLine}
+      <p><a href="${url}">View change orders →</a></p>
+    `,
+    text: `Change order #${payload.coNumber} ${verb} on ${payload.projectTitle}: ${url}`,
+  });
+}
+
+export async function sendSelectionApprovedAdminEmail(payload: {
+  projectTitle: string;
+  projectId: string;
+  selectionTitle: string;
+}) {
+  const client = resend();
+  if (!client) return { skipped: true };
+
+  const url = `${SITE}/admin/projects/${payload.projectId}/selections`;
+  const to = await adminNotifyEmails();
+  return client.emails.send({
+    from: FROM,
+    to,
+    subject: `Selection approved — ${payload.projectTitle}`,
+    html: `
+      <p>The client approved the selection <strong>${payload.selectionTitle}</strong> on <strong>${payload.projectTitle}</strong>.</p>
+      <p><a href="${url}">View selections →</a></p>
+    `,
+    text: `Selection approved on ${payload.projectTitle}: ${payload.selectionTitle}\n${url}`,
   });
 }

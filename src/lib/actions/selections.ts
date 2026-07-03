@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
+import { sendSelectionApprovedAdminEmail } from "@/lib/email/project-notify";
+import { sendAdminSms } from "@/lib/sms/ghl";
 
 function revalidate(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/selections`);
@@ -85,7 +87,7 @@ export async function clientApproveSelection(formData: FormData) {
 
   const { data: sel } = await supabase
     .from("project_selections")
-    .select("id, project_id, client_visible")
+    .select("id, project_id, client_visible, title")
     .eq("id", id)
     .single();
 
@@ -103,6 +105,19 @@ export async function clientApproveSelection(formData: FormData) {
     .from("project_selections")
     .update({ status: "approved" })
     .eq("id", id);
+
+  // The builder always hears about the client's approval.
+  const { data: projectMeta } = await supabase
+    .from("projects")
+    .select("title")
+    .eq("id", projectId)
+    .single();
+  const projectTitle = projectMeta?.title ?? "your project";
+  const selectionTitle = sel.title ?? "a selection";
+  await sendSelectionApprovedAdminEmail({ projectTitle, projectId, selectionTitle });
+  await sendAdminSms(
+    `8th Street portal: client approved selection "${selectionTitle}" on ${projectTitle}.`
+  );
 
   revalidate(projectId);
 }

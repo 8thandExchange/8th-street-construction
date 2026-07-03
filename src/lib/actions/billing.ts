@@ -17,6 +17,7 @@ import { mercuryConfigured } from "@/lib/mercury/config";
 import { getMercuryPayLink, pushInvoiceToMercury } from "@/lib/mercury/service";
 import { markInvoicePaidLocally } from "@/lib/mercury/sync";
 import { getSiteUrl } from "@/lib/brand/assets";
+import { sendSms } from "@/lib/sms/ghl";
 
 function formatDueDateLabel(due: string | null) {
   if (!due) return null;
@@ -105,7 +106,7 @@ async function deliverInvoice(
   const admin = createAdminClient();
   const { data: client } = await admin
     .from("profiles")
-    .select("email, first_name, last_name")
+    .select("email, phone, first_name, last_name")
     .eq("id", project.client_id)
     .single();
 
@@ -148,6 +149,12 @@ async function deliverInvoice(
       isHabitat: isHabitat608Project(project.slug ?? ""),
     });
   }
+
+  await sendSms({
+    phone: client?.phone,
+    firstName: client?.first_name ?? undefined,
+    message: `8th Street Construction: invoice ${invoice.invoice_number} (${formatMoney(Number(invoice.total))}) is ready for ${project.title ?? "your project"}.${mercuryPayLink ? ` Pay securely: ${mercuryPayLink}` : " Details are in your portal."}`,
+  });
 
   return mercuryPayLink;
 }

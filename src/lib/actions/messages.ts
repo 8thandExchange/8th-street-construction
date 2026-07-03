@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendNewMessageEmail } from "@/lib/email/project-notify";
+import {
+  sendClientMessageAdminEmail,
+  sendNewMessageEmail,
+} from "@/lib/email/project-notify";
+import { sendAdminSms, sendSms } from "@/lib/sms/ghl";
 
 function revalidateProject(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/messages`);
@@ -35,7 +39,7 @@ export async function sendProjectMessage(formData: FormData) {
   if (project?.client_id) {
     const { data: client } = await admin
       .from("profiles")
-      .select("email")
+      .select("email, phone, first_name")
       .eq("id", project.client_id)
       .single();
     if (client?.email) {
@@ -46,6 +50,11 @@ export async function sendProjectMessage(formData: FormData) {
         isClient: false,
       });
     }
+    await sendSms({
+      phone: client?.phone,
+      firstName: client?.first_name ?? undefined,
+      message: `8th Street Construction: new message from your project team on ${project.title}. Reply in your portal: ${process.env.NEXT_PUBLIC_SITE_URL || "https://www.8thstreetconstruction.com"}/client/projects/${projectId}/messages`,
+    });
   }
 
   revalidateProject(projectId);
@@ -81,6 +90,17 @@ export async function sendClientMessage(formData: FormData) {
   });
 
   if (error) return { error: error.message };
+
+  // Builder always hears about client messages — email every admin + SMS.
+  const preview = body.length > 240 ? `${body.slice(0, 240)}…` : body;
+  await sendClientMessageAdminEmail({
+    projectTitle: project.title,
+    projectId,
+    preview,
+  });
+  await sendAdminSms(
+    `8th Street portal: client message on ${project.title} — "${preview.slice(0, 120)}"`
+  );
 
   revalidateProject(projectId);
   return { ok: true };

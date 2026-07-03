@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendProjectUpdateEmail } from "@/lib/email/project-notify";
+import { sendSms } from "@/lib/sms/ghl";
 
 function revalidateProject(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/updates`);
@@ -15,7 +16,6 @@ export async function createProjectUpdate(formData: FormData) {
   const projectId = String(formData.get("project_id"));
   const title = String(formData.get("title")).trim();
   const body = String(formData.get("body") || "").trim() || null;
-  const notifyClient = formData.get("notify_client") === "on";
 
   if (!title) return { error: "Title is required" };
 
@@ -45,7 +45,8 @@ export async function createProjectUpdate(formData: FormData) {
     );
   }
 
-  if (notifyClient) {
+  // Clients are always notified of new updates — no opt-in checkbox to forget.
+  {
     const admin = createAdminClient();
     const { data: project } = await admin
       .from("projects")
@@ -55,7 +56,7 @@ export async function createProjectUpdate(formData: FormData) {
     if (project?.client_id) {
       const { data: client } = await admin
         .from("profiles")
-        .select("email, first_name")
+        .select("email, phone, first_name")
         .eq("id", project.client_id)
         .single();
       if (client?.email) {
@@ -67,6 +68,11 @@ export async function createProjectUpdate(formData: FormData) {
           projectId,
         });
       }
+      await sendSms({
+        phone: client?.phone,
+        firstName: client?.first_name ?? undefined,
+        message: `8th Street Construction: new progress update on ${project.title} — "${title}". See photos and details in your portal.`,
+      });
     }
   }
 
