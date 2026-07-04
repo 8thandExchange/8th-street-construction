@@ -8,6 +8,7 @@ import {
   sendNewMessageEmail,
 } from "@/lib/email/project-notify";
 import { sendAdminSms, sendSms } from "@/lib/sms/ghl";
+import { sendPushToAdmins, sendPushToProfile } from "@/lib/notify/push";
 
 function revalidateProject(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/messages`);
@@ -55,6 +56,12 @@ export async function sendProjectMessage(formData: FormData) {
       firstName: client?.first_name ?? undefined,
       message: `8th Street Construction: new message from your project team on ${project.title}. Reply in your portal: ${process.env.NEXT_PUBLIC_SITE_URL || "https://www.8thstreetconstruction.com"}/client/projects/${projectId}/messages`,
     });
+    await sendPushToProfile(project.client_id, {
+      title: project.title,
+      body: "New message from your project team",
+      url: `/client/projects/${projectId}/messages`,
+      tag: `msg-${projectId}`,
+    });
   }
 
   revalidateProject(projectId);
@@ -101,6 +108,12 @@ export async function sendClientMessage(formData: FormData) {
   await sendAdminSms(
     `8th Street portal: client message on ${project.title} — "${preview.slice(0, 120)}"`
   );
+  await sendPushToAdmins({
+    title: `Client message — ${project.title}`,
+    body: preview.slice(0, 140),
+    url: `/admin/projects/${projectId}/messages`,
+    tag: `msg-${projectId}`,
+  });
 
   revalidateProject(projectId);
   return { ok: true };

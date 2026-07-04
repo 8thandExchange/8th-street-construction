@@ -10,12 +10,18 @@ import "@fontsource/barlow-condensed/500.css";
 import "@fontsource/barlow-condensed/600.css";
 import "./globals.css";
 import { LeadConnectorChat } from "@/components/site/LeadConnectorChat";
+import { PwaProvider } from "@/components/pwa/PwaProvider";
 import { BRAND, brandPhoneTel } from "@/lib/brand/assets";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://8thstreetconstruction.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.8thstreetconstruction.com"),
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "8th Street",
+  },
   title: {
     default: "8th Street Construction — Custom Homes & Commercial Building | Augusta, GA",
     template: "%s · 8th Street Construction",
@@ -109,6 +115,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         {children}
         <LeadConnectorChat />
+        <PwaProvider />
       </body>
     </html>
   );

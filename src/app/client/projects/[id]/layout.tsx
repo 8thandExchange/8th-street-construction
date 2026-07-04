@@ -3,6 +3,7 @@ import { ClientProjectNav } from "@/components/client/ClientProjectNav";
 import { ProjectFundingBadge } from "@/components/project/ProjectFundingBadge";
 import { requireClientProjectAccess } from "@/lib/portal/access";
 import { PORTAL_FEATURES, isFeatureEnabled } from "@/lib/portal/features";
+import { EnableNotificationsButton } from "@/components/pwa/EnableNotificationsButton";
 import { parseFundingType } from "@/lib/project/funding";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,7 @@ export default async function ClientProjectLayout({
               hudGrantYear={project.hud_grant_year}
               size="md"
             />
+            <EnableNotificationsButton />
           </div>
           {project.subtitle && (
             <p className="mt-1 text-ink/55 text-sm">{project.subtitle}</p>

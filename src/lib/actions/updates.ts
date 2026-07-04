@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendProjectUpdateEmail } from "@/lib/email/project-notify";
 import { sendSms } from "@/lib/sms/ghl";
+import { sendPushToProfile } from "@/lib/notify/push";
 
 function revalidateProject(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/updates`);
@@ -72,6 +73,11 @@ export async function createProjectUpdate(formData: FormData) {
         phone: client?.phone,
         firstName: client?.first_name ?? undefined,
         message: `8th Street Construction: new progress update on ${project.title} — "${title}". See photos and details in your portal.`,
+      });
+      await sendPushToProfile(project.client_id, {
+        title: project.title,
+        body: `New progress update: ${title}`,
+        url: `/client/projects/${projectId}/updates`,
       });
     }
   }
