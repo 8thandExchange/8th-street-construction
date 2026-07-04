@@ -8,6 +8,9 @@ import { ProcessTimeline } from "@/components/home/ProcessTimeline";
 import { HeritageRenderingSystemSection } from "@/components/home/HeritageRenderingSystemSection";
 import { AboutSection } from "@/components/home/AboutSection";
 import { ContactSection } from "@/components/home/ContactSection";
+import { HeirloomBand } from "@/components/home/HeirloomBand";
+import { PortalPromiseSection } from "@/components/home/PortalPromiseSection";
+import { TrustStrip } from "@/components/home/TrustStrip";
 
 export const revalidate = 3600;
 
@@ -20,9 +23,12 @@ export default function HomePage() {
         <HeroSection />
         <FeaturedProjectSection />
         <CollectionSection />
+        <HeirloomBand />
         <ProcessTimeline />
+        <PortalPromiseSection />
         <HeritageRenderingSystemSection />
         <AboutSection />
+        <TrustStrip />
         <ContactSection />
       </main>
       <SiteFooter />
