@@ -8,6 +8,7 @@ import {
   sendChangeOrderEmail,
 } from "@/lib/email/project-notify";
 import { sendAdminSms, sendSms } from "@/lib/sms/ghl";
+import { sendPushToAdmins, sendPushToProfile } from "@/lib/notify/push";
 
 function revalidateProject(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/change-orders`);
@@ -82,6 +83,11 @@ export async function createChangeOrder(formData: FormData) {
         phone: client?.phone,
         firstName: client?.first_name ?? undefined,
         message: `8th Street Construction: change order #${number} on ${project.title} needs your review — approve or decline in your portal.`,
+      });
+      await sendPushToProfile(project.client_id, {
+        title: project.title,
+        body: `Change order #${number} needs your review`,
+        url: `/client/projects/${projectId}/change-orders`,
       });
     }
   }
@@ -161,6 +167,11 @@ export async function clientRespondChangeOrder(formData: FormData) {
   await sendAdminSms(
     `8th Street portal: change order #${co.number} ${decision === "approved" ? "APPROVED" : "DECLINED"} by client on ${projectTitle}.`
   );
+  await sendPushToAdmins({
+    title: projectTitle,
+    body: `Change order #${co.number} ${decision === "approved" ? "approved" : "declined"} by client`,
+    url: `/admin/projects/${projectId}/change-orders`,
+  });
 
   revalidateProject(projectId);
   return { ok: true };

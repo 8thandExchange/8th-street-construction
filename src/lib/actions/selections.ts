@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { sendSelectionApprovedAdminEmail } from "@/lib/email/project-notify";
 import { sendAdminSms } from "@/lib/sms/ghl";
+import { sendPushToAdmins } from "@/lib/notify/push";
 
 function revalidate(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/selections`);
@@ -118,6 +119,11 @@ export async function clientApproveSelection(formData: FormData) {
   await sendAdminSms(
     `8th Street portal: client approved selection "${selectionTitle}" on ${projectTitle}.`
   );
+  await sendPushToAdmins({
+    title: projectTitle,
+    body: `Selection approved: ${selectionTitle}`,
+    url: `/admin/projects/${projectId}/selections`,
+  });
 
   revalidate(projectId);
 }
@@ -208,6 +214,11 @@ export async function clientChooseSelectionOption(formData: FormData) {
   await sendAdminSms(
     `8th Street portal: client chose "${option.title}" for ${sel.title ?? "a selection"} on ${projectTitle}.`
   );
+  await sendPushToAdmins({
+    title: projectTitle,
+    body: `Client chose "${option.title}" for ${sel.title ?? "a selection"}`,
+    url: `/admin/projects/${projectId}/selections`,
+  });
 
   revalidate(projectId);
 }

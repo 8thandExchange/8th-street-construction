@@ -23,6 +23,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { AdminSearch } from "@/components/admin/AdminSearch";
+import { EnableNotificationsButton } from "@/components/pwa/EnableNotificationsButton";
 
 const NAV_GROUPS: {
   label: string | null;
@@ -113,6 +114,9 @@ function SidebarFooter({ userEmail }: { userEmail: string }) {
           <Link href="/account/password" className="text-xs app-muted hover:text-copper transition-colors">
             Change password
           </Link>
+          <div className="mt-1">
+            <EnableNotificationsButton compact />
+          </div>
         </div>
         <button
           onClick={signOut}
