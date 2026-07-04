@@ -1,3 +1,4 @@
+import { GENERATED_IMAGERY } from "@/lib/generated-imagery";
 import type { ProjectCategory, ProjectStatus } from "@/types/database";
 import { PROJECT_CATEGORY_LABELS } from "@/lib/utils";
 
@@ -33,12 +34,12 @@ export function isPortfolioIllustration(slug: string) {
 }
 
 export const PORTFOLIO_IMAGE_BY_CATEGORY: Record<ProjectCategory, string> = {
-  custom_home: "/img/projects/custom-home.png",
-  residential_renovation: "/img/projects/residential-renovation.png",
-  commercial_new_build: "/img/projects/commercial-new-build.jpg",
-  tenant_buildout: "/img/projects/tenant-buildout.png",
-  design_build: "/img/projects/design-build.jpg",
-  historic_restoration: "/img/projects/historic-restoration.png",
+  custom_home: GENERATED_IMAGERY.wcCustomHome.src,
+  residential_renovation: GENERATED_IMAGERY.wcRenovation.src,
+  commercial_new_build: GENERATED_IMAGERY.wcCommercial.src,
+  tenant_buildout: GENERATED_IMAGERY.wcTenantBuildout.src,
+  design_build: GENERATED_IMAGERY.wcDesignBuild.src,
+  historic_restoration: GENERATED_IMAGERY.wcRestoration.src,
 };
 
 const categoryCopy: Record<
