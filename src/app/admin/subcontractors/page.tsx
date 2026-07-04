@@ -42,7 +42,7 @@ export default async function SubcontractorsPage() {
           </div>
           <div>
             <label className="field-label">Trade *</label>
-            <input name="trade" required className="field-input" placeholder="electrical" />
+            <input name="trade" required className="field-input" placeholder="trade" />
           </div>
           <div>
             <label className="field-label">Portal user</label>

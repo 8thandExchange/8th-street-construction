@@ -127,7 +127,7 @@ export function CustomInvoiceForm({
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Additional site work — drainage correction"
+              placeholder="What are you billing for?"
               className="field-input w-full"
               required
             />

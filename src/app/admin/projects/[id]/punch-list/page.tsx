@@ -47,11 +47,11 @@ export default async function ProjectPunchListPage(props: { params: Promise<{ id
           </div>
           <div>
             <label className="field-label">Location</label>
-            <input name="location" className="field-input" placeholder="Master bath" />
+            <input name="location" className="field-input" placeholder="Location in home" />
           </div>
           <div>
             <label className="field-label">Trade</label>
-            <input name="assigned_trade" className="field-input" placeholder="Plumbing" />
+            <input name="assigned_trade" className="field-input" placeholder="Trade" />
           </div>
           <div>
             <label className="field-label">Priority</label>

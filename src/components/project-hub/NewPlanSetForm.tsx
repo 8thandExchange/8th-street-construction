@@ -62,7 +62,7 @@ export function NewPlanSetForm({ projectId }: { projectId: string }) {
           name="title"
           required
           className="field-input"
-          placeholder="e.g. Schematic Design — Rev A"
+          placeholder="Plan set title"
         />
       </div>
       <div>

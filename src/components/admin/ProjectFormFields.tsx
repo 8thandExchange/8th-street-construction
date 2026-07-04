@@ -141,7 +141,7 @@ export function ProjectFormFields({
             name="budget_range"
             defaultValue={defaults.budget_range ?? ""}
             className="field-input"
-            placeholder="$500K – $750K"
+            placeholder="Budget range"
           />
         </div>
         <div>

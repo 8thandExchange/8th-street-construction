@@ -129,7 +129,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
               name="street_address"
               defaultValue={project.street_address ?? ""}
               className="field-input"
-              placeholder="608 Macon Ave"
+              placeholder="Street address"
             />
           </div>
           <div>
@@ -155,7 +155,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
               name="subdivision"
               defaultValue={project.subdivision ?? ""}
               className="field-input"
-              placeholder="e.g. West Lake"
+              placeholder="Neighborhood or area"
             />
           </div>
           <div>

@@ -46,7 +46,7 @@ export function ProjectTitleSlugFields({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className="field-input"
-          placeholder="608 Macon Ave"
+          placeholder="Job name or street address"
         />
       </div>
 
@@ -77,7 +77,7 @@ export function ProjectTitleSlugFields({
             setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
           }}
           className="field-input font-mono text-sm"
-          placeholder="608-macon-ave"
+          placeholder="job-name-or-address"
         />
       </div>
     </div>
