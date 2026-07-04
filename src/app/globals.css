@@ -1433,3 +1433,22 @@ a:has(.hub-metric):hover .hub-metric {
   background: rgba(var(--app-accent), 0.09);
   color: rgb(var(--app-accent));
 }
+
+/* Hero still — imperceptibly slow drift; stillness for reduced motion */
+.hero-drift {
+  animation: heroDrift 36s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes heroDrift {
+  from {
+    transform: scale(1.02) translateY(0);
+  }
+  to {
+    transform: scale(1.1) translateY(-1.5%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-drift {
+    animation: none;
+  }
+}

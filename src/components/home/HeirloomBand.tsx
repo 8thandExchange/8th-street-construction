@@ -7,7 +7,7 @@ import { GENERATED_IMAGERY } from "@/lib/generated-imagery";
  * Concepts moment: photography does the talking.
  */
 export function HeirloomBand() {
-  const img = GENERATED_IMAGERY.photoHeroPorch;
+  const img = GENERATED_IMAGERY.photoHeroBrickDusk;
   return (
     <section className="relative h-[70svh] min-h-[420px] overflow-hidden">
       <Image
