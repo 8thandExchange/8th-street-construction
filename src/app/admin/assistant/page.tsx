@@ -8,7 +8,10 @@ export const metadata: Metadata = {
   title: "Assistant — 8th Street Construction",
 };
 
-export default function AdminAssistantPage() {
+export default async function AdminAssistantPage(props: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await props.searchParams;
   const configured = anthropicConfigured();
 
   return (
@@ -24,7 +27,7 @@ export default function AdminAssistantPage() {
 
       {configured ? (
         <div className="mx-auto mt-2 flex w-full min-h-0 max-w-3xl flex-1 flex-col">
-          <AssistantChat />
+          <AssistantChat initialPrompt={q?.trim() || undefined} />
         </div>
       ) : (
         <div className="mx-auto mt-8 w-full max-w-2xl rounded-xl border border-navy/10 bg-white p-6">
