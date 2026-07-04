@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isFeatureEnabled } from "@/lib/portal/features";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { DOCUMENT_CATEGORIES } from "@/lib/project/labels";
@@ -11,10 +12,12 @@ export default async function ClientDocumentsPage(props: { params: Promise<{ id:
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title")
+    .select("id, title, portal_features")
     .eq("id", id)
     .single();
   if (!project) notFound();
+  if (!isFeatureEnabled(project.portal_features, "documents")) notFound();
+
 
   const { data: documents } = await supabase
     .from("project_documents")

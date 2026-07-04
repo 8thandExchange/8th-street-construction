@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isFeatureEnabled } from "@/lib/portal/features";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ProjectGantt } from "@/components/schedule/ProjectGantt";
@@ -23,10 +24,12 @@ export default async function ClientSchedulePage(props: { params: Promise<{ id: 
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title, start_date, target_completion_date")
+    .select("id, title, start_date, target_completion_date, portal_features")
     .eq("id", id)
     .single();
   if (!project) notFound();
+  if (!isFeatureEnabled(project.portal_features, "schedule")) notFound();
+
 
   const milestones = await loadGanttMilestones(supabase, id);
   const summary = computeScheduleSummary(milestones, {

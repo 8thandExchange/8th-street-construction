@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isFeatureEnabled } from "@/lib/portal/features";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { GalleryGrid } from "@/components/photos/GalleryGrid";
@@ -21,10 +22,12 @@ export default async function ClientUpdatesPage(props: {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title")
+    .select("id, title, portal_features")
     .eq("id", id)
     .single();
   if (!project) notFound();
+  if (!isFeatureEnabled(project.portal_features, "updates")) notFound();
+
 
   const { data: updates, count } = await supabase
     .from("project_updates")

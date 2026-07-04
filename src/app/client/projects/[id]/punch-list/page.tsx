@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isFeatureEnabled } from "@/lib/portal/features";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
@@ -8,8 +9,10 @@ export default async function ClientPunchListPage(props: { params: Promise<{ id:
   const { id } = await props.params;
   const supabase = await createClient();
 
-  const { data: project } = await supabase.from("projects").select("id, title").eq("id", id).single();
+  const { data: project } = await supabase.from("projects").select("id, title, portal_features").eq("id", id).single();
   if (!project) notFound();
+  if (!isFeatureEnabled(project.portal_features, "punch_list")) notFound();
+
 
   const { data: items } = await supabase
     .from("punch_list_items")

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ClientProjectNav } from "@/components/client/ClientProjectNav";
 import { ProjectFundingBadge } from "@/components/project/ProjectFundingBadge";
 import { requireClientProjectAccess } from "@/lib/portal/access";
+import { PORTAL_FEATURES, isFeatureEnabled } from "@/lib/portal/features";
 import { parseFundingType } from "@/lib/project/funding";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +42,12 @@ export default async function ClientProjectLayout({
             <p className="mt-1 text-ink/55 text-sm">{project.subtitle}</p>
           )}
           <div className="mt-5">
-            <ClientProjectNav projectId={id} />
+            <ClientProjectNav
+              projectId={id}
+              enabledHrefs={PORTAL_FEATURES.filter((f) =>
+                isFeatureEnabled(project.portal_features, f.key)
+              ).map((f) => f.href)}
+            />
           </div>
         </div>
       </div>

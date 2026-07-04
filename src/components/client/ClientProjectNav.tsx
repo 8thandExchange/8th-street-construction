@@ -18,13 +18,22 @@ const TABS = [
   { href: "/change-orders", label: "Change Orders" },
 ] as const;
 
-export function ClientProjectNav({ projectId }: { projectId: string }) {
+export function ClientProjectNav({
+  projectId,
+  enabledHrefs,
+}: {
+  projectId: string;
+  /** Tab hrefs enabled for this project (from portal_features). Omit = all. */
+  enabledHrefs?: string[];
+}) {
   const pathname = usePathname();
   const base = `/client/projects/${projectId}`;
+  const enabled = enabledHrefs ? new Set(enabledHrefs) : null;
+  const tabs = TABS.filter((tab) => tab.href === "" || !enabled || enabled.has(tab.href));
 
   return (
     <nav className="flex gap-2 overflow-x-auto pb-2 scrollbar-none" aria-label="Project">
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const href = `${base}${tab.href}`;
         const active =
           tab.href === ""

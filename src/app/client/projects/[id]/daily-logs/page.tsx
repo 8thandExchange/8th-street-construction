@@ -1,4 +1,4 @@
-import { requireClientProjectAccess } from "@/lib/portal/access";
+import { requireClientProjectFeature } from "@/lib/portal/access";
 import Link from "next/link";
 import { CloudSun, HardHat } from "lucide-react";
 
@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ClientDailyLogsPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
-  const { supabase, project } = await requireClientProjectAccess(id);
+  const { supabase, project } = await requireClientProjectFeature(id, "daily_logs");
 
   const { data: logs } = await supabase
     .from("project_daily_logs")

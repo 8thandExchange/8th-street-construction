@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isFeatureEnabled } from "@/lib/portal/features";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -32,8 +33,10 @@ export default async function ClientSelectionsPage(props: { params: Promise<{ id
   const { id } = await props.params;
   const supabase = await createClient();
 
-  const { data: project } = await supabase.from("projects").select("id, title").eq("id", id).single();
+  const { data: project } = await supabase.from("projects").select("id, title, portal_features").eq("id", id).single();
   if (!project) notFound();
+  if (!isFeatureEnabled(project.portal_features, "selections")) notFound();
+
 
   const { data: items } = await supabase
     .from("project_selections")

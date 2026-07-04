@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isFeatureEnabled } from "@/lib/portal/features";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { BillingBrandHeader } from "@/components/billing/BillingBrandHeader";
@@ -25,10 +26,12 @@ export default async function ClientBillingPage(props: {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title, slug, contract_value")
+    .select("id, title, slug, contract_value, portal_features")
     .eq("id", id)
     .single();
   if (!project) notFound();
+  if (!isFeatureEnabled(project.portal_features, "billing")) notFound();
+
 
   const [{ data: draws }, { data: invoices }] = await Promise.all([
     supabase

@@ -137,3 +137,24 @@ export async function removeProjectPortalMember(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidateAll(projectId, profileId);
 }
+
+/** Save which portal features (tabs) this project's clients can see. */
+export async function updateProjectPortalFeatures(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const projectId = String(formData.get("project_id"));
+
+  const { PORTAL_FEATURES } = await import("@/lib/portal/features");
+  const features: Record<string, boolean> = {};
+  for (const f of PORTAL_FEATURES) {
+    features[f.key] = formData.get(`feature_${f.key}`) === "on";
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update({ portal_features: features })
+    .eq("id", projectId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/admin/projects/${projectId}/overview`);
+  revalidatePath(`/client/projects/${projectId}`, "layout");
+}
