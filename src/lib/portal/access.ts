@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import { isFeatureEnabled, type PortalFeatureKey } from "@/lib/portal/features";
 
 export type ClientProjectRow = {
   id: string;
@@ -84,6 +85,13 @@ export async function requireClientProjectAccess(projectId: string) {
   if (!project) notFound();
 
   return { supabase, user, profile, project };
+}
+
+/** Like requireClientProjectAccess, but also 404s when the feature is toggled off for this project. */
+export async function requireClientProjectFeature(projectId: string, feature: PortalFeatureKey) {
+  const ctx = await requireClientProjectAccess(projectId);
+  if (!isFeatureEnabled(ctx.project.portal_features, feature)) notFound();
+  return ctx;
 }
 
 /** Check access without throwing — for conditional UI. */

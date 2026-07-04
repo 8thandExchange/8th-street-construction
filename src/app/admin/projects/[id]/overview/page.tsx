@@ -9,6 +9,8 @@ import {
 } from "@/lib/actions/project-overview";
 import { listJurisdictions } from "@/lib/building-regulations/registry";
 import { ClientAssignmentPanel } from "@/components/project/ClientAssignmentPanel";
+import { updateProjectPortalFeatures } from "@/lib/actions/portal-access-control";
+import { PORTAL_FEATURES, isFeatureEnabled } from "@/lib/portal/features";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +77,37 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
         clients={clients ?? []}
         portalMembers={portalMembers}
       />
+
+      <form
+        action={async (fd) => {
+          "use server";
+          await updateProjectPortalFeatures(fd);
+        }}
+        className="bg-paper border border-ink/15 p-6 md:p-8 mb-10"
+      >
+        <input type="hidden" name="project_id" value={project.id} />
+        <h3 className="eyebrow mb-1">Portal features for this job</h3>
+        <p className="text-sm text-ink/60 mb-4">
+          Untick anything this client doesn&apos;t need — hidden tabs disappear from their
+          portal. Overview and access rules are unaffected.
+        </p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2.5">
+          {PORTAL_FEATURES.map((f) => (
+            <label key={f.key} className="flex items-center gap-2.5 text-sm text-ink cursor-pointer">
+              <input
+                type="checkbox"
+                name={`feature_${f.key}`}
+                defaultChecked={isFeatureEnabled(project.portal_features, f.key)}
+                className="w-4 h-4 accent-copper"
+              />
+              {f.label}
+            </label>
+          ))}
+        </div>
+        <button type="submit" className="mt-5 h-9 px-4 app-btn app-btn-secondary">
+          Save Portal Features
+        </button>
+      </form>
 
       <form
         action={async (fd) => {

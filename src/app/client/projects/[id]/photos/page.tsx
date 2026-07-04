@@ -1,4 +1,4 @@
-import { requireClientProjectAccess } from "@/lib/portal/access";
+import { requireClientProjectFeature } from "@/lib/portal/access";
 import Link from "next/link";
 import { GalleryGrid, type GalleryImage } from "@/components/photos/GalleryGrid";
 
@@ -13,7 +13,7 @@ type UpdateWithImages = {
 
 export default async function ClientPhotosPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
-  const { supabase, project } = await requireClientProjectAccess(id);
+  const { supabase, project } = await requireClientProjectFeature(id, "photos");
 
   const { data: updates } = await supabase
     .from("project_updates")

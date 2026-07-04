@@ -1,4 +1,4 @@
-import { requireClientProjectAccess } from "@/lib/portal/access";
+import { requireClientProjectFeature } from "@/lib/portal/access";
 import Link from "next/link";
 import { clientRespondChangeOrder } from "@/lib/actions/change-orders";
 import {
@@ -12,7 +12,7 @@ export default async function ClientChangeOrdersPage(props: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await props.params;
-  const { supabase, project } = await requireClientProjectAccess(id);
+  const { supabase, project } = await requireClientProjectFeature(id, "change_orders");
 
   const { data: orders } = await supabase
     .from("change_orders")

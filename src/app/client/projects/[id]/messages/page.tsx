@@ -1,4 +1,4 @@
-import { requireClientProjectAccess } from "@/lib/portal/access";
+import { requireClientProjectFeature } from "@/lib/portal/access";
 import Link from "next/link";
 import {
   LiveMessageThread,
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ClientMessagesPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
-  const { supabase, user, project } = await requireClientProjectAccess(id);
+  const { supabase, user, project } = await requireClientProjectFeature(id, "messages");
 
   const { data: messages } = await supabase
     .from("project_messages")
