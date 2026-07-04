@@ -16,6 +16,12 @@ const nextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        // Brand imagery generated via the company Higgsfield account
+        protocol: "https",
+        hostname: "d8j0ntlcm91z4.cloudfront.net",
+        pathname: "/user_3FKaDTe0AKMeUNUmiqtjxEQGLrP/**",
+      },
     ],
   },
   experimental: {
