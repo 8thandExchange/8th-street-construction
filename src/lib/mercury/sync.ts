@@ -4,12 +4,17 @@ import { sendInvoicePaidEmail } from "@/lib/email/invoice-notify";
 import { mercuryConfigured } from "./config";
 import { getMercuryInvoice } from "./invoices";
 
-function revalidateBilling(projectId: string) {
-  // Dynamic import avoids circular deps in server actions
-  return import("next/cache").then(({ revalidatePath }) => {
+async function revalidateBilling(projectId: string) {
+  // Dynamic import avoids circular deps in server actions. Swallow errors:
+  // when a sync runs during a page render (client billing page loads),
+  // revalidatePath throws — the page is already rendering fresh data.
+  try {
+    const { revalidatePath } = await import("next/cache");
     revalidatePath(`/admin/projects/${projectId}/billing`);
     revalidatePath(`/client/projects/${projectId}/billing`);
-  });
+  } catch {
+    // not allowed during render — safe to skip
+  }
 }
 
 export async function markInvoicePaidLocally(
