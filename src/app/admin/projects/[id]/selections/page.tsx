@@ -1,6 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import { createSelection, updateSelection, deleteSelection } from "@/lib/actions/selections";
+import {
+  createSelection,
+  updateSelection,
+  deleteSelection,
+  addSelectionOption,
+  deleteSelectionOption,
+} from "@/lib/actions/selections";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +34,7 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
 
   const { data: items } = await supabase
     .from("project_selections")
-    .select("*")
+    .select("*, selection_options(id, title, price, vendor, image_url, display_order)")
     .eq("project_id", id)
     .order("due_date", { ascending: true, nullsFirst: false });
 
@@ -204,12 +210,82 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
                 Save
               </button>
             </form>
+            <div className="px-5 pb-2 border-t border-ink/10 pt-4">
+              <div className="eyebrow mb-2">Options for the client to choose from</div>
+              {((item.selection_options ?? []) as {
+                id: string;
+                title: string;
+                price: number | null;
+                vendor: string | null;
+                image_url: string | null;
+                display_order: number;
+              }[])
+                .sort((a, b) => a.display_order - b.display_order)
+                .map((opt) => (
+                  <div
+                    key={opt.id}
+                    className="flex items-center justify-between gap-3 border border-ink/10 bg-bone px-3 py-2 mb-2"
+                  >
+                    <div className="min-w-0 text-sm text-ink">
+                      <span className={item.selected_option_id === opt.id ? "font-semibold text-copper" : ""}>
+                        {opt.title}
+                        {item.selected_option_id === opt.id && " ✓ client's choice"}
+                      </span>
+                      <span className="ml-2 text-xs text-stone-300">
+                        {opt.price != null && `$${Number(opt.price).toLocaleString()}`}
+                        {opt.vendor && ` · ${opt.vendor}`}
+                        {opt.image_url && " · photo"}
+                      </span>
+                    </div>
+                    <form
+                      action={async (fd) => {
+                        "use server";
+                        await deleteSelectionOption(fd);
+                      }}
+                    >
+                      <input type="hidden" name="project_id" value={id} />
+                      <input type="hidden" name="option_id" value={opt.id} />
+                      <button type="submit" className="text-[10px] font-mono uppercase text-red-600/70">
+                        Remove
+                      </button>
+                    </form>
+                  </div>
+                ))}
+              <form
+                action={async (fd) => {
+                  "use server";
+                  await addSelectionOption(fd);
+                }}
+                className="grid grid-cols-2 gap-2 mt-3"
+              >
+                <input type="hidden" name="project_id" value={id} />
+                <input type="hidden" name="selection_id" value={item.id} />
+                <input name="title" required className="field-input" placeholder="Option name *" />
+                <input type="number" step="0.01" name="price" className="field-input" placeholder="Price ($)" />
+                <input name="vendor" className="field-input" placeholder="Vendor" />
+                <input name="image_url" className="field-input" placeholder="Photo URL (optional)" />
+                <textarea
+                  name="description"
+                  rows={2}
+                  className="field-input col-span-2"
+                  placeholder="Short description the client sees"
+                />
+                <div className="col-span-2">
+                  <button type="submit" className="h-9 px-4 app-btn app-btn-secondary">
+                    Add Option
+                  </button>
+                  <span className="ml-3 text-xs text-ink/50">
+                    Set status to “client review” so the client can choose.
+                  </span>
+                </div>
+              </form>
+            </div>
             <form
               action={async (fd) => {
                 "use server";
                 await deleteSelection(fd);
               }}
-              className="px-5 pb-4"
+              className="px-5 pb-4 pt-2"
             >
               <input type="hidden" name="project_id" value={id} />
               <input type="hidden" name="id" value={item.id} />

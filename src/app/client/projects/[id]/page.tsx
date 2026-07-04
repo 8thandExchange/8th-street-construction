@@ -36,11 +36,21 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
 
   const base = `/client/projects/${project.id}`;
 
+  const daysToCompletion = project.target_completion_date
+    ? Math.ceil(
+        (new Date(`${project.target_completion_date}T12:00:00`).getTime() - Date.now()) /
+          86_400_000
+      )
+    : null;
+
   const heroStats = [
     {
       label: "Phases",
       value: `${dashboard.completedPhases}/${dashboard.totalPhases}`,
     },
+    ...(daysToCompletion !== null && daysToCompletion > 0
+      ? [{ label: "Days to go", value: daysToCompletion, accent: true }]
+      : []),
     {
       label: "Updates",
       value: dashboard.updateCount,

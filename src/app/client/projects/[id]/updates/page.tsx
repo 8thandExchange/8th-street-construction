@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import { GalleryGrid } from "@/components/photos/GalleryGrid";
 
 export const dynamic = "force-dynamic";
 
@@ -69,18 +69,15 @@ export default async function ClientUpdatesPage(props: {
               <p className="text-sm text-ink/75 leading-relaxed whitespace-pre-wrap">{u.body}</p>
             )}
             {u.project_update_images && u.project_update_images.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-4">
-                {u.project_update_images.map((img) => (
-                  <div key={img.id} className="aspect-square relative bg-bone overflow-hidden">
-                    <Image
-                      src={img.public_url}
-                      alt={img.caption || u.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 50vw, 200px"
-                    />
-                  </div>
-                ))}
+              <div className="mt-4">
+                <GalleryGrid
+                  images={u.project_update_images.map((img) => ({
+                    id: img.id,
+                    url: img.public_url,
+                    caption: img.caption || u.title,
+                  }))}
+                  columns={3}
+                />
               </div>
             )}
           </article>
