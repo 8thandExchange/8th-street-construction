@@ -2,7 +2,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
   seedCompanyCompliance,
-  syncComplianceStatuses,
   triggerComplianceReminders,
   upsertComplianceItem,
   deleteComplianceItem,
@@ -23,8 +22,9 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default async function CompanyCompliancePage() {
-  await syncComplianceStatuses();
-
+  // Statuses are computed live below (and synced to the DB by the daily
+  // cron); calling the sync action here crashed the page — revalidatePath
+  // is not allowed during render.
   const supabase = await createClient();
   const { data: items } = await supabase
     .from("company_compliance_items")
