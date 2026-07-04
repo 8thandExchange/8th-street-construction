@@ -20,6 +20,7 @@ export type AssistantToolName =
   | "get_project_billing"
   | "list_recent_leads"
   | "company_snapshot"
+  | "create_project"
   | "create_invoice"
   | "send_invoice"
   | "mark_invoice_paid";
@@ -90,6 +91,46 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: "object",
       properties: {},
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "create_project",
+    description:
+      "Create a new project/job. Use when the admin references a job that doesn't exist yet. status 'draft' keeps it OFF the public marketing site (recommended for operational jobs); any other status publishes it. Optionally link the client (from find_people) so invoicing works immediately, and seed the standard build-phase playbook.",
+    input_schema: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Job title, e.g. '1137 Merry Street'" },
+        category: {
+          type: "string",
+          enum: [
+            "custom_home",
+            "residential_renovation",
+            "commercial_new_build",
+            "tenant_buildout",
+            "design_build",
+            "historic_restoration",
+          ],
+          description: "Project category (default design_build)",
+        },
+        status: {
+          type: "string",
+          enum: ["draft", "pre_construction", "in_progress", "completed", "on_hold"],
+          description: "Default 'draft' (internal only, hidden from the public site)",
+        },
+        location: { type: "string", description: "City/neighborhood, e.g. 'Augusta, GA'" },
+        street_address: { type: "string" },
+        client_id: {
+          type: "string",
+          description: "Profile UUID from find_people — links the client and enables their portal + invoicing",
+        },
+        apply_playbook: {
+          type: "boolean",
+          description: "Seed standard Georgia residential build phases/tasks (default true)",
+        },
+      },
+      required: ["title"],
       additionalProperties: false,
     },
   },
@@ -218,10 +259,11 @@ export async function executeAssistantTool(
 
   switch (name as AssistantToolName) {
     case "list_projects": {
-      const { data: projects } = await admin
+      const { data: projects, error } = await admin
         .from("projects")
-        .select("id, title, slug, status, contract_value, client_id, funding_program")
+        .select("id, title, slug, status, contract_value, client_id, funding_type")
         .order("updated_at", { ascending: false });
+      if (error) return { error: error.message };
 
       const clientIds = [
         ...new Set((projects ?? []).map((p) => p.client_id).filter(Boolean)),
@@ -242,7 +284,7 @@ export async function executeAssistantTool(
           slug: p.slug,
           status: p.status,
           contract_value: p.contract_value,
-          funding_program: p.funding_program ?? null,
+          funding_type: p.funding_type ?? null,
           client: c
             ? {
                 id: c.id,
@@ -336,6 +378,45 @@ export async function executeAssistantTool(
         outstanding_receivables: outstanding,
         outstanding_formatted: formatMoney(outstanding),
       };
+    }
+
+    case "create_project": {
+      const title = String(i.title ?? "").trim();
+      if (!title) return { error: "title is required" };
+      const { slugifyProjectTitle } = await import("@/lib/utils");
+      const slug = slugifyProjectTitle(title);
+      if (!slug) return { error: "Could not derive a slug from that title" };
+
+      const status = String(i.status ?? "draft");
+      const { data: project, error } = await admin
+        .from("projects")
+        .insert({
+          slug,
+          title,
+          category: String(i.category ?? "design_build"),
+          status,
+          location: String(i.location ?? "").trim() || null,
+          street_address: String(i.street_address ?? "").trim() || null,
+          published_at: status !== "draft" ? new Date().toISOString() : null,
+          ...(i.client_id
+            ? { client_id: String(i.client_id), client_portal_enabled: true }
+            : {}),
+        })
+        .select("id, title, slug, status, client_id")
+        .single();
+      if (error || !project) return { error: error?.message ?? "Could not create project" };
+
+      if (i.apply_playbook !== false) {
+        try {
+          const { applyPlaybookToProject } = await import("@/lib/build/apply-playbook");
+          const { DEFAULT_PLAYBOOK_ID } = await import("@/lib/build/playbook-registry");
+          await applyPlaybookToProject(project.id, DEFAULT_PLAYBOOK_ID, {});
+        } catch (err) {
+          console.error("Playbook seeding failed:", err);
+        }
+      }
+
+      return { ok: true, project };
     }
 
     case "create_invoice": {
