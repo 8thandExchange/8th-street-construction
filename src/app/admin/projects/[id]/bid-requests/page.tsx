@@ -65,12 +65,12 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
         </p>
         <div>
           <label className="field-label">Title *</label>
-          <input name="title" required className="field-input" placeholder="Electrical rough-in" />
+          <input name="title" required className="field-input" placeholder="Scope of work" />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="field-label">Trade *</label>
-            <input name="trade" required className="field-input" placeholder="electrical" />
+            <input name="trade" required className="field-input" placeholder="trade" />
           </div>
           <div>
             <label className="field-label">Bid deadline</label>

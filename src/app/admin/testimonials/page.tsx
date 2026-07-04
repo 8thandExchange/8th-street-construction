@@ -63,7 +63,7 @@ export default async function AdminTestimonials() {
           </div>
           <div>
             <label className="field-label">Title / Location</label>
-            <input name="client_title" className="field-input" placeholder="Homeowner, Augusta GA" />
+            <input name="client_title" className="field-input" placeholder="Client name or role" />
           </div>
         </div>
         <div>

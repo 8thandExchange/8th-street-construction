@@ -74,7 +74,7 @@ export function ManualSubQuoteForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="field-label">Sub company *</label>
-          <input name="company_name" list="sub-list" required className="field-input" placeholder="ABC Electric" />
+          <input name="company_name" list="sub-list" required className="field-input" placeholder="Company name" />
           <datalist id="sub-list">
             {subcontractors.map((s) => (
               <option key={s.id} value={s.company_name} />
@@ -94,7 +94,7 @@ export function ManualSubQuoteForm({
         </div>
         <div>
           <label className="field-label">Trade *</label>
-          <input name="trade" required className="field-input" placeholder="Electrical" />
+          <input name="trade" required className="field-input" placeholder="Trade" />
         </div>
         <div>
           <label className="field-label">Quote amount ($) *</label>
@@ -102,7 +102,7 @@ export function ManualSubQuoteForm({
         </div>
         <div className="md:col-span-2">
           <label className="field-label">What is this for?</label>
-          <input name="title" className="field-input" placeholder="Electrical rough-in & trim" />
+          <input name="title" className="field-input" placeholder="Scope of work title" />
         </div>
         <div className="md:col-span-2">
           <label className="field-label">Match to cost plan line</label>

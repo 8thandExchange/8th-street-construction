@@ -92,7 +92,7 @@ export function NewBasePlanForm({ nextDisplayOrder }: { nextDisplayOrder: number
             value={name}
             onChange={(e) => suggestPlanNumber(e.target.value)}
             className="field-input"
-            placeholder="e.g. The Augusta"
+            placeholder="Plan name"
           />
         </div>
         <div>
@@ -103,7 +103,7 @@ export function NewBasePlanForm({ nextDisplayOrder }: { nextDisplayOrder: number
             value={planNumber}
             onChange={(e) => setPlanNumber(e.target.value.toUpperCase())}
             className="field-input font-mono"
-            placeholder="e.g. AUGUSTA"
+            placeholder="Plan code"
           />
         </div>
       </div>
@@ -119,7 +119,7 @@ export function NewBasePlanForm({ nextDisplayOrder }: { nextDisplayOrder: number
         </div>
         <div>
           <label className="field-label">Variant</label>
-          <input name="variant" className="field-input" placeholder="Optional — e.g. Porch Left" />
+          <input name="variant" className="field-input" placeholder="Variant (optional)" />
         </div>
         <div>
           <label className="field-label">Sheet Count</label>

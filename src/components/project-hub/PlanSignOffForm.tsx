@@ -94,7 +94,7 @@ export function PlanSignOffForm({
       </p>
       <div>
         <label className="field-label">Full Legal Name *</label>
-        <input name="signature_text" required className="field-input" placeholder="Jane Q. Homeowner" />
+        <input name="signature_text" required className="field-input" placeholder="Your full legal name" />
       </div>
       <div>
         <label className="field-label">Acknowledgment *</label>

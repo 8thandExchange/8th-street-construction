@@ -76,7 +76,7 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <label className="field-label">Title *</label>
-            <input name="title" required className="field-input" placeholder="Master bath tile" />
+            <input name="title" required className="field-input" placeholder="Selection title" />
           </div>
           <div>
             <label className="field-label">Category</label>

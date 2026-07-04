@@ -35,7 +35,7 @@ export default function NewProjectPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-ink/15">
           <div>
             <label className="field-label">Street address</label>
-            <input name="street_address" className="field-input" placeholder="608 Macon Ave" />
+            <input name="street_address" className="field-input" placeholder="Job name or street address" />
           </div>
           <div>
             <label className="field-label">Jurisdiction</label>

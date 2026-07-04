@@ -59,7 +59,7 @@ export function ShareManager({
               <input
                 type="text"
                 name="share_password"
-                placeholder="e.g. macon2026"
+                placeholder="Choose an access code"
                 className="field-input w-56"
                 required
                 minLength={4}

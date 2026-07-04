@@ -70,7 +70,7 @@ function AddTaskForm({
       <input
         name="title"
         required
-        placeholder="Task title — e.g. Coordinate tree removal with neighbor"
+        placeholder="Task title"
         className="field-input text-sm"
         autoFocus
       />

@@ -60,7 +60,7 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
           rows={3}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Rough notes — e.g. 'framed back wall, electrician roughed kitchen, rain delayed concrete'"
+          placeholder="Rough notes from the field — what happened today"
           className="field-input"
         />
         <StorageUpload
@@ -96,7 +96,7 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
           <input
             name="weather"
             className="field-input"
-            placeholder="Clear, 72°F"
+            placeholder="Weather conditions"
             value={weather}
             onChange={(e) => setWeather(e.target.value)}
           />

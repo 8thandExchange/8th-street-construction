@@ -135,7 +135,7 @@ export function FundingProgramFields({
               <input
                 name="hud_program_notes"
                 defaultValue={hudProgramNotes ?? ""}
-                placeholder="CHIP award, Turpin Hill, etc."
+                placeholder="Funding program details"
                 className="field-input mt-2 bg-ink/30 border-bone/15 text-bone"
               />
             </div>
