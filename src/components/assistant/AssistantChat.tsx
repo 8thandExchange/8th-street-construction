@@ -48,7 +48,7 @@ const SUGGESTIONS = [
   "Draft an invoice on 608 Macon for the final punch-out, $4,800 — don't send yet",
 ];
 
-export function AssistantChat() {
+export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [history, setHistory] = useState<HistoryMessage[]>([]);
   const [input, setInput] = useState("");
@@ -56,6 +56,7 @@ export function AssistantChat() {
   const [pending, setPending] = useState<PendingConfirmation | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const historyRef = useRef<HistoryMessage[]>([]);
+  const autoSent = useRef(false);
   historyRef.current = history;
 
   useEffect(() => {
@@ -189,6 +190,15 @@ export function AssistantChat() {
     },
     [busy, pending, streamTurn]
   );
+
+  // Query handed off from the command palette (?q=) — send it once on mount.
+  useEffect(() => {
+    if (initialPrompt && !autoSent.current) {
+      autoSent.current = true;
+      sendMessage(initialPrompt);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPrompt]);
 
   const resolveConfirmation = useCallback(
     async (approved: boolean) => {
