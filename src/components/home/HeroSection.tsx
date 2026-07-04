@@ -2,21 +2,16 @@ import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { BrandTexture } from "@/components/site/BrandTexture";
-import {
-  HOME_HERO_POSTER,
-  HOME_HERO_POSTER_ALT,
-  HOME_HERO_VIDEO,
-} from "@/lib/home-hero";
+import { GENERATED_IMAGERY } from "@/lib/generated-imagery";
 import { ContourLines } from "./ContourLines";
-import { HeroVideoBackground } from "./HeroVideoBackground";
+import { HeroStillBackground } from "./HeroStillBackground";
 
 export function HeroSection() {
   return (
     <section id="home" className="relative bg-navy text-parchment overflow-hidden min-h-[100svh]">
-      <HeroVideoBackground
-        src={HOME_HERO_VIDEO}
-        poster={HOME_HERO_POSTER}
-        posterAlt={HOME_HERO_POSTER_ALT}
+      <HeroStillBackground
+        src={GENERATED_IMAGERY.photoHeroPorch.src}
+        alt={GENERATED_IMAGERY.photoHeroPorch.alt}
       />
 
       {/* Scrim — readable copy over video; lighter on the right so motion shows through */}
