@@ -33,14 +33,18 @@ export function resolveMilestoneDates(
   milestone: GanttMilestone,
   dateMode: "internal" | "client"
 ) {
-  const start =
-    dateMode === "client"
-      ? parseDate(milestone.target_date)
-      : parseDate(milestone.scheduled_start) ?? parseDate(milestone.target_date);
+  if (dateMode === "client") {
+    // Clients see real duration bars: the planning start shapes the bar,
+    // but the committed target date always wins as the end date.
+    const target = parseDate(milestone.target_date);
+    const end = target ?? parseDate(milestone.scheduled_end);
+    let start = parseDate(milestone.scheduled_start) ?? target;
+    if (start && end && start > end) start = end;
+    return { start, end: end ?? start };
+  }
+  const start = parseDate(milestone.scheduled_start) ?? parseDate(milestone.target_date);
   const end =
-    dateMode === "client"
-      ? parseDate(milestone.target_date)
-      : parseDate(milestone.scheduled_end) ?? parseDate(milestone.target_date) ?? start;
+    parseDate(milestone.scheduled_end) ?? parseDate(milestone.target_date) ?? start;
   return { start, end: end ?? start };
 }
 
