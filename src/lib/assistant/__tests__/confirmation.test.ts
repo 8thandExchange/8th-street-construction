@@ -19,6 +19,10 @@ describe("requiresConfirmation", () => {
     expect(requiresConfirmation("mark_invoice_paid", {})).toBe(true);
   });
 
+  it("gates portal access grants", () => {
+    expect(requiresConfirmation("grant_project_access", {})).toBe(true);
+  });
+
   it("gates create_invoice only when it sends immediately", () => {
     expect(requiresConfirmation("create_invoice", { send_now: true })).toBe(true);
     expect(requiresConfirmation("create_invoice", { send_now: false })).toBe(false);

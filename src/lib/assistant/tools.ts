@@ -27,7 +27,8 @@ export type AssistantToolName =
   | "get_project_schedule"
   | "update_milestone"
   | "send_client_message"
-  | "create_portal_user";
+  | "create_portal_user"
+  | "grant_project_access";
 
 type LineItemInput = { description: string; quantity: number; unit_amount: number };
 
@@ -258,6 +259,24 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "grant_project_access",
+    description:
+      "Give an existing client-role portal user access to a project (or revoke it). If they're the project's primary client it flips the project's client-portal switch; otherwise they're added as a portal member. Their portal shows the project immediately. Resolve the person with find_people and the project with list_projects first. Creating the login itself is create_portal_user — this tool only attaches/detaches projects.",
+    input_schema: {
+      type: "object",
+      properties: {
+        profile_id: { type: "string", description: "Profile UUID from find_people" },
+        project_id: { type: "string", description: "Project UUID from list_projects" },
+        enabled: {
+          type: "boolean",
+          description: "true = grant access (default), false = revoke",
+        },
+      },
+      required: ["profile_id", "project_id"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "send_invoice",
     description:
       "Send an existing DRAFT invoice to the project's client — pushes it to Mercury for ACH payment and emails the pay link.",
@@ -296,6 +315,7 @@ export function requiresConfirmation(name: string, input: unknown): boolean {
   if (name === "send_invoice" || name === "mark_invoice_paid") return true;
   if (name === "send_client_message") return true;
   if (name === "create_portal_user") return true;
+  if (name === "grant_project_access") return true;
   if (name === "create_invoice") {
     return Boolean((input as CreateInvoiceInput)?.send_now);
   }
@@ -329,6 +349,11 @@ export function describeConfirmation(name: string, input: unknown): string {
     return `Create a ${role} login for ${String(i.email ?? "")}${
       i.password ? " with the password you provided" : " with a generated temporary password"
     }. Existing accounts with this email get their password reset instead.`;
+  }
+  if (name === "grant_project_access") {
+    return i.enabled === false
+      ? "Revoke this person's portal access to the project — it disappears from their portal immediately."
+      : "Grant this person portal access to the project — schedule, photos, documents, and messages become visible to them immediately.";
   }
   return `Run ${name}.`;
 }
@@ -688,6 +713,65 @@ export async function executeAssistantTool(
         note: verified
           ? "Login tested with a real sign-in — it works."
           : "Account saved but the sign-in test FAILED — report this to the admin.",
+      };
+    }
+
+    case "grant_project_access": {
+      const profileId = String(i.profile_id ?? "");
+      const projectId = String(i.project_id ?? "");
+      const enabled = i.enabled !== false;
+      if (!profileId || !projectId) return { error: "profile_id and project_id are required" };
+
+      const [{ data: profile }, { data: project }] = await Promise.all([
+        admin.from("profiles").select("id, role, email, first_name, last_name").eq("id", profileId).single(),
+        admin.from("projects").select("id, title, client_id, client_portal_enabled").eq("id", projectId).single(),
+      ]);
+      if (!profile) return { error: "Person not found — use find_people first" };
+      if (!project) return { error: "Project not found — use list_projects first" };
+
+      // Same rule as the admin UI: primary client → project switch, everyone else → member row.
+      if (project.client_id === profile.id) {
+        const { error } = await admin
+          .from("projects")
+          .update({ client_portal_enabled: enabled })
+          .eq("id", projectId);
+        if (error) return { error: error.message };
+      } else if (enabled) {
+        if (profile.role !== "client") {
+          return { error: "Only client-role users can be added as portal members." };
+        }
+        const { error } = await admin.from("project_portal_members").upsert(
+          {
+            project_id: projectId,
+            profile_id: profileId,
+            portal_enabled: true,
+            granted_at: new Date().toISOString(),
+          },
+          { onConflict: "project_id,profile_id" }
+        );
+        if (error) return { error: error.message };
+      } else {
+        const { error } = await admin
+          .from("project_portal_members")
+          .update({ portal_enabled: false })
+          .eq("project_id", projectId)
+          .eq("profile_id", profileId);
+        if (error) return { error: error.message };
+      }
+
+      const { revalidatePath } = await import("next/cache");
+      revalidatePath(`/admin/projects/${projectId}/overview`);
+      revalidatePath(`/admin/users/${profileId}/access`);
+      revalidatePath("/client");
+
+      const who =
+        [profile.first_name, profile.last_name].filter(Boolean).join(" ") || profile.email;
+      return {
+        ok: true,
+        action: enabled ? "access_granted" : "access_revoked",
+        person: who,
+        project: project.title,
+        via: project.client_id === profile.id ? "primary_client_switch" : "portal_member",
       };
     }
 
