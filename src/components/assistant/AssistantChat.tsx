@@ -44,6 +44,13 @@ const TOOL_LABELS: Record<string, string> = {
   update_milestone: "Updating the schedule",
   send_client_message: "Drafting client message",
   create_portal_user: "Setting up portal login",
+  // Client concierge tools
+  get_schedule: "Reading your schedule",
+  get_recent_updates: "Checking recent updates",
+  get_billing_summary: "Pulling your billing summary",
+  get_documents: "Listing your documents",
+  get_messages: "Reading the message thread",
+  send_message_to_team: "Drafting a message to the team",
 };
 
 const SUGGESTIONS = [
@@ -52,6 +59,16 @@ const SUGGESTIONS = [
   "Send an invoice to Habitat for $12,500 for the framing draw",
   "Flag exterior paint as a volunteer stage — note that Habitat crews are welcome",
 ];
+
+export type AssistantChatConfig = {
+  /** API route the chat talks to (default: the admin assistant) */
+  endpoint?: string;
+  suggestions?: string[];
+  emptyTitle?: string;
+  emptyBody?: string;
+  placeholder?: string;
+  footnote?: string;
+};
 
 /** Minimal Web Speech API surface (Chrome/Edge/Safari; absent elsewhere). */
 type SpeechRecognitionLike = {
@@ -73,7 +90,22 @@ function getSpeechRecognition(): (new () => SpeechRecognitionLike) | null {
     | null;
 }
 
-export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
+export function AssistantChat({
+  initialPrompt,
+  config,
+}: {
+  initialPrompt?: string;
+  config?: AssistantChatConfig;
+}) {
+  const endpoint = config?.endpoint ?? "/api/assistant";
+  const suggestions = config?.suggestions ?? SUGGESTIONS;
+  const emptyTitle = config?.emptyTitle ?? "What needs doing?";
+  const emptyBody =
+    config?.emptyBody ??
+    "Invoicing, schedules, client messages, leads — type it or tap the mic and say it. Anything that moves money or reaches a client waits for your approval first.";
+  const placeholder = config?.placeholder ?? 'Try: "send an invoice to Habitat for $12,500"';
+  const footnote =
+    config?.footnote ?? "Money actions and client messages require your approval before anything sends.";
   const [items, setItems] = useState<DisplayItem[]>([]);
   const [history, setHistory] = useState<HistoryMessage[]>([]);
   const [input, setInput] = useState("");
@@ -134,7 +166,7 @@ export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
     async (body: Record<string, unknown>) => {
       setBusy(true);
       try {
-        const res = await fetch("/api/assistant", {
+        const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
@@ -241,7 +273,7 @@ export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
         setBusy(false);
       }
     },
-    []
+    [endpoint]
   );
 
   const sendMessage = useCallback(
@@ -296,13 +328,10 @@ export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-navy text-copper">
               <Sparkles size={20} strokeWidth={1.75} />
             </div>
-            <h2 className="font-display text-2xl text-navy">What needs doing?</h2>
-            <p className="mt-2 text-sm app-muted">
-              Invoicing, schedules, client messages, leads — type it or tap the mic and say it.
-              Anything that moves money or reaches a client waits for your approval first.
-            </p>
+            <h2 className="font-display text-2xl text-navy">{emptyTitle}</h2>
+            <p className="mt-2 text-sm app-muted">{emptyBody}</p>
             <div className="mt-6 grid gap-2">
-              {SUGGESTIONS.map((s) => (
+              {suggestions.map((s) => (
                 <button
                   key={s}
                   onClick={() => sendMessage(s)}
@@ -428,11 +457,7 @@ export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
               }
             }}
             rows={1}
-            placeholder={
-              pending
-                ? "Approve or cancel the pending action first…"
-                : 'Try: "send an invoice to Habitat for $12,500"'
-            }
+            placeholder={pending ? "Approve or cancel the pending action first…" : placeholder}
             disabled={Boolean(pending)}
             className="max-h-40 min-h-[38px] flex-1 resize-none bg-transparent px-2 py-1.5 text-[14px] text-navy outline-none placeholder:text-navy/35 disabled:opacity-60"
           />
@@ -461,9 +486,7 @@ export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
             <ArrowUp size={16} strokeWidth={2} />
           </button>
         </div>
-        <p className="mt-2 text-center text-[11px] app-muted">
-          Money actions and client messages require your approval before anything sends.
-        </p>
+        <p className="mt-2 text-center text-[11px] app-muted">{footnote}</p>
       </form>
     </div>
   );
