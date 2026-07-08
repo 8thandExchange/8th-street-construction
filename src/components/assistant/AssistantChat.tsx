@@ -43,6 +43,7 @@ const TOOL_LABELS: Record<string, string> = {
   get_project_schedule: "Reading the schedule",
   update_milestone: "Updating the schedule",
   send_client_message: "Drafting client message",
+  create_portal_user: "Setting up portal login",
 };
 
 const SUGGESTIONS = [

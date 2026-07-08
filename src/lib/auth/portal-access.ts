@@ -47,16 +47,38 @@ export async function sendPortalCredentialsEmail(payload: {
   return { ok: true as const };
 }
 
+/**
+ * Prove a login actually works: attempt a real password sign-in with the
+ * public anon key (stateless — no cookies touched).
+ */
+export async function verifyPortalLogin(email: string, password: string): Promise<boolean> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) return false;
+  const { createClient } = await import("@supabase/supabase-js");
+  const probe = createClient(url, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await probe.auth.signInWithPassword({ email, password });
+  if (data.session) await probe.auth.signOut({ scope: "local" }).catch(() => {});
+  return !error && Boolean(data.session);
+}
+
 export async function provisionPortalUser(input: {
   email: string;
   role: UserRole;
   firstName?: string | null;
   lastName?: string | null;
   sendEmail?: boolean;
+  /** Explicit starting password; a temporary one is generated when omitted */
+  password?: string;
+  /** Force a password change at first login (defaults to true only for generated passwords) */
+  forcePasswordChange?: boolean;
 }) {
   const admin = createAdminClient();
   const email = input.email.trim().toLowerCase();
-  const tempPassword = generateTemporaryPassword();
+  const tempPassword = input.password?.trim() || generateTemporaryPassword();
+  const mustChange = input.forcePasswordChange ?? !input.password;
 
   const { data: existingProfile } = await admin
     .from("profiles")
@@ -71,7 +93,7 @@ export async function provisionPortalUser(input: {
       email,
       password: tempPassword,
       email_confirm: true,
-      user_metadata: { must_change_password: true },
+      user_metadata: { must_change_password: mustChange },
     });
 
     if (createErr) {
@@ -83,7 +105,7 @@ export async function provisionPortalUser(input: {
         userId = found.id;
         await admin.auth.admin.updateUserById(userId, {
           password: tempPassword,
-          user_metadata: { must_change_password: true },
+          user_metadata: { must_change_password: mustChange },
         });
       } else {
         return { error: createErr.message };
@@ -94,7 +116,7 @@ export async function provisionPortalUser(input: {
   } else {
     await admin.auth.admin.updateUserById(userId, {
       password: tempPassword,
-      user_metadata: { must_change_password: true },
+      user_metadata: { must_change_password: mustChange },
     });
   }
 
@@ -107,7 +129,7 @@ export async function provisionPortalUser(input: {
       role: input.role,
       first_name: input.firstName ?? null,
       last_name: input.lastName ?? null,
-      must_change_password: true,
+      must_change_password: mustChange,
     },
     { onConflict: "id" }
   );

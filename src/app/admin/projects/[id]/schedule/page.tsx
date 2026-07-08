@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { ScheduleTimeline } from "@/components/project-hub/ScheduleTimeline";
 import { InteractiveScheduleGantt } from "@/components/schedule/InteractiveScheduleGantt";
 import { ScheduleDashboard } from "@/components/schedule/ScheduleDashboard";
@@ -54,13 +55,22 @@ export default async function ProjectSchedulePage(props: { params: Promise<{ id:
 
   return (
     <div className="max-w-6xl space-y-10">
-      <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper">Build</p>
-        <h2 className="mt-2 app-h1">Schedule</h2>
-        <p className="mt-2 text-sm text-ink/60 max-w-2xl leading-relaxed">
-          Drag phase bars to reschedule, preview the client view, and share a password-protected
-          progress page.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper">Build</p>
+          <h2 className="mt-2 app-h1">Schedule</h2>
+          <p className="mt-2 text-sm text-ink/60 max-w-2xl leading-relaxed">
+            Drag phase bars to reschedule, preview the client view, and share a password-protected
+            progress page.
+          </p>
+        </div>
+        <Link
+          href={`/print/schedule/${id}`}
+          target="_blank"
+          className="inline-flex h-9 items-center border border-ink/20 px-4 font-mono text-[10px] uppercase tracking-[0.18em] text-ink/70 transition-colors hover:border-ink/40 hover:text-ink"
+        >
+          Print / PDF
+        </Link>
       </div>
 
       {!milestones.length ? (
