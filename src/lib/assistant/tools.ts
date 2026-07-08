@@ -23,7 +23,10 @@ export type AssistantToolName =
   | "create_project"
   | "create_invoice"
   | "send_invoice"
-  | "mark_invoice_paid";
+  | "mark_invoice_paid"
+  | "get_project_schedule"
+  | "update_milestone"
+  | "send_client_message";
 
 type LineItemInput = { description: string; quantity: number; unit_amount: number };
 
@@ -169,6 +172,62 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "get_project_schedule",
+    description:
+      "Get the build schedule for one project: every phase with dates, status, days late (if past its target), task counts, volunteer flags, plus the current phase and what's up next. Call before answering schedule questions or changing dates.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_id: { type: "string", description: "Project UUID from list_projects" },
+      },
+      required: ["project_id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "update_milestone",
+    description:
+      "Update one schedule phase (milestone): shift its dates, change status, edit the client-facing description, or flag it as a volunteer stage with a note (Habitat builds). Only provided fields change. The client sees the result immediately on their portal schedule.",
+    input_schema: {
+      type: "object",
+      properties: {
+        milestone_id: { type: "string", description: "Milestone UUID from get_project_schedule" },
+        target_date: { type: "string", description: "Client-facing commitment date YYYY-MM-DD" },
+        scheduled_start: { type: "string", description: "Planning window start YYYY-MM-DD" },
+        scheduled_end: { type: "string", description: "Planning window end YYYY-MM-DD" },
+        status: {
+          type: "string",
+          enum: ["pending", "in_progress", "completed", "blocked"],
+        },
+        description: { type: "string", description: "Client-facing sentence about the phase" },
+        volunteer_friendly: {
+          type: "boolean",
+          description: "true = show a 'Volunteer stage' chip on the client schedule",
+        },
+        volunteer_notes: {
+          type: "string",
+          description: "Client-visible volunteer note: dates, what to bring, who to contact",
+        },
+      },
+      required: ["milestone_id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "send_client_message",
+    description:
+      "Send a message to a project's client through the portal message thread. The client is notified by email, SMS, and push immediately. Write in the company voice, sign off as the 8th Street team. Use for schedule updates, heads-ups, and answers to client questions.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_id: { type: "string", description: "Project UUID" },
+        body: { type: "string", description: "The message text exactly as the client will read it" },
+      },
+      required: ["project_id", "body"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "send_invoice",
     description:
       "Send an existing DRAFT invoice to the project's client — pushes it to Mercury for ACH payment and emails the pay link.",
@@ -205,6 +264,7 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
  */
 export function requiresConfirmation(name: string, input: unknown): boolean {
   if (name === "send_invoice" || name === "mark_invoice_paid") return true;
+  if (name === "send_client_message") return true;
   if (name === "create_invoice") {
     return Boolean((input as CreateInvoiceInput)?.send_now);
   }
@@ -227,6 +287,11 @@ export function describeConfirmation(name: string, input: unknown): string {
   }
   if (name === "mark_invoice_paid") {
     return "Mark this invoice paid in full. This updates the books and may notify the client.";
+  }
+  if (name === "send_client_message") {
+    const body = String(i.body ?? "");
+    const preview = body.length > 280 ? `${body.slice(0, 280)}…` : body;
+    return `Send this message to the client (they'll be notified by email, SMS, and push):\n\n"${preview}"`;
   }
   return `Run ${name}.`;
 }
@@ -437,6 +502,117 @@ export async function executeAssistantTool(
         action: input.send_now ? "created_and_sent" : "created_draft",
         invoice,
       };
+    }
+
+    case "get_project_schedule": {
+      const projectId = String(i.project_id ?? "");
+      const [{ data: project }, { data: milestones }, { data: tasks }] = await Promise.all([
+        admin
+          .from("projects")
+          .select("id, title, start_date, target_completion_date")
+          .eq("id", projectId)
+          .single(),
+        admin
+          .from("project_milestones")
+          .select("*")
+          .eq("project_id", projectId)
+          .order("display_order", { ascending: true }),
+        admin
+          .from("project_tasks")
+          .select("milestone_id, status, title, due_date")
+          .eq("project_id", projectId),
+      ]);
+      if (!project) return { error: "Project not found" };
+
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+      const phases = (milestones ?? []).map((m) => {
+        const phaseTasks = (tasks ?? []).filter((t) => t.milestone_id === m.id);
+        const doneCount = phaseTasks.filter((t) => t.status === "done").length;
+        const end = m.target_date ? new Date(`${m.target_date}T12:00:00`) : null;
+        const daysLate =
+          m.status !== "completed" && end && end < today
+            ? Math.max(1, Math.floor((today.getTime() - end.getTime()) / 86_400_000))
+            : 0;
+        return {
+          id: m.id,
+          title: m.title,
+          status: m.status,
+          scheduled_start: m.scheduled_start,
+          scheduled_end: m.scheduled_end,
+          target_date: m.target_date,
+          days_late: daysLate,
+          tasks_done: doneCount,
+          tasks_total: phaseTasks.length,
+          open_tasks: phaseTasks
+            .filter((t) => t.status !== "done" && t.status !== "cancelled")
+            .map((t) => ({ title: t.title, status: t.status, due_date: t.due_date })),
+          volunteer_friendly: m.volunteer_friendly ?? false,
+          volunteer_notes: m.volunteer_notes ?? null,
+          description: m.description ?? null,
+        };
+      });
+
+      return {
+        project: {
+          id: project.id,
+          title: project.title,
+          start_date: project.start_date,
+          target_completion_date: project.target_completion_date,
+        },
+        current_phase: phases.find((p) => p.status === "in_progress")?.title ?? null,
+        next_up:
+          phases.find(
+            (p) =>
+              p.status === "pending" &&
+              p.scheduled_start &&
+              new Date(`${p.scheduled_start}T12:00:00`) > today
+          )?.title ?? null,
+        phases,
+      };
+    }
+
+    case "update_milestone": {
+      const milestoneId = String(i.milestone_id ?? "");
+      if (!milestoneId) return { error: "milestone_id is required" };
+
+      const patch: Record<string, unknown> = {};
+      for (const key of [
+        "target_date",
+        "scheduled_start",
+        "scheduled_end",
+        "status",
+        "description",
+        "volunteer_notes",
+      ]) {
+        if (i[key] !== undefined) patch[key] = i[key];
+      }
+      if (i.volunteer_friendly !== undefined) {
+        patch.volunteer_friendly = Boolean(i.volunteer_friendly);
+      }
+      if (i.status === "completed") patch.completed_at = new Date().toISOString();
+      if (Object.keys(patch).length === 0) return { error: "Nothing to update" };
+
+      const { data, error } = await admin
+        .from("project_milestones")
+        .update(patch)
+        .eq("id", milestoneId)
+        .select("id, title, status, target_date, scheduled_start, scheduled_end, volunteer_friendly")
+        .single();
+      if (error) return { error: error.message };
+      return { ok: true, milestone: data };
+    }
+
+    case "send_client_message": {
+      const { sendProjectMessage } = await import("@/lib/actions/messages");
+      const result = await sendProjectMessage(
+        toFormData({
+          project_id: String(i.project_id ?? ""),
+          body: String(i.body ?? ""),
+        })
+      );
+      if (result && "error" in result && result.error) return { error: result.error };
+      return { ok: true, action: "message_sent_and_client_notified" };
     }
 
     case "send_invoice": {

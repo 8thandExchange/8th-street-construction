@@ -7,11 +7,11 @@ export async function loadGanttMilestones(
   projectId: string
 ): Promise<GanttMilestone[]> {
   const [{ data: milestones }, { data: tasks }] = await Promise.all([
+    // select("*") tolerates columns that newer migrations add (e.g. volunteer
+    // fields) without breaking deploys that race the migration.
     supabase
       .from("project_milestones")
-      .select(
-        "id, title, status, target_date, scheduled_start, scheduled_end, display_order, phase_key, predecessor_id, description, completed_at"
-      )
+      .select("*")
       .eq("project_id", projectId)
       .order("display_order", { ascending: true }),
     supabase
@@ -44,5 +44,7 @@ export async function loadGanttMilestones(
     predecessor_id: milestone.predecessor_id ?? null,
     description: milestone.description ?? null,
     completed_at: milestone.completed_at ?? null,
+    volunteer_friendly: milestone.volunteer_friendly ?? null,
+    volunteer_notes: milestone.volunteer_notes ?? null,
   }));
 }
