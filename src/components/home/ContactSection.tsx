@@ -1,9 +1,10 @@
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { ContactForm } from "./ContactForm";
-import { BRAND, brandPhoneTel } from "@/lib/brand/assets";
+import { getSiteContact, contactTelHref } from "@/lib/site-contact";
 
-export function ContactSection() {
+export async function ContactSection() {
+  const contact = await getSiteContact();
   return (
     <section id="contact" className="relative bg-navy text-parchment section-pad overflow-hidden">
       <Container size="wide" className="relative">
@@ -24,16 +25,16 @@ export function ContactSection() {
             </Reveal>
             <Reveal delay={220} className="mt-10 hidden lg:block space-y-3">
               <a
-                href={`tel:${brandPhoneTel()}`}
+                href={`tel:${contactTelHref(contact.phone)}`}
                 className="block font-sans text-sm text-gold hover:text-parchment transition-colors duration-300 editorial-link"
               >
-                {BRAND.phone}
+                {contact.phone}
               </a>
               <a
-                href="mailto:construction@8thandexchange.com"
+                href={`mailto:${contact.email}`}
                 className="block font-sans text-sm text-gold hover:text-parchment transition-colors duration-300 editorial-link"
               >
-                construction@8thandexchange.com
+                {contact.email}
               </a>
             </Reveal>
           </div>

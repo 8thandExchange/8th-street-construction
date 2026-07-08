@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { SITE_CONTACT_TAG } from "@/lib/site-contact";
 import { SettingField } from "@/components/admin/SettingField";
 import {
   ContactSettingField,
@@ -25,7 +26,8 @@ async function updateSetting(formData: FormData) {
     .from("site_settings")
     .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
 
-  revalidatePath("/");
+  revalidateTag(SITE_CONTACT_TAG);
+  revalidatePath("/", "layout");
   revalidatePath("/admin/settings");
 }
 
