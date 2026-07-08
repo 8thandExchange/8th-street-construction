@@ -26,7 +26,8 @@ export type AssistantToolName =
   | "mark_invoice_paid"
   | "get_project_schedule"
   | "update_milestone"
-  | "send_client_message";
+  | "send_client_message"
+  | "create_portal_user";
 
 type LineItemInput = { description: string; quantity: number; unit_amount: number };
 
@@ -228,6 +229,35 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "create_portal_user",
+    description:
+      "Create (or reset the credentials of) a portal login — admin, client, or subcontractor. With an explicit password, the account starts with that password and the person can change it anytime; without one, a temporary password is generated and a forced change applies at first login. The login is verified with a real sign-in attempt before reporting success.",
+    input_schema: {
+      type: "object",
+      properties: {
+        email: { type: "string", description: "Login email address" },
+        role: {
+          type: "string",
+          enum: ["admin", "client", "subcontractor"],
+          description: "Portal role — admin gets full access to everything",
+        },
+        first_name: { type: "string" },
+        last_name: { type: "string" },
+        password: {
+          type: "string",
+          description:
+            "Explicit starting password (min 8 chars). Omit to generate a temporary one.",
+        },
+        send_credentials_email: {
+          type: "boolean",
+          description: "Email the credentials to the person (default false)",
+        },
+      },
+      required: ["email", "role"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "send_invoice",
     description:
       "Send an existing DRAFT invoice to the project's client — pushes it to Mercury for ACH payment and emails the pay link.",
@@ -265,6 +295,7 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
 export function requiresConfirmation(name: string, input: unknown): boolean {
   if (name === "send_invoice" || name === "mark_invoice_paid") return true;
   if (name === "send_client_message") return true;
+  if (name === "create_portal_user") return true;
   if (name === "create_invoice") {
     return Boolean((input as CreateInvoiceInput)?.send_now);
   }
@@ -292,6 +323,12 @@ export function describeConfirmation(name: string, input: unknown): string {
     const body = String(i.body ?? "");
     const preview = body.length > 280 ? `${body.slice(0, 280)}…` : body;
     return `Send this message to the client (they'll be notified by email, SMS, and push):\n\n"${preview}"`;
+  }
+  if (name === "create_portal_user") {
+    const role = String(i.role ?? "client").toUpperCase();
+    return `Create a ${role} login for ${String(i.email ?? "")}${
+      i.password ? " with the password you provided" : " with a generated temporary password"
+    }. Existing accounts with this email get their password reset instead.`;
   }
   return `Run ${name}.`;
 }
@@ -613,6 +650,45 @@ export async function executeAssistantTool(
       );
       if (result && "error" in result && result.error) return { error: result.error };
       return { ok: true, action: "message_sent_and_client_notified" };
+    }
+
+    case "create_portal_user": {
+      const email = String(i.email ?? "").trim().toLowerCase();
+      const role = String(i.role ?? "");
+      if (!email || !email.includes("@")) return { error: "A valid email is required" };
+      if (!["admin", "client", "subcontractor"].includes(role))
+        return { error: "role must be admin, client, or subcontractor" };
+      const password = i.password ? String(i.password) : undefined;
+      if (password && password.length < 8)
+        return { error: "Password must be at least 8 characters" };
+
+      const { provisionPortalUser, verifyPortalLogin } = await import(
+        "@/lib/auth/portal-access"
+      );
+      const result = await provisionPortalUser({
+        email,
+        role: role as "admin" | "client" | "subcontractor",
+        firstName: i.first_name ? String(i.first_name) : null,
+        lastName: i.last_name ? String(i.last_name) : null,
+        password,
+        forcePasswordChange: password ? false : true,
+        sendEmail: Boolean(i.send_credentials_email),
+      });
+      if ("error" in result) return { error: result.error };
+
+      const verified = await verifyPortalLogin(email, password ?? result.tempPassword);
+      return {
+        ok: true,
+        email,
+        role,
+        login_verified: verified,
+        login_url: result.loginUrl,
+        // Only reveal generated passwords — never echo one the admin chose.
+        ...(password ? {} : { temporary_password: result.tempPassword }),
+        note: verified
+          ? "Login tested with a real sign-in — it works."
+          : "Account saved but the sign-in test FAILED — report this to the admin.",
+      };
     }
 
     case "send_invoice": {
