@@ -159,6 +159,26 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
           {setupStep !== 2 && (
             <>
               <DrawTimeline projectId={id} draws={drawList} />
+              {drawList.length > 0 && (
+                <div className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-navy/10 bg-white px-5 py-4">
+                  <div>
+                    <p className="text-[13px] font-semibold text-navy">
+                      {isHabitat ? "HUD draw packet" : "Draw packet"}
+                    </p>
+                    <p className="mt-0.5 text-[12px] app-muted">
+                      AIA G702/G703-format payment application
+                      {isHabitat && " — the format Augusta requires for HOME fund draws"}.
+                    </p>
+                  </div>
+                  <Link
+                    href={`/print/draw-packet/${id}`}
+                    target="_blank"
+                    className="app-btn app-btn-primary !h-9 shrink-0 !px-4 text-xs"
+                  >
+                    Generate packet
+                  </Link>
+                </div>
+              )}
               <InvoiceList projectId={id} invoices={invoiceList} />
             </>
           )}
