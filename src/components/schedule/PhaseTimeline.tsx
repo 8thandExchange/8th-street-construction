@@ -120,6 +120,11 @@ export function PhaseTimeline({
                   {late} day{late === 1 ? "" : "s"} past target
                 </span>
               )}
+              {m.volunteer_friendly && (
+                <span className="text-[9px] font-mono tracking-[0.12em] uppercase px-2 py-0.5 border border-emerald-200 bg-emerald-50 text-emerald-700">
+                  Volunteer stage
+                </span>
+              )}
             </div>
 
             {(dates || finished) && (
@@ -136,6 +141,12 @@ export function PhaseTimeline({
             {m.description && (
               <p className="mt-2 text-sm text-ink/55 leading-relaxed max-w-xl">
                 {m.description}
+              </p>
+            )}
+
+            {m.volunteer_friendly && m.volunteer_notes && (
+              <p className="mt-2 border-l-2 border-emerald-300 pl-3 text-sm text-emerald-800/80 leading-relaxed max-w-xl">
+                {m.volunteer_notes}
               </p>
             )}
 

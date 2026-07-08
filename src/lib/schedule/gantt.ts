@@ -22,6 +22,10 @@ export type GanttMilestone = {
   description?: string | null;
   /** When the phase was actually finished */
   completed_at?: string | null;
+  /** Phase welcomes volunteer crews (Habitat builds) */
+  volunteer_friendly?: boolean | null;
+  /** Client-visible volunteer note: dates, what to bring, contact */
+  volunteer_notes?: string | null;
 };
 
 export type GanttBar = {

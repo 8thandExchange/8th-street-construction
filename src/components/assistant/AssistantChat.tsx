@@ -7,6 +7,7 @@ import {
   CircleCheck,
   CircleX,
   Loader2,
+  Mic,
   ShieldCheck,
   Sparkles,
   Wrench,
@@ -39,14 +40,37 @@ const TOOL_LABELS: Record<string, string> = {
   create_invoice: "Creating invoice",
   send_invoice: "Sending invoice",
   mark_invoice_paid: "Marking invoice paid",
+  get_project_schedule: "Reading the schedule",
+  update_milestone: "Updating the schedule",
+  send_client_message: "Drafting client message",
 };
 
 const SUGGESTIONS = [
+  "Where are we on 608 Macon — are we on schedule?",
+  "Message Habitat that the slab pours Friday and framing starts the week after",
   "Send an invoice to Habitat for $12,500 for the framing draw",
-  "What's outstanding across all jobs right now?",
-  "Show me our latest leads",
-  "Draft an invoice on 608 Macon for the final punch-out, $4,800 — don't send yet",
+  "Flag exterior paint as a volunteer stage — note that Habitat crews are welcome",
 ];
+
+/** Minimal Web Speech API surface (Chrome/Edge/Safari; absent elsewhere). */
+type SpeechRecognitionLike = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+};
+
+function getSpeechRecognition(): (new () => SpeechRecognitionLike) | null {
+  if (typeof window === "undefined") return null;
+  const w = window as unknown as Record<string, unknown>;
+  return (w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null) as
+    | (new () => SpeechRecognitionLike)
+    | null;
+}
 
 export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
   const [items, setItems] = useState<DisplayItem[]>([]);
@@ -54,10 +78,52 @@ export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<PendingConfirmation | null>(null);
+  const [listening, setListening] = useState(false);
+  const [voiceSupported, setVoiceSupported] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const historyRef = useRef<HistoryMessage[]>([]);
   const autoSent = useRef(false);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const dictationBase = useRef("");
   historyRef.current = history;
+
+  useEffect(() => {
+    setVoiceSupported(Boolean(getSpeechRecognition()));
+  }, []);
+
+  const toggleDictation = useCallback(() => {
+    if (listening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+    const Recognition = getSpeechRecognition();
+    if (!Recognition) return;
+    const rec = new Recognition();
+    rec.lang = "en-US";
+    rec.continuous = true;
+    rec.interimResults = true;
+    dictationBase.current = input ? input.replace(/\s+$/, "") + " " : "";
+    rec.onresult = (event) => {
+      let transcript = "";
+      for (let r = 0; r < event.results.length; r++) {
+        transcript += event.results[r][0]?.transcript ?? "";
+      }
+      setInput(dictationBase.current + transcript.trimStart());
+    };
+    rec.onend = () => {
+      setListening(false);
+      recognitionRef.current = null;
+    };
+    rec.onerror = () => {
+      setListening(false);
+      recognitionRef.current = null;
+    };
+    recognitionRef.current = rec;
+    setListening(true);
+    rec.start();
+  }, [listening, input]);
+
+  useEffect(() => () => recognitionRef.current?.stop(), []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -231,8 +297,8 @@ export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
             </div>
             <h2 className="font-display text-2xl text-navy">What needs doing?</h2>
             <p className="mt-2 text-sm app-muted">
-              Invoicing, billing status, leads — just say it in plain English. Anything that
-              moves money waits for your approval first.
+              Invoicing, schedules, client messages, leads — type it or tap the mic and say it.
+              Anything that moves money or reaches a client waits for your approval first.
             </p>
             <div className="mt-6 grid gap-2">
               {SUGGESTIONS.map((s) => (
@@ -369,6 +435,22 @@ export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
             disabled={Boolean(pending)}
             className="max-h-40 min-h-[38px] flex-1 resize-none bg-transparent px-2 py-1.5 text-[14px] text-navy outline-none placeholder:text-navy/35 disabled:opacity-60"
           />
+          {voiceSupported && (
+            <button
+              type="button"
+              onClick={toggleDictation}
+              disabled={Boolean(pending)}
+              className={cn(
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors disabled:opacity-30",
+                listening
+                  ? "border-rust bg-rust/10 text-rust animate-pulse"
+                  : "border-navy/15 bg-white text-navy/60 hover:text-navy"
+              )}
+              title={listening ? "Stop dictation" : "Dictate"}
+            >
+              <Mic size={15} strokeWidth={1.75} />
+            </button>
+          )}
           <button
             type="submit"
             disabled={busy || !input.trim() || Boolean(pending)}
@@ -379,7 +461,7 @@ export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
           </button>
         </div>
         <p className="mt-2 text-center text-[11px] app-muted">
-          Money actions require your approval before anything is sent or charged.
+          Money actions and client messages require your approval before anything sends.
         </p>
       </form>
     </div>
