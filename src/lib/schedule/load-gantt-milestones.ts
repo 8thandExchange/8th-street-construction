@@ -10,7 +10,7 @@ export async function loadGanttMilestones(
     supabase
       .from("project_milestones")
       .select(
-        "id, title, status, target_date, scheduled_start, scheduled_end, display_order, phase_key, predecessor_id"
+        "id, title, status, target_date, scheduled_start, scheduled_end, display_order, phase_key, predecessor_id, description, completed_at"
       )
       .eq("project_id", projectId)
       .order("display_order", { ascending: true }),
@@ -42,5 +42,7 @@ export async function loadGanttMilestones(
     display_order: milestone.display_order,
     progress: progressMap.get(milestone.id) ?? null,
     predecessor_id: milestone.predecessor_id ?? null,
+    description: milestone.description ?? null,
+    completed_at: milestone.completed_at ?? null,
   }));
 }

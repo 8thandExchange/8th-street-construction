@@ -4,8 +4,12 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ProjectGantt } from "@/components/schedule/ProjectGantt";
 import { ScheduleDashboard } from "@/components/schedule/ScheduleDashboard";
+import { ScheduleHealthBanner } from "@/components/schedule/ScheduleHealthBanner";
+import { PhaseTimeline } from "@/components/schedule/PhaseTimeline";
+import { ScheduleViews } from "@/components/schedule/ScheduleViews";
 import { loadGanttMilestones } from "@/lib/schedule/load-gantt-milestones";
 import { computeScheduleSummary } from "@/lib/schedule/summary";
+import { computeScheduleHealth } from "@/lib/schedule/health";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +41,7 @@ export default async function ClientSchedulePage(props: { params: Promise<{ id: 
     projectEnd: project.target_completion_date,
     dateMode: "client",
   });
+  const health = computeScheduleHealth(milestones, { dateMode: "client" });
 
   return (
     <div className="px-6 md:px-10 lg:px-14 py-10 max-w-4xl">
@@ -55,19 +60,41 @@ export default async function ClientSchedulePage(props: { params: Promise<{ id: 
         </p>
       </header>
 
+      <div className="mb-6">
+        <ScheduleHealthBanner health={health} />
+      </div>
+
       <ScheduleDashboard
         summary={summary}
         projectStartLabel={fmt(project.start_date) ?? "TBD"}
         projectEndLabel={fmt(project.target_completion_date) ?? "TBD"}
+        audience="client"
       />
 
-      <ProjectGantt
-        milestones={milestones}
-        projectStart={project.start_date}
-        projectEnd={project.target_completion_date}
-        dateMode="client"
-        title={project.title}
-        subtitle="Target dates for each phase of your build."
+      <ScheduleViews
+        timeline={
+          <section className="hub-panel p-6 md:p-8">
+            <div className="mb-7">
+              <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper">
+                Phase by phase
+              </p>
+              <h3 className="mt-1 font-display text-xl md:text-2xl text-ink tracking-tight">
+                Your build timeline
+              </h3>
+            </div>
+            <PhaseTimeline milestones={milestones} dateMode="client" />
+          </section>
+        }
+        chart={
+          <ProjectGantt
+            milestones={milestones}
+            projectStart={project.start_date}
+            projectEnd={project.target_completion_date}
+            dateMode="client"
+            title={project.title}
+            subtitle="Target dates for each phase of your build."
+          />
+        }
       />
     </div>
   );

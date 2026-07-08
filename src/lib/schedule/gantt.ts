@@ -18,6 +18,10 @@ export type GanttMilestone = {
   progress?: number | null;
   /** Finish-to-start predecessor */
   predecessor_id?: string | null;
+  /** What happens during this phase — shown on the client timeline */
+  description?: string | null;
+  /** When the phase was actually finished */
+  completed_at?: string | null;
 };
 
 export type GanttBar = {

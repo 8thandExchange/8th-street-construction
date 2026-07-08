@@ -6,12 +6,15 @@ type ScheduleDashboardProps = {
   summary: ScheduleSummary;
   projectStartLabel?: string | null;
   projectEndLabel?: string | null;
+  /** Client audience hides admin-only hints (e.g. drag-to-reschedule) */
+  audience?: "admin" | "client";
 };
 
 export function ScheduleDashboard({
   summary,
   projectStartLabel,
   projectEndLabel,
+  audience = "admin",
 }: ScheduleDashboardProps) {
   return (
     <div className="space-y-6 mb-8">
@@ -93,7 +96,9 @@ export function ScheduleDashboard({
           </ul>
         ) : (
           <p className="text-sm text-ink/50 leading-relaxed">
-            No phase starts or finishes scheduled this week. Drag the Gantt bars to adjust timing.
+            {audience === "client"
+              ? "No phase starts or finishes on the calendar this week — the timeline below shows what's ahead."
+              : "No phase starts or finishes scheduled this week. Drag the Gantt bars to adjust timing."}
           </p>
         )}
       </section>
