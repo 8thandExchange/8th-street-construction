@@ -1,6 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { SettingField } from "@/components/admin/SettingField";
+import {
+  ContactSettingField,
+  isContactValue,
+} from "@/components/admin/ContactSettingField";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +64,11 @@ export default async function AdminSettings() {
                 Updated {new Date(setting.updated_at).toLocaleString()}
               </span>
             </div>
-            <SettingField value={setting.value} />
+            {setting.key === "contact" && isContactValue(setting.value) ? (
+              <ContactSettingField value={setting.value} />
+            ) : (
+              <SettingField value={setting.value} />
+            )}
             <button
               type="submit"
               className="mt-4 app-btn app-btn-primary"
