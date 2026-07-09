@@ -1,9 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import {
-  LEAD_STATUS_LABELS,
-  LEAD_STATUS_COLORS,
-  PROJECT_CATEGORY_LABELS,
-} from "@/lib/utils";
+import { LEAD_STATUS_LABELS, PROJECT_CATEGORY_LABELS } from "@/lib/utils";
+import { appStatusBadge } from "@/lib/project/status-badges";
 import {
   convertLeadToProject,
   deleteLead,
@@ -47,14 +44,10 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
           <span className="eyebrow">— Lead</span>
           <h1 className="mt-2 app-h1">{leadName}</h1>
           <div className="mt-3 flex items-center gap-3">
-            <span
-              className={`app-badge border !text-[11px] ${
-                LEAD_STATUS_COLORS[lead.status]
-              }`}
-            >
+            <span className={appStatusBadge("lead", lead.status)}>
               {LEAD_STATUS_LABELS[lead.status]}
             </span>
-            <span className="text-xs text-stone-300 font-mono">
+            <span className="text-xs app-muted">
               Received {new Date(lead.created_at).toLocaleString()}
             </span>
           </div>

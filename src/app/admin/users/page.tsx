@@ -9,6 +9,7 @@ import {
   approveAccessRequest,
   denyAccessRequest,
 } from "@/lib/actions/access-requests";
+import { appStatusBadge } from "@/lib/project/status-badges";
 
 export const dynamic = "force-dynamic";
 
@@ -18,11 +19,6 @@ const ROLE_LABELS: Record<string, string> = {
   subcontractor: "Subcontractor",
 };
 
-const REQUEST_STATUS_STYLES: Record<string, string> = {
-  pending: "border-amber-200 text-amber-800 bg-amber-50",
-  approved: "border-emerald-200 text-emerald-700 bg-emerald-50",
-  denied: "border-stone-200 text-stone-500 bg-stone-50",
-};
 
 export default async function AdminUsersPage() {
   const supabase = await createClient();
@@ -63,21 +59,21 @@ export default async function AdminUsersPage() {
             {(requests ?? [])
               .filter((r) => r.status === "pending")
               .map((r) => (
-                <li key={r.id} className="bg-paper border border-ink/15 p-6">
+                <li key={r.id} className="app-card p-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <div className="font-medium text-ink">
                         {[r.first_name, r.last_name].filter(Boolean).join(" ") || r.email}
                       </div>
-                      <div className="text-xs font-mono text-stone-300 mt-1">{r.email}</div>
-                      <div className="text-xs font-mono uppercase tracking-wider text-stone-300 mt-2">
+                      <div className="text-xs app-muted mt-1">{r.email}</div>
+                      <div className="app-label mt-2 !text-[11px]">
                         Requested: {ROLE_LABELS[r.requested_role] || r.requested_role}
                         {r.portal_path ? ` · ${r.portal_path}` : ""}
                       </div>
                       {r.message && (
                         <p className="mt-3 text-sm text-ink/70 whitespace-pre-wrap">{r.message}</p>
                       )}
-                      <div className="text-[10px] font-mono text-stone-300 mt-2">
+                      <div className="text-[11px] app-muted mt-2">
                         {new Date(r.created_at).toLocaleString()}
                       </div>
                     </div>
@@ -90,7 +86,7 @@ export default async function AdminUsersPage() {
                         className="flex items-center gap-2"
                       >
                         <input type="hidden" name="id" value={r.id} />
-                        <select name="role" className="field-input text-xs py-2" defaultValue={r.requested_role}>
+                        <select name="role" className="text-xs" defaultValue={r.requested_role}>
                           <option value="client">Client</option>
                           <option value="subcontractor">Subcontractor</option>
                           <option value="admin">Admin</option>
@@ -111,7 +107,7 @@ export default async function AdminUsersPage() {
                         <input type="hidden" name="id" value={r.id} />
                         <button
                           type="submit"
-                          className="w-full text-[10px] font-mono uppercase tracking-wider text-stone-300 hover:text-red-600"
+                          className="app-btn app-btn-ghost !h-8 w-full !text-[12.5px] hover:!text-red-600"
                         >
                           Deny
                         </button>
@@ -129,7 +125,7 @@ export default async function AdminUsersPage() {
           "use server";
           await invitePortalUser(fd);
         }}
-        className="mt-10 bg-paper border border-ink/15 p-8 space-y-5"
+        className="mt-10 app-card p-8 space-y-5"
       >
         <h2 className="eyebrow">Grant access directly</h2>
         <p className="text-sm text-ink/60">
@@ -176,12 +172,10 @@ export default async function AdminUsersPage() {
               .map((r) => (
                 <li key={r.id} className="flex flex-wrap items-center gap-3 text-ink/70">
                   <span>{r.email}</span>
-                  <span
-                    className={`text-[9px] font-mono tracking-[0.15em] uppercase px-1.5 py-0.5 border ${REQUEST_STATUS_STYLES[r.status]}`}
-                  >
+                  <span className={`${appStatusBadge("access_request", r.status)} capitalize`}>
                     {r.status}
                   </span>
-                  <span className="text-xs font-mono text-stone-300">
+                  <span className="text-xs app-muted">
                     {new Date(r.created_at).toLocaleDateString()}
                   </span>
                 </li>
@@ -190,7 +184,7 @@ export default async function AdminUsersPage() {
         </section>
       )}
 
-      <div className="mt-12 bg-paper border border-ink/15">
+      <div className="mt-12 app-card overflow-hidden">
         <table className="app-table">
           <thead>
             <tr>
@@ -207,15 +201,13 @@ export default async function AdminUsersPage() {
                   <div className="font-medium text-ink">
                     {[u.first_name, u.last_name].filter(Boolean).join(" ") || u.email}
                   </div>
-                  <div className="text-xs font-mono text-stone-300 mt-0.5">{u.email}</div>
+                  <div className="text-xs app-muted mt-0.5">{u.email}</div>
                   {u.must_change_password && (
-                    <div className="text-[9px] font-mono uppercase tracking-wider text-amber-700 mt-1">
-                      Awaiting password change
-                    </div>
+                    <div className="mt-1"><span className="app-badge app-badge-amber !h-[18px] !text-[11px]">Awaiting password change</span></div>
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border border-ink/20">
+                  <span className="app-badge app-badge-neutral">
                     {ROLE_LABELS[u.role] || u.role}
                   </span>
                 </td>
@@ -239,7 +231,7 @@ export default async function AdminUsersPage() {
                       </Link>
                     </div>
                   ) : (
-                    <span className="text-stone-300 text-xs">—</span>
+                    <span className="app-muted text-xs">—</span>
                   )}
                 </td>
                 <td className="px-4 py-3 text-right space-x-4">
@@ -253,7 +245,7 @@ export default async function AdminUsersPage() {
                     <input type="hidden" name="id" value={u.id} />
                     <button
                       type="submit"
-                      className="text-[10px] font-mono uppercase tracking-wider text-stone-300 hover:text-ink"
+                      className="app-btn app-btn-ghost !h-7 !px-2 !text-[12px]"
                     >
                       Reset password
                     </button>
@@ -268,7 +260,7 @@ export default async function AdminUsersPage() {
                     <input type="hidden" name="id" value={u.id} />
                     <button
                       type="submit"
-                      className="text-[10px] font-mono uppercase tracking-wider text-stone-300 hover:text-red-600"
+                      className="app-btn app-btn-ghost !h-7 !px-2 !text-[12px] hover:!text-red-600"
                     >
                       Remove
                     </button>

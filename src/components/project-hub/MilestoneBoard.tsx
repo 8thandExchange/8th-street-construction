@@ -27,8 +27,8 @@ import {
 } from "@/lib/actions/milestones";
 import {
   MILESTONE_STATUS_LABELS,
-  MILESTONE_STATUS_STYLES,
-} from "@/lib/project/labels";
+  } from "@/lib/project/labels";
+import { appStatusBadge } from "@/lib/project/status-badges";
 
 export type MilestoneRow = {
   id: string;
@@ -76,9 +76,7 @@ function SortableRow({
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2 mb-1">
           <h3 className="font-medium text-ink">{m.title}</h3>
-          <span
-            className={`text-[9px] font-mono tracking-[0.15em] uppercase px-1.5 py-0.5 border ${MILESTONE_STATUS_STYLES[m.status]}`}
-          >
+          <span className={appStatusBadge("milestone", m.status)}>
             {MILESTONE_STATUS_LABELS[m.status]}
           </span>
         </div>

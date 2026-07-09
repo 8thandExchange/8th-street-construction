@@ -1,5 +1,6 @@
 import { HubMetric, ProgressRing } from "@/components/hub/HubUI";
 import { MILESTONE_STATUS_LABELS, MILESTONE_STATUS_STYLES } from "@/lib/project/labels";
+import { appStatusBadge } from "@/lib/project/status-badges";
 import type { ScheduleSummary } from "@/lib/schedule/summary";
 
 type ScheduleDashboardProps = {
@@ -85,9 +86,13 @@ export function ScheduleDashboard({
                   </p>
                 </div>
                 <span
-                  className={`text-[9px] font-mono tracking-[0.12em] uppercase px-2 py-0.5 border ${
-                    MILESTONE_STATUS_STYLES[item.status] ?? MILESTONE_STATUS_STYLES.pending
-                  }`}
+                  className={
+                    audience === "client"
+                      ? `text-[9px] font-mono tracking-[0.12em] uppercase px-2 py-0.5 border ${
+                          MILESTONE_STATUS_STYLES[item.status] ?? MILESTONE_STATUS_STYLES.pending
+                        }`
+                      : appStatusBadge("milestone", item.status)
+                  }
                 >
                   {MILESTONE_STATUS_LABELS[item.status] ?? item.status}
                 </span>

@@ -10,16 +10,9 @@ import {
   computeComplianceStatus,
   daysUntilExpiry,
 } from "@/lib/compliance/compliance-utils";
+import { appStatusBadge } from "@/lib/project/status-badges";
 
 export const dynamic = "force-dynamic";
-
-const STATUS_STYLES: Record<string, string> = {
-  active: "border-green-200 text-green-800 bg-green-50",
-  expiring_soon: "border-amber-200 text-amber-900 bg-amber-50",
-  expired: "border-red-300 text-red-800 bg-red-50",
-  pending: "border-ink/20 text-ink/70 bg-bone",
-  not_applicable: "border-ink/10 text-ink/40",
-};
 
 export default async function CompanyCompliancePage() {
   // Statuses are computed live below (and synced to the DB by the daily
@@ -130,9 +123,7 @@ export default async function CompanyCompliancePage() {
                         : `${item.days}d left`}
                   </span>
                 )}
-                <span
-                  className={`app-badge border !text-[11px] ${STATUS_STYLES[item.computed] ?? STATUS_STYLES.pending}`}
-                >
+                <span className={appStatusBadge("compliance", item.computed)}>
                   {item.computed.replace("_", " ")}
                 </span>
               </div>

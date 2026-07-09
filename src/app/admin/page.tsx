@@ -17,7 +17,7 @@ export default async function AdminDashboard() {
       <div className="mb-10">
         <span className="eyebrow">— Good morning</span>
         <h1 className="mt-2 app-h1">Company Home</h1>
-        <p className="mt-3 text-ink/60 max-w-2xl leading-relaxed">
+        <p className="mt-3 app-muted max-w-2xl leading-relaxed">
           Every active job at a glance. Tap a job to open its master board — checklists, money, and
           what needs attention today.
         </p>
@@ -65,7 +65,7 @@ export default async function AdminDashboard() {
             {complianceAlerts.slice(0, 4).map((item) => (
               <li key={item.id} className="flex justify-between gap-4">
                 <span>{item.title}</span>
-                <span className="font-mono text-[10px] uppercase text-amber-800 shrink-0">
+                <span className={`shrink-0 ${item.status === "expired" ? "app-badge app-badge-red" : "app-badge app-badge-amber"}`}>
                   {item.status === "expired" ? "Expired" : `${item.days}d left`}
                 </span>
               </li>
@@ -82,7 +82,7 @@ export default async function AdminDashboard() {
       </div>
 
       {jobs.length === 0 ? (
-        <div className="hub-panel py-16 text-center text-ink/50">
+        <div className="hub-panel py-16 text-center app-muted">
           No active jobs.{" "}
           <Link href="/admin/projects/new" className="text-copper hover:underline">
             Start a project
@@ -113,7 +113,7 @@ export default async function AdminDashboard() {
                     )}
                   </div>
                   {job.location && (
-                    <p className="text-sm text-ink/50 mt-1">{job.location}</p>
+                    <p className="text-sm app-muted mt-1">{job.location}</p>
                   )}
                   <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                     <div>
@@ -151,11 +151,8 @@ export default async function AdminDashboard() {
         </div>
       )}
 
-      <div className="mt-12 pt-8 border-t border-ink/10">
-        <Link
-          href="/admin/leads"
-          className="text-sm text-stone-300 hover:text-ink font-mono text-[10px] uppercase tracking-wider"
-        >
+      <div className="mt-12 pt-8 border-t border-navy/[0.08]">
+        <Link href="/admin/leads" className="app-label !text-copper">
           Sales: leads & consultations →
         </Link>
       </div>

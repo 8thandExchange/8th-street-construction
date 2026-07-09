@@ -1099,7 +1099,7 @@ a:has(.hub-metric):hover .hub-metric {
 /* --- Surfaces ------------------------------------------------------- */
 .app-card {
   background: rgb(var(--app-surface));
-  border: 1px solid rgba(var(--app-line), 0.08);
+  border: 1px solid rgb(var(--app-line) / 0.08);
   border-radius: var(--app-radius);
   box-shadow: var(--app-shadow);
 }
@@ -1109,13 +1109,13 @@ a:has(.hub-metric):hover .hub-metric {
 }
 
 .app-card-hover:hover {
-  border-color: rgba(var(--app-line), 0.16);
+  border-color: rgb(var(--app-line) / 0.16);
   box-shadow: var(--app-shadow-md);
 }
 
 .app-inset {
   background: rgb(var(--app-surface-2));
-  border: 1px solid rgba(var(--app-line), 0.06);
+  border: 1px solid rgb(var(--app-line) / 0.06);
   border-radius: var(--app-radius-sm);
 }
 
@@ -1157,7 +1157,7 @@ a:has(.hub-metric):hover .hub-metric {
 /* --- Sidebar ---------------------------------------------------------- */
 .app-sidebar {
   background: rgb(var(--app-surface));
-  border-right: 1px solid rgba(var(--app-line), 0.08);
+  border-right: 1px solid rgb(var(--app-line) / 0.08);
 }
 
 .app-nav-item {
@@ -1168,18 +1168,18 @@ a:has(.hub-metric):hover .hub-metric {
   border-radius: var(--app-radius-sm);
   font-size: 13.5px;
   font-weight: 450;
-  color: rgba(var(--app-ink), 0.72);
+  color: rgb(var(--app-ink) / 0.72);
   transition: background 0.15s ease, color 0.15s ease;
 }
 
 .app-nav-item:hover {
-  background: rgba(var(--app-line), 0.05);
+  background: rgb(var(--app-line) / 0.05);
   color: rgb(var(--app-ink));
 }
 
 .app-nav-item-active,
 .app-nav-item-active:hover {
-  background: rgba(var(--app-accent), 0.09);
+  background: rgb(var(--app-accent) / 0.09);
   color: rgb(var(--app-accent));
   font-weight: 500;
 }
@@ -1190,7 +1190,7 @@ a:has(.hub-metric):hover .hub-metric {
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(var(--app-muted), 0.75);
+  color: rgb(var(--app-muted) / 0.75);
   padding: 0 10px;
   margin: 18px 0 6px;
 }
@@ -1211,14 +1211,14 @@ a:has(.hub-metric):hover .hub-metric {
   color: rgb(var(--app-muted));
   text-align: left;
   padding: 10px 16px;
-  border-bottom: 1px solid rgba(var(--app-line), 0.09);
+  border-bottom: 1px solid rgb(var(--app-line) / 0.09);
   white-space: nowrap;
 }
 
 .app-table tbody td {
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(var(--app-line), 0.06);
-  color: rgba(var(--app-ink), 0.88);
+  border-bottom: 1px solid rgb(var(--app-line) / 0.06);
+  color: rgb(var(--app-ink) / 0.88);
   vertical-align: middle;
 }
 
@@ -1231,7 +1231,7 @@ a:has(.hub-metric):hover .hub-metric {
 }
 
 .app-table tbody tr:hover {
-  background: rgba(var(--app-line), 0.025);
+  background: rgb(var(--app-line) / 0.025);
 }
 
 .app-td-num {
@@ -1258,8 +1258,8 @@ a:has(.hub-metric):hover .hub-metric {
 .app-badge-amber { background: rgb(var(--app-amber-bg)); color: rgb(var(--app-amber)); }
 .app-badge-red   { background: rgb(var(--app-red-bg));   color: rgb(var(--app-red)); }
 .app-badge-blue  { background: rgb(var(--app-blue-bg));  color: rgb(var(--app-blue)); }
-.app-badge-neutral { background: rgba(var(--app-line), 0.07); color: rgb(var(--app-muted)); }
-.app-badge-accent  { background: rgba(var(--app-accent), 0.1); color: rgb(var(--app-accent)); }
+.app-badge-neutral { background: rgb(var(--app-line) / 0.07); color: rgb(var(--app-muted)); }
+.app-badge-accent  { background: rgb(var(--app-accent) / 0.1); color: rgb(var(--app-accent)); }
 
 .app-dot {
   width: 6px;
@@ -1290,7 +1290,7 @@ a:has(.hub-metric):hover .hub-metric {
   color: #fff;
 }
 
-.app-btn-primary:hover { background: rgba(var(--app-ink), 0.88); }
+.app-btn-primary:hover { background: rgb(var(--app-ink) / 0.88); }
 
 .app-btn-accent {
   background: rgb(var(--app-accent));
@@ -1301,19 +1301,19 @@ a:has(.hub-metric):hover .hub-metric {
 
 .app-btn-secondary {
   background: rgb(var(--app-surface));
-  border: 1px solid rgba(var(--app-line), 0.14);
+  border: 1px solid rgb(var(--app-line) / 0.14);
   color: rgb(var(--app-ink));
   box-shadow: var(--app-shadow);
 }
 
-.app-btn-secondary:hover { border-color: rgba(var(--app-line), 0.28); }
+.app-btn-secondary:hover { border-color: rgb(var(--app-line) / 0.28); }
 
 .app-btn-ghost {
   color: rgb(var(--app-muted));
 }
 
 .app-btn-ghost:hover {
-  background: rgba(var(--app-line), 0.05);
+  background: rgb(var(--app-line) / 0.05);
   color: rgb(var(--app-ink));
 }
 
@@ -1329,7 +1329,7 @@ a:has(.hub-metric):hover .hub-metric {
 .app-shell select,
 .app-shell textarea {
   background: rgb(var(--app-surface));
-  border: 1px solid rgba(var(--app-line), 0.14);
+  border: 1px solid rgb(var(--app-line) / 0.14);
   border-radius: var(--app-radius-sm);
   font-size: 13.5px;
   color: rgb(var(--app-ink));
@@ -1341,20 +1341,20 @@ a:has(.hub-metric):hover .hub-metric {
 .app-shell select:focus,
 .app-shell textarea:focus {
   outline: none;
-  border-color: rgba(var(--app-accent), 0.55);
-  box-shadow: 0 0 0 3px rgba(var(--app-accent), 0.12);
+  border-color: rgb(var(--app-accent) / 0.55);
+  box-shadow: 0 0 0 3px rgb(var(--app-accent) / 0.12);
 }
 
 .app-shell input::placeholder,
 .app-shell textarea::placeholder {
-  color: rgba(var(--app-muted), 0.7);
+  color: rgb(var(--app-muted) / 0.7);
 }
 
 /* --- Progress / meters --------------------------------------------------- */
 .app-meter {
   height: 6px;
   border-radius: 999px;
-  background: rgba(var(--app-line), 0.08);
+  background: rgb(var(--app-line) / 0.08);
   overflow: hidden;
 }
 
@@ -1371,7 +1371,7 @@ a:has(.hub-metric):hover .hub-metric {
 /* --- Scrollbars (desktop, subtle) ---------------------------------------- */
 .app-shell ::-webkit-scrollbar { width: 10px; height: 10px; }
 .app-shell ::-webkit-scrollbar-thumb {
-  background: rgba(var(--app-line), 0.14);
+  background: rgb(var(--app-line) / 0.14);
   border-radius: 999px;
   border: 3px solid rgb(var(--app-canvas));
 }
@@ -1381,26 +1381,26 @@ a:has(.hub-metric):hover .hub-metric {
 .app-shell .hub-panel,
 .app-shell .dash-panel {
   background: rgb(var(--app-surface));
-  border: 1px solid rgba(var(--app-line), 0.08);
+  border: 1px solid rgb(var(--app-line) / 0.08);
   border-radius: var(--app-radius);
   box-shadow: var(--app-shadow);
 }
 
 .app-shell .hub-metric {
   background: rgb(var(--app-surface));
-  border: 1px solid rgba(var(--app-line), 0.08);
+  border: 1px solid rgb(var(--app-line) / 0.08);
   border-radius: var(--app-radius);
   box-shadow: var(--app-shadow);
 }
 
 .app-shell a:has(.hub-metric):hover .hub-metric {
-  border-color: rgba(var(--app-line), 0.18);
+  border-color: rgb(var(--app-line) / 0.18);
   box-shadow: var(--app-shadow-md);
 }
 
 .app-shell .hub-metric-accent {
-  border-color: rgba(var(--app-accent), 0.3);
-  background: rgba(var(--app-accent), 0.05);
+  border-color: rgb(var(--app-accent) / 0.3);
+  background: rgb(var(--app-accent) / 0.05);
 }
 
 .app-shell .eyebrow {
@@ -1424,14 +1424,71 @@ a:has(.hub-metric):hover .hub-metric {
 }
 
 .app-shell .hub-nav-pill:hover {
-  background: rgba(var(--app-line), 0.05);
+  background: rgb(var(--app-line) / 0.05);
   color: rgb(var(--app-ink));
 }
 
 .app-shell .hub-nav-pill-active,
 .app-shell .hub-nav-pill-active:hover {
-  background: rgba(var(--app-accent), 0.09);
+  background: rgb(var(--app-accent) / 0.09);
   color: rgb(var(--app-accent));
+}
+
+/* The admin never renders the editorial serif — headings that use
+   font-display inside the shell fall back to the app sans. */
+.app-shell .font-display {
+  font-family: var(--font-sans), sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* Editorial underline fields become standard app inputs inside the shell.
+   (Also cover inputs written without an explicit type attribute, which the
+   input[type=…] selectors above miss.) */
+.app-shell input:not([type]) {
+  background: rgb(var(--app-surface));
+  border: 1px solid rgb(var(--app-line) / 0.14);
+  border-radius: var(--app-radius-sm);
+  font-size: 13.5px;
+  color: rgb(var(--app-ink));
+  padding: 8px 11px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.app-shell input:not([type]):focus {
+  outline: none;
+  border-color: rgb(var(--app-accent) / 0.55);
+  box-shadow: 0 0 0 3px rgb(var(--app-accent) / 0.12);
+}
+
+.app-shell .field-input,
+.app-shell input.field-input,
+.app-shell textarea.field-input,
+.app-shell select.field-input {
+  background: rgb(var(--app-surface));
+  border: 1px solid rgb(var(--app-line) / 0.14);
+  border-radius: var(--app-radius-sm);
+  font-size: 13.5px;
+  color: rgb(var(--app-ink));
+  padding: 8px 11px;
+}
+
+.app-shell .field-input:focus {
+  outline: none;
+  border-bottom-color: rgb(var(--app-accent) / 0.55);
+  border-color: rgb(var(--app-accent) / 0.55);
+  box-shadow: 0 0 0 3px rgb(var(--app-accent) / 0.12);
+}
+
+.app-shell .field-label {
+  font-family: var(--font-label), sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(var(--app-muted));
+  margin-bottom: 6px;
+  display: block;
 }
 
 /* Hero still — imperceptibly slow drift; stillness for reduced motion */

@@ -2,7 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { PROJECT_CATEGORY_LABELS } from "@/lib/utils";
 import Link from "next/link";
 import { formatMoney } from "@/lib/billing/constants";
-import { PROJECT_STATUS_LABELS, PROJECT_STATUS_STYLES } from "@/lib/project/labels";
+import { PROJECT_STATUS_LABELS } from "@/lib/project/labels";
+import { appStatusSelectStyles } from "@/lib/project/status-badges";
 import { InlineStatusSelect } from "@/components/admin/InlineStatusSelect";
 import { FundingTypeDot } from "@/components/project/ProjectFundingBadge";
 import { FUNDING_TYPE_SHORT, parseFundingType } from "@/lib/project/funding";
@@ -80,7 +81,7 @@ export default async function AdminProjects() {
                         {p.title}
                       </span>
                     </Link>
-                    <div className="text-xs text-stone-300 font-mono mt-1 pl-5">
+                    <div className="text-xs app-muted mt-1 pl-5">
                       {PROJECT_CATEGORY_LABELS[p.category]}
                       {parseFundingType(p.funding_type) !== "private" && (
                         <> · {FUNDING_TYPE_SHORT[parseFundingType(p.funding_type)]}</>
@@ -92,13 +93,13 @@ export default async function AdminProjects() {
                   <td className="px-4 py-3">
                     {p.playbook_applied_at && p.total > 0 ? (
                       <div>
-                        <div className="font-mono text-sm text-ink">{p.pct}%</div>
-                        <div className="text-[10px] text-stone-300">
+                        <div className="text-sm font-medium tabular-nums text-navy">{p.pct}%</div>
+                        <div className="text-[11px] app-muted">
                           {p.done}/{p.total} tasks
                         </div>
                       </div>
                     ) : (
-                      <span className="text-stone-300 text-sm">—</span>
+                      <span className="app-muted text-sm">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm hidden md:table-cell">
@@ -111,7 +112,7 @@ export default async function AdminProjects() {
                     <InlineStatusSelect
                       value={p.status}
                       options={PROJECT_STATUS_OPTIONS}
-                      styles={PROJECT_STATUS_STYLES}
+                      styles={appStatusSelectStyles("project")}
                       action={setProjectStatusAction}
                       hiddenFields={{ id: p.id }}
                       aria-label={`Change status for ${p.title}`}
@@ -123,8 +124,8 @@ export default async function AdminProjects() {
           </table>
         </div>
       ) : (
-        <div className="border border-ink/15 p-16 text-center bg-paper">
-          <p className="text-ink/50 mb-6">No projects yet.</p>
+        <div className="app-card p-16 text-center">
+          <p className="app-muted mb-6">No projects yet.</p>
           <Link
             href="/admin/projects/new"
             className="app-btn app-btn-primary"

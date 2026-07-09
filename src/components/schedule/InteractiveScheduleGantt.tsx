@@ -18,7 +18,8 @@ import {
   resolveGanttDateRange,
   resolveMilestoneDates,
 } from "@/lib/schedule/gantt-dates";
-import { MILESTONE_STATUS_LABELS, MILESTONE_STATUS_STYLES } from "@/lib/project/labels";
+import { MILESTONE_STATUS_LABELS } from "@/lib/project/labels";
+import { appStatusBadge } from "@/lib/project/status-badges";
 
 type InteractiveScheduleGanttProps = {
   projectId: string;
@@ -374,9 +375,7 @@ export function InteractiveScheduleGantt({
                     </div>
                     <div className="flex items-center gap-2 pl-4 min-w-0">
                       <span
-                        className={`shrink-0 text-[8px] font-mono tracking-[0.12em] uppercase px-1.5 py-px border ${
-                          MILESTONE_STATUS_STYLES[bar.status] ?? MILESTONE_STATUS_STYLES.pending
-                        }`}
+                        className={`shrink-0 !h-[18px] !px-2 !text-[11px] ${appStatusBadge("milestone", bar.status)}`}
                       >
                         {MILESTONE_STATUS_LABELS[bar.status] ?? bar.status}
                       </span>

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { appStatusBadge } from "@/lib/project/status-badges";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { NewPlanSetForm } from "@/components/project-hub/NewPlanSetForm";
@@ -8,8 +9,7 @@ import { resolveJurisdiction } from "@/lib/building-regulations/registry";
 import {
   PLAN_FILE_KINDS,
   PLAN_SET_STATUS_LABELS,
-  PLAN_SET_STATUS_STYLES,
-} from "@/lib/project/labels";
+  } from "@/lib/project/labels";
 import type { JurisdictionRegulations } from "@/lib/building-regulations/types";
 
 export const dynamic = "force-dynamic";
@@ -77,9 +77,7 @@ export default async function ProjectPlansPage(props: { params: Promise<{ id: st
               <div className="flex flex-wrap items-center gap-3 mb-3">
                 <span className="font-mono text-xs text-stone-300">v{ps.version}</span>
                 <h3 className="app-h2 !text-[16px]">{ps.title}</h3>
-                <span
-                  className={`text-[9px] font-mono tracking-[0.15em] uppercase px-1.5 py-0.5 border ${PLAN_SET_STATUS_STYLES[ps.status]}`}
-                >
+                <span className={appStatusBadge("plan_set", ps.status)}>
                   {PLAN_SET_STATUS_LABELS[ps.status]}
                 </span>
               </div>
