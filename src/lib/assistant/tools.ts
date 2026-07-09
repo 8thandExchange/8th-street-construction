@@ -6,6 +6,7 @@ import {
   markInvoicePaid,
 } from "@/lib/actions/billing";
 import { formatMoney } from "@/lib/billing/constants";
+import { ATTACHMENT_BUCKET, STAGING_PREFIX } from "@/lib/assistant/attachments";
 
 /**
  * Admin assistant tool surface. Read tools run directly against the admin
@@ -18,6 +19,7 @@ export type AssistantToolName =
   | "list_projects"
   | "find_people"
   | "get_project_billing"
+  | "list_invoices"
   | "list_recent_leads"
   | "company_snapshot"
   | "create_project"
@@ -28,12 +30,15 @@ export type AssistantToolName =
   | "update_milestone"
   | "send_client_message"
   | "create_portal_user"
-  | "grant_project_access";
+  | "grant_project_access"
+  | "file_document"
+  | "get_schedule_pdf";
 
 type LineItemInput = { description: string; quantity: number; unit_amount: number };
 
 export type CreateInvoiceInput = {
   project_id: string;
+  project_title?: string;
   title: string;
   line_items: LineItemInput[];
   due_date?: string;
@@ -75,6 +80,24 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
         project_id: { type: "string", description: "Project UUID from list_projects" },
       },
       required: ["project_id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "list_invoices",
+    description:
+      "List invoices across ALL jobs (or one job), newest first: invoice number, job, title, status, total, amount paid, and dates. Use for 'what invoices do we have', 'what's outstanding', or 'where is that invoice'. Invoice numbers are job-prefixed (e.g. 1137-MERRY-001) so each one is traceable to its job.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_id: { type: "string", description: "Limit to one project (optional)" },
+        status: {
+          type: "string",
+          enum: ["draft", "sent", "paid", "overdue", "void"],
+          description: "Limit to one status (optional)",
+        },
+        limit: { type: "integer", description: "Max invoices to return (default 25)" },
+      },
       additionalProperties: false,
     },
   },
@@ -142,11 +165,12 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
   {
     name: "create_invoice",
     description:
-      "Create an invoice on a project. With send_now=true it is pushed to Mercury (ACH pay link) and emailed to the client immediately; with send_now=false it is saved as a draft. Amounts are in dollars. Always confirm the project, amount, and line items with get_project_billing / list_projects first.",
+      "Create an invoice on a project. DEFAULT TO A DRAFT (omit send_now or set false) so the admin can review before anything reaches the client — the result includes the saved draft with its job-prefixed invoice number and every line item; present that in full and ask whether to send. Only use send_now=true when the admin explicitly said to send immediately. Amounts are in dollars. Confirm the project and amounts with get_project_billing / list_projects first.",
     input_schema: {
       type: "object",
       properties: {
         project_id: { type: "string", description: "Project UUID" },
+        project_title: { type: "string", description: "Project title, shown on the approval card" },
         title: { type: "string", description: "Invoice title, e.g. 'Draw 3: Framing complete'" },
         line_items: {
           type: "array",
@@ -277,6 +301,59 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "get_schedule_pdf",
+    description:
+      "Generate a downloadable, printable PDF of a project's build schedule — branded Gantt chart plus a phase detail table. Returns a download link the admin can click to view, download, or print. Default shows client-facing committed dates; dates='internal' shows the internal planning window instead. Resolve the project with list_projects first.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_id: { type: "string", description: "Project UUID from list_projects" },
+        dates: {
+          type: "string",
+          enum: ["client", "internal"],
+          description: "'client' (default) = committed dates shown to the client; 'internal' = planning window",
+        },
+      },
+      required: ["project_id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "file_document",
+    description:
+      "File an attached (uploaded) file into a project's Documents. Moves the staged file out of the assistant inbox into the project folder and creates the document record. Use the storage_path shown next to the attachment. Read the file first so title/category are accurate, and resolve the project with list_projects. visibility 'internal' keeps it off the client portal (right for vendor bills/receipts); 'client' shows it to the client.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_id: { type: "string", description: "Project UUID from list_projects" },
+        project_title: {
+          type: "string",
+          description: "Project title, shown on the approval card",
+        },
+        storage_path: {
+          type: "string",
+          description: "Staged path from the attachment marker, starts with assistant-inbox/",
+        },
+        title: {
+          type: "string",
+          description: "Document title as it appears in the Documents list, e.g. 'ABC Plumbing invoice #1042 — $4,200'",
+        },
+        category: {
+          type: "string",
+          enum: ["contract", "plan", "permit", "invoice", "other"],
+        },
+        visibility: {
+          type: "string",
+          enum: ["client", "internal"],
+          description: "'internal' = admin only (default for vendor bills), 'client' = visible on the client portal",
+        },
+        description: { type: "string", description: "Optional note shown with the document" },
+      },
+      required: ["project_id", "storage_path", "title", "category", "visibility"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "send_invoice",
     description:
       "Send an existing DRAFT invoice to the project's client — pushes it to Mercury for ACH payment and emails the pay link.",
@@ -316,14 +393,64 @@ export function requiresConfirmation(name: string, input: unknown): boolean {
   if (name === "send_client_message") return true;
   if (name === "create_portal_user") return true;
   if (name === "grant_project_access") return true;
+  if (name === "file_document") return true;
   if (name === "create_invoice") {
     return Boolean((input as CreateInvoiceInput)?.send_now);
   }
   return false;
 }
 
+function lineItemBreakdown(items: LineItemInput[]): string {
+  return items
+    .map((li) => {
+      const amount = Math.round(Number(li.quantity) * Number(li.unit_amount) * 100) / 100;
+      const qty =
+        Number(li.quantity) !== 1
+          ? ` (${li.quantity} × ${formatMoney(Number(li.unit_amount))})`
+          : "";
+      return `• ${li.description}${qty} — ${formatMoney(amount)}`;
+    })
+    .join("\n");
+}
+
+/** The real stored invoice, quoted on approval cards so the admin reviews actual data. */
+async function invoiceCardDetail(invoiceId: string): Promise<string | null> {
+  const admin = createAdminClient();
+  const { data: invoice } = await admin
+    .from("invoices")
+    .select("invoice_number, title, total, due_date, status, project_id")
+    .eq("id", invoiceId)
+    .single();
+  if (!invoice) return null;
+
+  const [{ data: project }, { data: items }] = await Promise.all([
+    admin.from("projects").select("title").eq("id", invoice.project_id).single(),
+    admin
+      .from("invoice_line_items")
+      .select("description, quantity, unit_amount, amount")
+      .eq("invoice_id", invoiceId)
+      .order("display_order"),
+  ]);
+
+  const lines = lineItemBreakdown(
+    (items ?? []).map((li) => ({
+      description: li.description,
+      quantity: Number(li.quantity),
+      unit_amount: Number(li.unit_amount),
+    }))
+  );
+  const due = invoice.due_date
+    ? `\nDue ${new Date(`${invoice.due_date}T12:00:00`).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })}`
+    : "";
+  return `${invoice.invoice_number} — "${invoice.title}" on ${project?.title ?? "this job"} for ${formatMoney(Number(invoice.total))}\n${lines}${due}`;
+}
+
 /** Human-readable summary of a gated action for the confirmation card. */
-export function describeConfirmation(name: string, input: unknown): string {
+export async function describeConfirmation(name: string, input: unknown): Promise<string> {
   const i = input as Record<string, unknown>;
   if (name === "create_invoice") {
     const items = (i.line_items as LineItemInput[]) ?? [];
@@ -331,13 +458,20 @@ export function describeConfirmation(name: string, input: unknown): string {
       (sum, li) => sum + Math.round(Number(li.quantity) * Number(li.unit_amount) * 100) / 100,
       0
     );
-    return `Create and send invoice "${String(i.title)}" for ${formatMoney(total)} — the client will receive a Mercury ACH pay link by email.`;
+    const where = i.project_title ? ` on ${String(i.project_title)}` : "";
+    return `Create and send invoice "${String(i.title)}"${where} for ${formatMoney(total)}:\n${lineItemBreakdown(items)}\n\nThe client will receive a Mercury ACH pay link by email.`;
   }
   if (name === "send_invoice") {
-    return "Send this draft invoice to the client — pushes to Mercury and emails the ACH pay link.";
+    const detail = await invoiceCardDetail(String(i.invoice_id ?? ""));
+    return detail
+      ? `Send this invoice to the client — pushes to Mercury and emails the ACH pay link:\n\n${detail}`
+      : "Send this draft invoice to the client — pushes to Mercury and emails the ACH pay link.";
   }
   if (name === "mark_invoice_paid") {
-    return "Mark this invoice paid in full. This updates the books and may notify the client.";
+    const detail = await invoiceCardDetail(String(i.invoice_id ?? ""));
+    return detail
+      ? `Mark this invoice paid in full (updates the books and its linked draw):\n\n${detail}`
+      : "Mark this invoice paid in full. This updates the books and may notify the client.";
   }
   if (name === "send_client_message") {
     const body = String(i.body ?? "");
@@ -355,6 +489,14 @@ export function describeConfirmation(name: string, input: unknown): string {
       ? "Revoke this person's portal access to the project — it disappears from their portal immediately."
       : "Grant this person portal access to the project — schedule, photos, documents, and messages become visible to them immediately.";
   }
+  if (name === "file_document") {
+    const where = i.project_title ? `${String(i.project_title)}` : "the project";
+    const audience =
+      i.visibility === "client"
+        ? "the client will see it on their portal"
+        : "internal only — the client will not see it";
+    return `File "${String(i.title)}" under ${where} → Documents as ${String(i.category)} (${audience}).`;
+  }
   return `Run ${name}.`;
 }
 
@@ -368,7 +510,7 @@ async function latestInvoiceForProject(projectId: string) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("invoices")
-    .select("id, invoice_number, title, status, total, mercury_pay_slug")
+    .select("id, invoice_number, title, status, total, due_date, notes, mercury_pay_slug")
     .eq("project_id", projectId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -473,6 +615,43 @@ export async function executeAssistantTool(
       return { project, outstanding, invoices: invoices ?? [], draws: draws ?? [] };
     }
 
+    case "list_invoices": {
+      const limit = Math.min(Number(i.limit) || 25, 100);
+      let query = admin
+        .from("invoices")
+        .select(
+          "id, project_id, invoice_number, title, status, total, amount_paid, due_date, sent_at, paid_at, mercury_status"
+        )
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (i.project_id) query = query.eq("project_id", String(i.project_id));
+      if (i.status) query = query.eq("status", String(i.status));
+      const { data: invoices, error } = await query;
+      if (error) return { error: error.message };
+
+      const projectIds = [...new Set((invoices ?? []).map((inv) => inv.project_id))];
+      const { data: projects } = projectIds.length
+        ? await admin.from("projects").select("id, title").in("id", projectIds)
+        : { data: [] };
+      const titleById = new Map((projects ?? []).map((p) => [p.id, p.title]));
+
+      return (invoices ?? []).map((inv) => ({
+        invoice_id: inv.id,
+        invoice_number: inv.invoice_number,
+        job: titleById.get(inv.project_id) ?? null,
+        project_id: inv.project_id,
+        title: inv.title,
+        status: inv.status,
+        total: inv.total,
+        amount_paid: inv.amount_paid,
+        due_date: inv.due_date,
+        sent_at: inv.sent_at,
+        paid_at: inv.paid_at,
+        mercury_status: inv.mercury_status,
+        admin_page: `/admin/projects/${inv.project_id}/billing`,
+      }));
+    }
+
     case "list_recent_leads": {
       const limit = Math.min(Number(i.limit) || 10, 50);
       const { data } = await admin
@@ -559,10 +738,23 @@ export async function executeAssistantTool(
         })
       );
       const invoice = await latestInvoiceForProject(input.project_id);
+      const { data: items } = invoice
+        ? await admin
+            .from("invoice_line_items")
+            .select("description, quantity, unit_amount, amount")
+            .eq("invoice_id", invoice.id)
+            .order("display_order")
+        : { data: [] };
       return {
         ok: true,
         action: input.send_now ? "created_and_sent" : "created_draft",
-        invoice,
+        invoice: invoice ? { ...invoice, line_items: items ?? [] } : null,
+        ...(input.send_now
+          ? {}
+          : {
+              note: "Draft saved — NOT sent. Show the admin the full draft (invoice number, every line item with amount, total, due date) and where it lives (the job's Client Invoices page). Ask if they want it sent; sending happens via send_invoice with an approval card.",
+              admin_page: `/admin/projects/${input.project_id}/billing`,
+            }),
       };
     }
 
@@ -772,6 +964,99 @@ export async function executeAssistantTool(
         person: who,
         project: project.title,
         via: project.client_id === profile.id ? "primary_client_switch" : "portal_member",
+      };
+    }
+
+    case "get_schedule_pdf": {
+      const projectId = String(i.project_id ?? "");
+      if (!projectId) return { error: "project_id is required" };
+      const { data: project } = await admin
+        .from("projects")
+        .select("id, title, slug")
+        .eq("id", projectId)
+        .single();
+      if (!project) return { error: "Project not found — use list_projects first" };
+      const { count } = await admin
+        .from("project_milestones")
+        .select("id", { count: "exact", head: true })
+        .eq("project_id", projectId);
+      if (!count) {
+        return { error: "This project has no schedule yet — apply a build playbook or add milestones first." };
+      }
+
+      const internal = i.dates === "internal";
+      const download_url = `/api/projects/${projectId}/schedule/pdf${internal ? "?dates=internal" : ""}`;
+      return {
+        ok: true,
+        project: project.title,
+        dates: internal ? "internal planning window" : "client-facing committed dates",
+        download_url,
+        file_name: `${project.slug || "project"}-schedule.pdf`,
+        note: "A download card is shown to the admin in the chat — tell them to click it to view or print the PDF.",
+      };
+    }
+
+    case "file_document": {
+      const projectId = String(i.project_id ?? "");
+      const storagePath = String(i.storage_path ?? "");
+      const title = String(i.title ?? "").trim();
+      if (!projectId || !title) return { error: "project_id and title are required" };
+      // Only files staged by the chat upload can be filed — never move existing docs.
+      if (!storagePath.startsWith(STAGING_PREFIX) || storagePath.includes("..")) {
+        return { error: "storage_path must be a staged attachment path (assistant-inbox/…)" };
+      }
+
+      const { data: project } = await admin
+        .from("projects")
+        .select("id, title")
+        .eq("id", projectId)
+        .single();
+      if (!project) return { error: "Project not found — use list_projects first" };
+
+      const { requireAdmin } = await import("@/lib/actions/admin-auth");
+      const { user } = await requireAdmin();
+
+      const ext = storagePath.split(".").pop() || "bin";
+      const finalPath = `${projectId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: moveError } = await admin.storage
+        .from(ATTACHMENT_BUCKET)
+        .move(storagePath, finalPath);
+      if (moveError) {
+        return { error: `Could not move the file into the project folder: ${moveError.message}` };
+      }
+
+      const category = String(i.category ?? "other");
+      const visibility = i.visibility === "client" ? "client" : "internal";
+      const { data: doc, error } = await admin
+        .from("project_documents")
+        .insert({
+          project_id: projectId,
+          uploaded_by: user.id,
+          title,
+          description: String(i.description ?? "").trim() || null,
+          storage_path: finalPath,
+          file_type: ext === "pdf" ? "application/pdf" : `image/${ext === "jpg" ? "jpeg" : ext}`,
+          category,
+          visibility,
+        })
+        .select("id, title, category, visibility")
+        .single();
+      if (error) {
+        // Put the file back so a retry can find it at the staged path.
+        await admin.storage.from(ATTACHMENT_BUCKET).move(finalPath, storagePath);
+        return { error: error.message };
+      }
+
+      const { revalidatePath } = await import("next/cache");
+      revalidatePath(`/admin/projects/${projectId}/documents`);
+      revalidatePath(`/client/projects/${projectId}`);
+
+      return {
+        ok: true,
+        action: "document_filed",
+        project: project.title,
+        document: doc,
+        client_visible: visibility === "client",
       };
     }
 

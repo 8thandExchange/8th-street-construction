@@ -111,3 +111,17 @@ export function formatMoney(amount: number): string {
     maximumFractionDigits: 0,
   }).format(amount);
 }
+
+/**
+ * Job prefix for invoice numbers, from the project slug:
+ * "1137-merry-street" → "1137-MERRY", "608-macon-ave" → "608-MACON".
+ * Keeps every invoice traceable to its job at a glance.
+ */
+export function invoiceJobPrefix(slug: string | null | undefined): string {
+  const tokens = String(slug ?? "")
+    .toUpperCase()
+    .split(/[^A-Z0-9]+/)
+    .filter(Boolean);
+  if (!tokens.length) return "JOB";
+  return tokens.slice(0, 2).join("-").slice(0, 16);
+}

@@ -43,8 +43,8 @@ describe("requiresConfirmation", () => {
 });
 
 describe("describeConfirmation", () => {
-  it("totals line items for a send-now invoice", () => {
-    const summary = describeConfirmation("create_invoice", {
+  it("totals line items for a send-now invoice", async () => {
+    const summary = await describeConfirmation("create_invoice", {
       title: "Framing draw",
       send_now: true,
       line_items: [
@@ -54,6 +54,8 @@ describe("describeConfirmation", () => {
     });
     expect(summary).toContain("Framing draw");
     expect(summary).toContain("$12,500");
+    expect(summary).toContain("Framing labor");
+    expect(summary).toContain("Materials (2 × $1,250)");
     expect(summary.toLowerCase()).toContain("mercury");
   });
 });

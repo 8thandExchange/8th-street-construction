@@ -20,7 +20,7 @@ type ProjectHubShellProps = {
 export function ProjectHubShell({ project, children }: ProjectHubShellProps) {
   return (
     <div className="min-h-full">
-      <header className="sticky top-14 lg:top-0 z-10 border-b border-navy/[0.08] bg-white/85 backdrop-blur-md">
+      <header className="sticky top-14 lg:top-0 z-40 border-b border-navy/[0.08] bg-white">
         <div className="px-4 md:px-8 lg:px-10 pt-6 pb-3">
           <Link
             href="/admin/projects"

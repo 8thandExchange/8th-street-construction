@@ -61,13 +61,22 @@ export default async function ClientSchedulePage(props: { params: Promise<{ id: 
               Schedule
             </h2>
           </div>
-          <Link
-            href={`/print/schedule/${id}`}
-            target="_blank"
-            className="inline-flex h-9 items-center border border-ink/20 px-4 font-mono text-[10px] uppercase tracking-[0.18em] text-ink/70 transition-colors hover:border-ink/40 hover:text-ink"
-          >
-            Print / PDF
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={`/api/projects/${id}/schedule/pdf`}
+              target="_blank"
+              className="inline-flex h-9 items-center border border-ink/20 px-4 font-mono text-[10px] uppercase tracking-[0.18em] text-ink/70 transition-colors hover:border-ink/40 hover:text-ink"
+            >
+              Download PDF
+            </a>
+            <Link
+              href={`/print/schedule/${id}`}
+              target="_blank"
+              className="inline-flex h-9 items-center border border-ink/20 px-4 font-mono text-[10px] uppercase tracking-[0.18em] text-ink/70 transition-colors hover:border-ink/40 hover:text-ink"
+            >
+              Checklist view
+            </Link>
+          </div>
         </div>
         <p className="mt-3 text-[15px] text-ink/60 leading-relaxed max-w-xl">
           A live view of each construction phase and its target dates — updated as your build moves

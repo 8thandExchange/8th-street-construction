@@ -24,7 +24,8 @@ export type AssistantStreamConfig = {
   confirm?: ConfirmPayload;
   executeTool: (name: string, input: unknown) => Promise<unknown>;
   requiresConfirmation: (name: string, input: unknown) => boolean;
-  describeConfirmation: (name: string, input: unknown) => string;
+  /** May be async so the summary can quote the real stored record (e.g. a draft invoice). */
+  describeConfirmation: (name: string, input: unknown) => string | Promise<string>;
   /** Sent back to the model when the human declines a gated action. */
   declinedNote: string;
 };
@@ -56,10 +57,23 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
   async function runTool(
     name: string,
     input: unknown
-  ): Promise<{ content: string; isError: boolean }> {
+  ): Promise<{ content: string; isError: boolean; download?: { url: string; file_name: string } }> {
     try {
       const result = await config.executeTool(name, input);
-      return { content: JSON.stringify(result), isError: false };
+      // Tools that produce a downloadable file surface a card in the chat UI.
+      let download: { url: string; file_name: string } | undefined;
+      if (
+        result &&
+        typeof result === "object" &&
+        typeof (result as Record<string, unknown>).download_url === "string"
+      ) {
+        const r = result as Record<string, unknown>;
+        download = {
+          url: String(r.download_url),
+          file_name: String(r.file_name ?? "download.pdf"),
+        };
+      }
+      return { content: JSON.stringify(result), isError: false, download };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Tool execution failed";
       return { content: JSON.stringify({ error: message }), isError: true };
@@ -79,11 +93,16 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
             return;
           }
 
-          let result: { content: string; isError: boolean };
+          let result: { content: string; isError: boolean; download?: { url: string; file_name: string } };
           if (config.confirm.approved) {
             ndjson(controller, { type: "tool_start", name: toolUse.name });
             result = await runTool(toolUse.name, toolUse.input);
-            ndjson(controller, { type: "tool_end", name: toolUse.name, is_error: result.isError });
+            ndjson(controller, {
+              type: "tool_end",
+              name: toolUse.name,
+              is_error: result.isError,
+              ...(result.download ? { download: result.download } : {}),
+            });
           } else {
             result = {
               content: JSON.stringify({ declined: true, note: config.declinedNote }),
@@ -152,7 +171,7 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
               tool_use_id: toolUse.id,
               name: toolUse.name,
               input: toolUse.input,
-              summary: config.describeConfirmation(toolUse.name, toolUse.input),
+              summary: await config.describeConfirmation(toolUse.name, toolUse.input),
             });
             ndjson(controller, { type: "done" });
             controller.close();
@@ -161,7 +180,12 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
 
           ndjson(controller, { type: "tool_start", name: toolUse.name });
           const result = await runTool(toolUse.name, toolUse.input);
-          ndjson(controller, { type: "tool_end", name: toolUse.name, is_error: result.isError });
+          ndjson(controller, {
+            type: "tool_end",
+            name: toolUse.name,
+            is_error: result.isError,
+            ...(result.download ? { download: result.download } : {}),
+          });
 
           const toolResultMessage: Anthropic.MessageParam = {
             role: "user",

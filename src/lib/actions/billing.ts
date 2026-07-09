@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe/client";
-import { formatMoney } from "@/lib/billing/constants";
+import { formatMoney, invoiceJobPrefix } from "@/lib/billing/constants";
 import { sendInvoiceReadyEmail } from "@/lib/email/invoice-notify";
 import {
   getDrawTemplateForProject,
@@ -46,19 +46,19 @@ async function nextInvoiceNumber(
   supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
   projectId: string
 ) {
-  const { data: lastInv } = await supabase
-    .from("invoices")
-    .select("invoice_number")
-    .eq("project_id", projectId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [{ data: project }, { data: existing }] = await Promise.all([
+    supabase.from("projects").select("slug").eq("id", projectId).single(),
+    supabase.from("invoices").select("invoice_number").eq("project_id", projectId),
+  ]);
 
-  const seq = lastInv?.invoice_number
-    ? Number(String(lastInv.invoice_number).replace(/\D/g, "")) + 1
-    : 1;
+  // Highest trailing sequence across the job's invoices (handles both the
+  // old INV-0001 style and the job-prefixed style).
+  const maxSeq = (existing ?? []).reduce((max, inv) => {
+    const match = String(inv.invoice_number ?? "").match(/(\d+)\s*$/);
+    return match ? Math.max(max, Number(match[1])) : max;
+  }, 0);
 
-  return `INV-${String(seq).padStart(4, "0")}`;
+  return `${invoiceJobPrefix(project?.slug)}-${String(maxSeq + 1).padStart(3, "0")}`;
 }
 
 function parseCustomLineItems(raw: string): CustomLineItem[] {
