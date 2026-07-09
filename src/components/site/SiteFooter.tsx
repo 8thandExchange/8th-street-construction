@@ -27,8 +27,8 @@ export async function SiteFooter() {
       heading: "Services",
       links: [
         { href: "/services#custom-homes", label: "Custom Homes" },
-        { href: "/services#commercial", label: "Commercial Construction" },
-        { href: "/services#renovations", label: "Renovations" },
+        { href: "/services#commercial-construction", label: "Commercial Construction" },
+        { href: "/services#residential-renovations", label: "Renovations" },
         { href: "/services#design-build", label: "Design-Build" },
       ],
     },

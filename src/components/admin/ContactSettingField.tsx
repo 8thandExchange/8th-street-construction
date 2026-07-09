@@ -1,26 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import type { ContactValue } from "@/lib/contact-value";
 
-export type ContactValue = {
-  city: string | null;
-  email: string | null;
-  phone: string | null;
-  service_area: string[];
-};
-
-export function isContactValue(value: unknown): value is ContactValue {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-  const v = value as Record<string, unknown>;
-  const stringOrNull = (x: unknown) => typeof x === "string" || x === null;
-  return (
-    stringOrNull(v.city) &&
-    stringOrNull(v.email) &&
-    stringOrNull(v.phone) &&
-    Array.isArray(v.service_area) &&
-    v.service_area.every((s) => typeof s === "string")
-  );
-}
+export type { ContactValue } from "@/lib/contact-value";
 
 /**
  * Friendly editor for the structured "contact" site setting. Emits the same

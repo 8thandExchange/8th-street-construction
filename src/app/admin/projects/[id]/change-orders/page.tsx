@@ -8,6 +8,18 @@ import {
 
 export const dynamic = "force-dynamic";
 
+// Form actions must be module-level "use server" functions returning void —
+// inline closures in a server component can't be serialized to the client.
+async function createChangeOrderAction(formData: FormData) {
+  "use server";
+  await createChangeOrder(formData);
+}
+
+async function deleteChangeOrderAction(formData: FormData) {
+  "use server";
+  await deleteChangeOrder(formData);
+}
+
 export default async function ProjectChangeOrdersPage(props: {
   params: Promise<{ id: string }>;
 }) {
@@ -31,9 +43,7 @@ export default async function ProjectChangeOrdersPage(props: {
       </p>
 
       <form
-        action={async (fd) => {
-          await createChangeOrder(fd);
-        }}
+        action={createChangeOrderAction}
         className="p-8 border border-ink/15 bg-paper space-y-5 mb-10"
       >
         <input type="hidden" name="project_id" value={id} />
@@ -90,12 +100,7 @@ export default async function ProjectChangeOrdersPage(props: {
               )}
             </div>
             {co.status === "draft" && (
-              <form
-                action={async (fd) => {
-                  await deleteChangeOrder(fd);
-                }}
-                className="mt-4"
-              >
+              <form action={deleteChangeOrderAction} className="mt-4">
                 <input type="hidden" name="id" value={co.id} />
                 <input type="hidden" name="project_id" value={id} />
                 <button

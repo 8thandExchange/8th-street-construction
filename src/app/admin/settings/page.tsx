@@ -2,10 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { SITE_CONTACT_TAG } from "@/lib/site-contact";
 import { SettingField } from "@/components/admin/SettingField";
-import {
-  ContactSettingField,
-  isContactValue,
-} from "@/components/admin/ContactSettingField";
+import { ContactSettingField } from "@/components/admin/ContactSettingField";
+import { isContactValue } from "@/lib/contact-value";
 
 export const dynamic = "force-dynamic";
 
