@@ -91,6 +91,13 @@ const TONES = {
     approved: "green",
     denied: "neutral",
   },
+  purchase_order: {
+    draft: "neutral",
+    issued: "accent",
+    billed: "amber",
+    closed: "green",
+    cancelled: "red",
+  },
 } satisfies Record<string, Record<string, string>>;
 
 export type StatusFamily = keyof typeof TONES;

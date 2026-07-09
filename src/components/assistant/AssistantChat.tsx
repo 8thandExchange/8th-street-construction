@@ -49,6 +49,7 @@ const TOOL_LABELS: Record<string, string> = {
   find_people: "Searching people",
   get_project_billing: "Pulling billing details",
   list_invoices: "Looking up invoices",
+  list_purchase_orders: "Looking up purchase orders",
   list_recent_leads: "Fetching leads",
   company_snapshot: "Running the numbers",
   create_invoice: "Creating invoice",

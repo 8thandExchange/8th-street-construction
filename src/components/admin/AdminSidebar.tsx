@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Banknote,
+  BookOpenCheck,
   Building2,
   CalendarClock,
   FileStack,
@@ -53,7 +54,10 @@ const NAV_GROUPS: {
   },
   {
     label: "Money",
-    items: [{ href: "/admin/invoicing", label: "Invoicing", icon: Banknote }],
+    items: [
+      { href: "/admin/invoicing", label: "Invoicing", icon: Banknote },
+      { href: "/admin/accounting", label: "Accounting", icon: BookOpenCheck },
+    ],
   },
   {
     label: "Company",

@@ -32,7 +32,8 @@ export type AssistantToolName =
   | "create_portal_user"
   | "grant_project_access"
   | "file_document"
-  | "get_schedule_pdf";
+  | "get_schedule_pdf"
+  | "list_purchase_orders";
 
 type LineItemInput = { description: string; quantity: number; unit_amount: number };
 
@@ -297,6 +298,23 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ["profile_id", "project_id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "list_purchase_orders",
+    description:
+      "List purchase orders (committed costs to subs/vendors) across all jobs or one job, newest first: PO number (job-prefixed, e.g. 608-MACON-PO-001), job, vendor, title, status (draft/issued/billed/closed/cancelled), and total. Use for 'what have we committed to subs', 'is there a PO for the plumber', or committed-vs-estimate questions.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_id: { type: "string", description: "Limit to one project (optional)" },
+        status: {
+          type: "string",
+          enum: ["draft", "issued", "billed", "closed", "cancelled"],
+          description: "Limit to one status (optional)",
+        },
+      },
       additionalProperties: false,
     },
   },
@@ -965,6 +983,37 @@ export async function executeAssistantTool(
         project: project.title,
         via: project.client_id === profile.id ? "primary_client_switch" : "portal_member",
       };
+    }
+
+    case "list_purchase_orders": {
+      let query = admin
+        .from("purchase_orders")
+        .select(
+          "id, po_number, title, status, total, issue_date, needed_by, project_id, project:projects(title), subcontractor:subcontractors(company_name, trade)"
+        )
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (i.project_id) query = query.eq("project_id", String(i.project_id));
+      if (i.status) query = query.eq("status", String(i.status));
+      const { data: pos, error } = await query;
+      if (error) return { error: error.message };
+      return (pos ?? []).map((po) => {
+        const project = Array.isArray(po.project) ? po.project[0] : po.project;
+        const sub = Array.isArray(po.subcontractor) ? po.subcontractor[0] : po.subcontractor;
+        return {
+          po_number: po.po_number,
+          job: project?.title ?? null,
+          vendor: sub?.company_name ?? null,
+          trade: sub?.trade ?? null,
+          title: po.title,
+          status: po.status,
+          total: po.total,
+          issue_date: po.issue_date,
+          needed_by: po.needed_by,
+          admin_page: `/admin/projects/${po.project_id}/purchase-orders`,
+          pdf: `/api/purchase-orders/${po.id}/pdf`,
+        };
+      });
     }
 
     case "get_schedule_pdf": {
