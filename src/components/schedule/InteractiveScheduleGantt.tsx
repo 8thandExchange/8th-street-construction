@@ -362,22 +362,25 @@ export function InteractiveScheduleGantt({
                   key={bar.id}
                   type="button"
                   onClick={() => setSelectedId(bar.id)}
-                  className={`w-full text-left px-4 py-3 border-b border-ink/[0.06] transition-colors ${
+                  style={{ height: ROW_HEIGHT }}
+                  className={`block w-full text-left px-4 border-b border-ink/[0.06] transition-colors ${
                     active ? "bg-copper/[0.06]" : idx % 2 ? "bg-ink/[0.015] hover:bg-ink/[0.03]" : "hover:bg-ink/[0.02]"
                   }`}
                 >
-                  <div className="flex items-start gap-2 min-w-0">
-                    <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${tone.dot}`} />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-ink truncate">{bar.title}</p>
+                  <div className="flex h-full flex-col justify-center gap-1 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${tone.dot}`} />
+                      <p className="text-[13px] font-medium text-ink truncate">{bar.title}</p>
+                    </div>
+                    <div className="flex items-center gap-2 pl-4 min-w-0">
                       <span
-                        className={`inline-block mt-1 text-[9px] font-mono tracking-[0.12em] uppercase px-1.5 py-0.5 border ${
+                        className={`shrink-0 text-[8px] font-mono tracking-[0.12em] uppercase px-1.5 py-px border ${
                           MILESTONE_STATUS_STYLES[bar.status] ?? MILESTONE_STATUS_STYLES.pending
                         }`}
                       >
                         {MILESTONE_STATUS_LABELS[bar.status] ?? bar.status}
                       </span>
-                      <p className="mt-2 font-mono text-[10px] text-stone-400 leading-relaxed">
+                      <span className="font-mono text-[10px] text-stone-400 truncate">
                         {bar.hasDates ? (
                           <>
                             {fmtShort(bar.scheduled_start)}
@@ -385,16 +388,14 @@ export function InteractiveScheduleGantt({
                               ? ` → ${fmtShort(bar.scheduled_end)}`
                               : ""}
                             {bar.durationDays ? ` · ${bar.durationDays}d` : ""}
+                            {bar.progress > 0 && (
+                              <span className="text-copper"> · {bar.progress}%</span>
+                            )}
                           </>
                         ) : (
                           "Date TBD"
                         )}
-                      </p>
-                      {bar.progress > 0 && (
-                        <p className="mt-1 font-mono text-[10px] text-copper">
-                          {bar.progress}% checklist done
-                        </p>
-                      )}
+                      </span>
                     </div>
                   </div>
                 </button>
