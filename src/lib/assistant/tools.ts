@@ -666,7 +666,7 @@ export async function executeAssistantTool(
         sent_at: inv.sent_at,
         paid_at: inv.paid_at,
         mercury_status: inv.mercury_status,
-        admin_page: `/admin/projects/${inv.project_id}/billing`,
+        admin_page: `/admin/projects/${inv.project_id}/billing/invoices/${inv.id}`,
       }));
     }
 
@@ -770,8 +770,8 @@ export async function executeAssistantTool(
         ...(input.send_now
           ? {}
           : {
-              note: "Draft saved — NOT sent. Show the admin the full draft (invoice number, every line item with amount, total, due date) and where it lives (the job's Client Invoices page). Ask if they want it sent; sending happens via send_invoice with an approval card.",
-              admin_page: `/admin/projects/${input.project_id}/billing`,
+              note: "Draft saved — NOT sent. Show the admin the full draft (invoice number, every line item with amount, total, due date) and tell them they can open, edit, send, or delete it at the admin_page link. Ask if they want it sent; sending happens via send_invoice with an approval card.",
+              admin_page: invoice ? `/admin/projects/${input.project_id}/billing/invoices/${invoice.id}` : `/admin/projects/${input.project_id}/billing`,
             }),
       };
     }

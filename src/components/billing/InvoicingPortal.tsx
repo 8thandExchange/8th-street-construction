@@ -13,6 +13,7 @@ export type InvoicingProject = {
   invoiceCount: number;
   openCount: number;
   outstanding: number;
+  draftCount: number;
 };
 
 type InvoicingPortalProps = {
@@ -79,9 +80,14 @@ export function InvoicingPortal({ projects }: InvoicingPortalProps) {
                       <p className="app-num text-lg font-medium text-navy">
                         {formatMoney(project.outstanding)}
                       </p>
-                      <p className="mt-1 text-[10px] font-mono uppercase tracking-wider text-stone-400">
+                      <p className="mt-1 text-xs app-muted">
                         {project.openCount} open · {project.invoiceCount} total
                       </p>
+                      {project.draftCount > 0 && (
+                        <span className="mt-1.5 inline-flex app-badge app-badge-amber !h-[18px] !text-[11px]">
+                          {project.draftCount} draft{project.draftCount > 1 ? "s" : ""} — not sent
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-3">

@@ -488,6 +488,79 @@ export async function createCustomInvoice(formData: FormData) {
   revalidate(projectId);
 }
 
+/** Edit a DRAFT invoice in place: title, due date, notes, and line items. */
+export async function updateDraftInvoice(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const projectId = String(formData.get("project_id"));
+  const invoiceId = String(formData.get("invoice_id"));
+  const title = String(formData.get("title") ?? "").trim();
+  const notes = String(formData.get("notes") ?? "").trim() || null;
+  const dueDate = String(formData.get("due_date") ?? "").trim() || null;
+  const lineItems = parseCustomLineItems(String(formData.get("line_items") ?? "[]"));
+
+  if (!title) throw new Error("Invoice title is required.");
+
+  const { data: invoice } = await supabase
+    .from("invoices")
+    .select("id, status")
+    .eq("id", invoiceId)
+    .eq("project_id", projectId)
+    .single();
+  if (!invoice) throw new Error("Invoice not found.");
+  if (invoice.status !== "draft") {
+    throw new Error("Only draft invoices can be edited — this one has already been sent.");
+  }
+
+  const subtotal = lineItems.reduce(
+    (sum, item) => sum + Math.round(item.quantity * item.unit_amount * 100) / 100,
+    0
+  );
+
+  const { error } = await supabase
+    .from("invoices")
+    .update({ title, notes, due_date: dueDate, subtotal, total: subtotal })
+    .eq("id", invoiceId);
+  if (error) throw new Error(error.message);
+
+  await supabase.from("invoice_line_items").delete().eq("invoice_id", invoiceId);
+  const { error: lineError } = await supabase.from("invoice_line_items").insert(
+    lineItems.map((item, index) => ({
+      invoice_id: invoiceId,
+      description: item.description,
+      quantity: item.quantity,
+      unit_amount: item.unit_amount,
+      amount: Math.round(item.quantity * item.unit_amount * 100) / 100,
+      display_order: index,
+    }))
+  );
+  if (lineError) throw new Error(lineError.message);
+
+  revalidate(projectId);
+  revalidatePath(`/admin/projects/${projectId}/billing/invoices/${invoiceId}`);
+}
+
+/** Delete a DRAFT invoice entirely (line items cascade). Sent invoices can only be voided. */
+export async function deleteDraftInvoice(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const projectId = String(formData.get("project_id"));
+  const invoiceId = String(formData.get("invoice_id"));
+
+  const { data: invoice } = await supabase
+    .from("invoices")
+    .select("id, status")
+    .eq("id", invoiceId)
+    .eq("project_id", projectId)
+    .single();
+  if (!invoice) throw new Error("Invoice not found.");
+  if (invoice.status !== "draft") {
+    throw new Error("Only draft invoices can be deleted.");
+  }
+
+  const { error } = await supabase.from("invoices").delete().eq("id", invoiceId);
+  if (error) throw new Error(error.message);
+  revalidate(projectId);
+}
+
 export async function sendCustomInvoice(formData: FormData) {
   const { supabase } = await requireAdmin();
   const projectId = String(formData.get("project_id"));

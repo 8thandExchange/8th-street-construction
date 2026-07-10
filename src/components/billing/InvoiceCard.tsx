@@ -25,6 +25,8 @@ type InvoiceCardProps = {
   variant: "admin" | "client";
   stripeReady?: boolean;
   markPaidAction?: React.ReactNode;
+  /** Admin detail page for this invoice (view / edit draft) */
+  detailHref?: string;
 };
 
 function formatDueDate(due: string | null) {
@@ -38,6 +40,7 @@ export function InvoiceCard({
   variant,
   stripeReady = false,
   markPaidAction,
+  detailHref,
 }: InvoiceCardProps) {
   const statusLabel = INVOICE_STATUS_LABELS[invoice.status] ?? invoice.status;
   const statusStyle = INVOICE_STATUS_STYLES[invoice.status] ?? INVOICE_STATUS_STYLES.sent;
@@ -67,7 +70,7 @@ export function InvoiceCard({
               <span className="app-num text-xs app-muted">
                 {invoice.invoice_number}
               </span>
-              <span className={`app-badge ${isPaid ? "app-badge-green" : invoice.status === "overdue" ? "app-badge-red" : "app-badge-blue"}`}>
+              <span className={`app-badge ${isPaid ? "app-badge-green" : invoice.status === "overdue" ? "app-badge-red" : invoice.status === "draft" ? "app-badge-neutral" : "app-badge-blue"}`}>
                 {statusLabel}
               </span>
               {invoice.mercury_status && invoice.mercury_status !== "Unpaid" && !isPaid && (
@@ -96,6 +99,11 @@ export function InvoiceCard({
           </div>
 
           <div className="flex flex-col items-stretch sm:items-end gap-2 shrink-0">
+            {variant === "admin" && detailHref && (
+              <a href={detailHref} className="app-btn app-btn-secondary !h-9 !px-4">
+                {invoice.status === "draft" ? "Open draft" : "View details"}
+              </a>
+            )}
             {!isPaid && variant === "client" && (
               <>
                 {mercuryUrl && (

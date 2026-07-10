@@ -45,6 +45,9 @@ export default async function ClientBillingPage(props: {
         "id, invoice_number, title, status, total, due_date, paid_at, mercury_pay_slug, mercury_status"
       )
       .eq("project_id", id)
+      // Drafts are internal until sent; void invoices are dead paper.
+      .neq("status", "draft")
+      .neq("status", "void")
       .order("created_at", { ascending: false }),
   ]);
 

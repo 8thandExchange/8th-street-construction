@@ -179,10 +179,15 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
                   </Link>
                 </div>
               )}
-              <InvoiceList projectId={id} invoices={invoiceList} />
             </>
           )}
         </>
+      )}
+
+      {/* Invoices are never hidden behind billing setup — if any exist
+          (e.g. a draft made before the draw schedule), they must be findable. */}
+      {(invoiceList.length > 0 || (setupStep !== 1 && setupStep !== 2)) && (
+        <InvoiceList projectId={id} invoices={invoiceList} />
       )}
 
       {contractValue > 0 && (
