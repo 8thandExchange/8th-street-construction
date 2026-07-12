@@ -12,6 +12,7 @@ const NAV = [
   { href: "/#collection", label: "The Collection", match: (p: string) => p === "/" },
   { href: "/#process", label: "Process", match: (p: string) => p === "/" },
   { href: "/#about", label: "About", match: (p: string) => p === "/" || p === "/about" },
+  { href: "/volunteer", label: "Volunteer", match: (p: string) => p === "/volunteer" },
   { href: "/#contact", label: "Contact", match: (p: string) => p === "/" || p === "/contact" },
 ];
 

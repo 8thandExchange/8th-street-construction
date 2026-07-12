@@ -20,6 +20,7 @@ export async function SiteFooter() {
         { href: "/about", label: "About" },
         { href: "/services", label: "Services" },
         { href: "/projects", label: "Selected Work" },
+        { href: "/volunteer", label: "Volunteer" },
         { href: "/contact", label: "Contact" },
       ],
     },

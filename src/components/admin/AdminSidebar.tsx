@@ -10,6 +10,7 @@ import {
   CalendarClock,
   FileStack,
   HardHat,
+  HeartHandshake,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -63,6 +64,7 @@ const NAV_GROUPS: {
     label: "Company",
     items: [
       { href: "/admin/compliance", label: "Compliance", icon: ShieldCheck },
+      { href: "/admin/volunteer", label: "Volunteer Days", icon: HeartHandshake },
       { href: "/admin/users", label: "Portal Users", icon: UserRound },
       { href: "/admin/testimonials", label: "Testimonials", icon: MessageSquareQuote },
       { href: "/admin/settings", label: "Settings", icon: Settings },
