@@ -1,5 +1,6 @@
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { StockDisclaimer } from "@/components/site/StockDisclaimer";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { LeadForm } from "@/components/forms/LeadForm";
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title: "Contact — Discuss Your Project | 8th Street Construction",
   description:
     "Get in touch with 8th Street Construction in Augusta, GA. We respond to every inquiry within one business day.",
+  alternates: { canonical: "/contact" },
 };
 
 export default function ContactPage() {
@@ -42,10 +44,10 @@ export default function ContactPage() {
                     <div>
                       <div className="eyebrow text-bone/40 mb-3">Direct Email</div>
                       <a
-                        href="mailto:construction@8thandexchange.com"
+                        href="mailto:hello@8thstreetconstruction.com"
                         className="editorial-link font-display text-2xl text-bone hover:text-copper-100"
                       >
-                        construction@8thandexchange.com
+                        hello@8thstreetconstruction.com
                       </a>
                     </div>
                   </Reveal>
@@ -84,6 +86,11 @@ export default function ContactPage() {
           </Container>
         </section>
       </main>
+
+        <div className="py-10 border-t border-bone/10 bg-navy">
+          <StockDisclaimer />
+        </div>
+
       <SiteFooter />
     </>
   );

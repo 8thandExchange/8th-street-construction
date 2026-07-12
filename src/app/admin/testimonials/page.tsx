@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 async function createTestimonial(formData: FormData) {
   "use server";
   const supabase = await createClient();
-  await supabase.from("testimonials").insert({
+  const { error } = await supabase.from("testimonials").insert({
     client_name: String(formData.get("client_name")).trim(),
     client_title: String(formData.get("client_title") || "").trim() || null,
     quote: String(formData.get("quote")).trim(),
@@ -14,6 +14,11 @@ async function createTestimonial(formData: FormData) {
     published: formData.get("published") === "on",
     featured: formData.get("featured") === "on",
   });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
   revalidatePath("/admin/testimonials");
   revalidatePath("/");
 }
@@ -23,7 +28,16 @@ async function togglePublished(formData: FormData) {
   const supabase = await createClient();
   const id = String(formData.get("id"));
   const published = formData.get("published") === "true";
-  await supabase.from("testimonials").update({ published: !published }).eq("id", id);
+
+  const { error } = await supabase
+    .from("testimonials")
+    .update({ published: !published })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
   revalidatePath("/admin/testimonials");
   revalidatePath("/");
 }
@@ -31,7 +45,15 @@ async function togglePublished(formData: FormData) {
 async function deleteTestimonial(formData: FormData) {
   "use server";
   const supabase = await createClient();
-  await supabase.from("testimonials").delete().eq("id", String(formData.get("id")));
+  const { error } = await supabase
+    .from("testimonials")
+    .delete()
+    .eq("id", String(formData.get("id")));
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
   revalidatePath("/admin/testimonials");
   revalidatePath("/");
 }

@@ -1,5 +1,6 @@
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { StockDisclaimer } from "@/components/site/StockDisclaimer";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { createClient } from "@/lib/supabase/server";
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
   title: "Services — Custom Homes, Commercial Construction & Renovations",
   description:
     "Full-service construction in Augusta, GA — custom homes, residential renovations, commercial new builds, tenant buildouts, pre-construction, and design-build.",
+  alternates: { canonical: "/services" },
 };
 
 export default async function ServicesPage() {
@@ -53,7 +55,7 @@ export default async function ServicesPage() {
               <Reveal key={service.slug}>
                 <article
                   id={service.slug}
-                  className="grid grid-cols-12 gap-6 lg:gap-12 py-16 md:py-24 border-b border-ink/10 last:border-b-0"
+                  className="scroll-mt-32 md:scroll-mt-44 grid grid-cols-12 gap-6 lg:gap-12 py-16 md:py-24 border-b border-ink/10 last:border-b-0"
                 >
                   <div className="col-span-12 lg:col-span-3">
                     <div className="sticky top-32">
@@ -118,6 +120,11 @@ export default async function ServicesPage() {
           </Container>
         </section>
       </main>
+
+        <div className="py-10 border-t border-ink/10 bg-inherit">
+          <StockDisclaimer />
+        </div>
+
       <SiteFooter />
     </>
   );

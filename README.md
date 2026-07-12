@@ -42,8 +42,17 @@ A division of 8th and Exchange Capital.
 ### Client portal (`/client`)
 - Auth-gated, role-based
 - Lists projects assigned to the logged-in client
-- Per-project view: milestone timeline, progress updates with photos, documents list, contact your PM
+- Per-project view: **Gantt schedule chart** (percent-positioned bars, month axis, today line, past-target flags — driven by `project_milestones.start_date` → `target_date`), progress updates with photos, downloadable documents (signed URLs from the private bucket), contact your PM
+- The same Gantt renders on the admin project page ("as the client sees it")
 - Read-only in Phase 1 — full CRUD coming in Phase 2 (see [PHASES.md](./PHASES.md))
+
+### Volunteer program (`/volunteer`)
+- Public build-day schedule for the Habitat for Humanity partnership — events published at least four weeks out (seeded schedule runs ~5–11 weeks ahead)
+- Communication cadence promised on-page and in emails: schedule well in advance → site details one week out → reminder 48 hours before
+- Signup form with capacity tracking: confirmed vs. waitlist is computed per event; duplicate emails are deduped; honeypot + rate limiting match the lead form
+- Confirmation email to the volunteer + roster notification to `EMAIL_TO_LEADS` (Resend)
+- Admin management at `/admin/volunteer`: schedule build days, publish/unpublish, per-event roster with confirm/waitlist/cancel controls
+- Tables: `volunteer_events`, `volunteer_signups` (see `supabase/migrations/20260712000000_security_gantt_volunteers.sql`, which also carries RLS hardening for profiles/projects/change orders/audit log and storage policies)
 
 ### Subcontractor portal (`/subs`)
 - Auth-gated

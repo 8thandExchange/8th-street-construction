@@ -50,12 +50,21 @@ export const metadata: Metadata = {
     title: "8th Street Construction — Custom Homes & Commercial Building",
     description:
       "Custom homes and commercial construction in Augusta, Georgia. Built on craft, precision, and lasting quality.",
+    images: [
+      {
+        url: "/img/og-default.jpg",
+        width: 1200,
+        height: 630,
+        alt: "8th Street Construction — Charleston double-porch residence",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "8th Street Construction — Augusta, Georgia",
     description:
       "Custom homes and commercial construction rooted in craft, precision, and lasting quality.",
+    images: ["/img/og-default.jpg"],
   },
   robots: { index: true, follow: true },
   alternates: { canonical: SITE_URL },
@@ -68,7 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     name: "8th Street Construction",
     alternateName: "8th Street Construction, a division of 8th and Exchange Capital",
     url: SITE_URL,
-    email: "construction@8thandexchange.com",
+    email: "hello@8thstreetconstruction.com",
     image: `${SITE_URL}/img/og-default.jpg`,
     description:
       "Custom homes, residential renovations, and commercial construction in Augusta, Georgia and the CSRA.",

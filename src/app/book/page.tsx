@@ -1,5 +1,6 @@
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { StockDisclaimer } from "@/components/site/StockDisclaimer";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { BookingForm } from "@/components/forms/BookingForm";
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: "Book a Consultation | 8th Street Construction",
   description:
     "Schedule a consultation with 8th Street Construction. Phone, video, in-person, or on-site visits available across the CSRA.",
+  alternates: { canonical: "/book" },
 };
 
 const HOW_IT_WORKS = [
@@ -104,6 +106,9 @@ export default function BookPage() {
           </Container>
         </section>
       </main>
+      <div className="py-10 border-t border-ink/10 bg-bone">
+        <StockDisclaimer />
+      </div>
       <SiteFooter />
     </>
   );

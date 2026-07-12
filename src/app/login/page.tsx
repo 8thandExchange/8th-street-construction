@@ -82,10 +82,10 @@ function LoginForm() {
                   Don't have an account?<br/>
                   Reach out to{" "}
                   <a
-                    href="mailto:construction@8thandexchange.com"
+                    href="mailto:hello@8thstreetconstruction.com"
                     className="text-copper-100 hover:text-copper"
                   >
-                    construction@8thandexchange.com
+                    hello@8thstreetconstruction.com
                   </a>{" "}
                   to get set up.
                 </p>

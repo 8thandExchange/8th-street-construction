@@ -1,17 +1,38 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { leadSchema } from "@/lib/validations";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendLeadNotification, sendLeadConfirmation } from "@/lib/email/resend";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const h = await headers();
+  const ip =
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    h.get("x-real-ip") ||
+    null;
+  const userAgent = h.get("user-agent") || null;
+
+  // Rate limit — over-limit gets the same silent success as the honeypot
+  // so throttling isn't revealed to bots.
+  if (!checkRateLimit(ip || "unknown", 5, 60_000)) {
+    return NextResponse.json({ ok: true });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  // Honeypot — check the raw body BEFORE validation so a filled honeypot
+  // is silently accepted rather than bounced with a 400.
+  const rawWebsite = (body as { website?: unknown } | null)?.website;
+  if (typeof rawWebsite === "string" && rawWebsite.length > 0) {
+    return NextResponse.json({ ok: true });
   }
 
   const result = leadSchema.safeParse(body);
@@ -23,18 +44,6 @@ export async function POST(request: Request) {
   }
 
   const data = result.data;
-
-  // Honeypot — silently accept but don't process
-  if (data.website && data.website.length > 0) {
-    return NextResponse.json({ ok: true });
-  }
-
-  const h = await headers();
-  const ip =
-    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    h.get("x-real-ip") ||
-    null;
-  const userAgent = h.get("user-agent") || null;
 
   const supabase = createAdminClient();
 

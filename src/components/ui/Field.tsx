@@ -103,16 +103,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         name={name || fieldId}
         required={required}
         defaultValue={defaultValue ?? ""}
-        className={cn(
-          "field-input appearance-none bg-no-repeat bg-[right_center] pr-6 cursor-pointer",
-          dark && "field-input-dark",
-          className
-        )}
-        style={{
-          backgroundImage: dark
-            ? "url(\"data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23F5F1EA' stroke-opacity='0.6' stroke-width='1.5'/%3E%3C/svg%3E\")"
-            : "url(\"data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%230A0F14' stroke-opacity='0.6' stroke-width='1.5'/%3E%3C/svg%3E\")",
-        }}
+        className={cn("field-input", dark && "field-input-dark", className)}
         {...rest}
       >
         <option value="" disabled>

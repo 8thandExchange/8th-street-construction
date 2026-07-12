@@ -48,6 +48,15 @@ const config: Config = {
           200: "#A8A29A",
           300: "#7A746C",
         },
+        "copper-glow": "#C8895E",
+        "navy-deep": "#070D14",
+        "slate-warm": "#9B9485",
+        parchment: {
+          DEFAULT: "#F2ECE0",
+          50: "#FAF7F1",
+          100: "#F2ECE0",
+          200: "#E8E0D2",
+        },
       },
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],
@@ -72,13 +81,16 @@ const config: Config = {
         editorial: "cubic-bezier(0.16, 1, 0.3, 1)",
       },
       animation: {
-        "fade-up": "fadeUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "fade-up": "fadeUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) both",
         "fade-in": "fadeIn 1.2s ease-out both",
         "subtle-pulse": "subtlePulse 4s ease-in-out infinite",
+        "ken-burns": "kenBurns 20s ease-in-out infinite alternate",
+        marquee: "marquee 40s linear infinite",
+        "copper-pulse": "copperPulse 2.5s ease-in-out infinite",
       },
       keyframes: {
         fadeUp: {
-          from: { opacity: "0", transform: "translateY(24px)" },
+          from: { opacity: "0", transform: "translateY(16px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
         fadeIn: {
@@ -89,9 +101,21 @@ const config: Config = {
           "0%, 100%": { opacity: "0.6" },
           "50%": { opacity: "1" },
         },
+        kenBurns: {
+          "0%": { transform: "scale(1) translate(0, 0)" },
+          "100%": { transform: "scale(1.05) translate(0.5%, 0.25%)" },
+        },
+        marquee: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+        copperPulse: {
+          "0%, 100%": { opacity: "0.45", transform: "scale(1)" },
+          "50%": { opacity: "1", transform: "scale(1.2)" },
+        },
       },
       backgroundImage: {
-        "grain":
+        grain:
           "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.04 0 0 0 0 0.06 0 0 0 0 0.08 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E\")",
       },
     },

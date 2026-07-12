@@ -45,6 +45,25 @@ export const bookingSchema = z.object({
 
 export type BookingInput = z.infer<typeof bookingSchema>;
 
+export const volunteerSignupSchema = z.object({
+  event_id: z.string().uuid(),
+  first_name: z.string().min(1, "First name is required").max(100),
+  last_name: z.string().min(1, "Last name is required").max(100),
+  email: z.string().email("Enter a valid email").max(255),
+  phone: z
+    .string()
+    .max(50)
+    .optional()
+    .transform((v) => (v?.trim() ? v : undefined)),
+  group_size: z.coerce.number().int().min(1).max(10).default(1),
+  experience_level: z.enum(["first_time", "some", "experienced"]).optional(),
+  notes: z.string().max(2000).optional(),
+  // Honeypot — checked before validation in the route
+  website: z.string().optional(),
+});
+
+export type VolunteerSignupInput = z.infer<typeof volunteerSignupSchema>;
+
 export const projectSchema = z.object({
   slug: z.string().min(2).max(120).regex(/^[a-z0-9-]+$/, "Lowercase letters, numbers, and hyphens only"),
   title: z.string().min(2).max(200),

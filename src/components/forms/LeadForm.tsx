@@ -74,10 +74,10 @@ export function LeadForm({ dark = false }: { dark?: boolean }) {
         <p className={`mt-6 max-w-prose leading-relaxed ${dark ? "text-bone/70" : "text-ink/70"}`}>
           A confirmation has been sent to your email. If anything's urgent, you can reach us directly at{" "}
           <a
-            href="mailto:construction@8thandexchange.com"
+            href="mailto:hello@8thstreetconstruction.com"
             className={`editorial-link ${dark ? "text-copper-100" : "text-copper"}`}
           >
-            construction@8thandexchange.com
+            hello@8thstreetconstruction.com
           </a>
           .
         </p>

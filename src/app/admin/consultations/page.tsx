@@ -29,7 +29,12 @@ async function updateConsultationStatus(formData: FormData) {
   const update: Record<string, unknown> = { status };
   if (status === "confirmed") update.confirmed_at = new Date().toISOString();
 
-  await supabase.from("consultations").update(update).eq("id", id);
+  const { error } = await supabase.from("consultations").update(update).eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
   revalidatePath("/admin/consultations");
   revalidatePath("/admin");
 }

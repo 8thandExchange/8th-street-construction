@@ -1,5 +1,6 @@
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { StockDisclaimer } from "@/components/site/StockDisclaimer";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { createClient } from "@/lib/supabase/server";
@@ -11,9 +12,10 @@ import type { Metadata } from "next";
 export const revalidate = 1800;
 
 export const metadata: Metadata = {
-  title: "Selected Work — Custom Homes & Commercial Projects in Augusta",
+  title: "Work — 8th Street Construction | Augusta, GA",
   description:
-    "A selection of recent residential and commercial construction projects by 8th Street Construction in the Augusta, GA area.",
+    "Portfolio and project work from 8th Street Construction in Augusta, Georgia and the CSRA.",
+  alternates: { canonical: "/projects" },
 };
 
 export default async function ProjectsIndex(
@@ -39,6 +41,7 @@ export default async function ProjectsIndex(
   const { data: projects } = await query;
 
   const categories = Object.entries(PROJECT_CATEGORY_LABELS);
+  const hasProjects = projects && projects.length > 0;
 
   return (
     <>
@@ -58,16 +61,18 @@ export default async function ProjectsIndex(
             </Reveal>
             <Reveal delay={200}>
               <p className="mt-10 max-w-2xl text-lg text-ink/70 leading-relaxed">
-                A selection of residential and commercial projects across the CSRA. Each one a study in craft, precision, and accountability.
+                {hasProjects
+                  ? "Published work from across the CSRA — documented as projects complete."
+                  : "We are building our first projects now. This page will grow as work is completed and documented."}
               </p>
             </Reveal>
           </Container>
         </section>
 
-        {/* Filter pills */}
-        <section className="border-y border-ink/10 py-6 sticky top-0 z-30 bg-bone/95 backdrop-blur-sm">
-          <Container size="wide">
-            <div className="flex flex-wrap gap-2 md:gap-3">
+        {hasProjects && (
+          <section className="border-y border-ink/10 py-6 sticky top-0 z-30 bg-bone/95 backdrop-blur-sm">
+            <Container size="wide">
+              <div className="flex flex-wrap gap-2 md:gap-3">
               <Link
                 href="/projects"
                 className={`inline-flex items-center px-4 h-9 font-mono text-[11px] tracking-[0.18em] uppercase border transition-all duration-300 ${
@@ -91,14 +96,15 @@ export default async function ProjectsIndex(
                   {label}
                 </Link>
               ))}
-            </div>
-          </Container>
-        </section>
+              </div>
+            </Container>
+          </section>
+        )}
 
         {/* Grid */}
         <section className="py-16 md:py-24">
           <Container size="wide">
-            {projects && projects.length > 0 ? (
+            {hasProjects ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
                 {projects.map((p, i) => (
                   <Reveal key={p.id} delay={(i % 3) * 100}>
@@ -137,20 +143,20 @@ export default async function ProjectsIndex(
             ) : (
               <Reveal>
                 <div className="border border-ink/15 p-12 md:p-20 text-center max-w-3xl mx-auto">
-                  <span className="eyebrow-copper">— Coming soon</span>
+                  <span className="eyebrow-copper">— In progress</span>
                   <h2 className="mt-6 font-display text-3xl md:text-5xl leading-snug text-ink">
-                    Our portfolio is being built.
+                    Our first projects are underway.
                   </h2>
                   <p className="mt-6 max-w-xl mx-auto text-ink/65 leading-relaxed">
                     {category
-                      ? `We don't have published projects in this category yet. Check back soon, or get in touch to discuss your project.`
-                      : `We're documenting our recent work and adding it to this page. In the meantime, if you'd like to discuss a project, we'd love to hear from you.`}
+                      ? "We don't have published projects in this category yet."
+                      : "We're a young company building our portfolio as our first homes and community projects take shape. Check back as work completes — or reach out if you'd like to be among our early clients."}
                   </p>
                   <Link
                     href="/book"
                     className="mt-10 inline-flex h-12 items-center px-7 bg-ink text-bone hover:bg-copper font-mono text-[11px] tracking-[0.2em] uppercase transition-colors duration-500"
                   >
-                    Discuss Your Project
+                    Book a Consultation
                   </Link>
                 </div>
               </Reveal>
@@ -158,6 +164,11 @@ export default async function ProjectsIndex(
           </Container>
         </section>
       </main>
+
+        <div className="py-10 border-t border-ink/10 bg-inherit">
+          <StockDisclaimer />
+        </div>
+
       <SiteFooter />
     </>
   );

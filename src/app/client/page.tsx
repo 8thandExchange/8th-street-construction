@@ -67,7 +67,7 @@ export default async function ClientHome() {
             No projects assigned to your account yet. Your project manager will add you to a project shortly.
           </p>
           <a
-            href="mailto:construction@8thandexchange.com"
+            href="mailto:hello@8thstreetconstruction.com"
             className="mt-6 inline-block text-sm text-copper editorial-link"
           >
             Questions? Email your project manager

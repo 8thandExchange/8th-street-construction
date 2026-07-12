@@ -1,21 +1,28 @@
 import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { GanttChart } from "@/components/portal/GanttChart";
 
 export const dynamic = "force-dynamic";
 
-const MILESTONE_STATUS_COLORS: Record<string, string> = {
-  pending: "border-stone-300 text-stone-300",
-  in_progress: "border-copper/50 text-copper bg-copper/5",
-  completed: "border-emerald-500/50 text-emerald-600 bg-emerald-50",
-  blocked: "border-amber-500/50 text-amber-600",
-};
+function fmtBytes(bytes: number | null): string | null {
+  if (!bytes) return null;
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export default async function ClientProjectDetail(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  // RLS also enforces this, but belt-and-suspenders: only the assigned
+  // client (or an admin) may load this page.
   const { data: project } = await supabase
     .from("projects")
     .select("*")
@@ -23,6 +30,13 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
     .single();
 
   if (!project) notFound();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (project.client_id !== user.id && profile?.role !== "admin") notFound();
 
   const [{ data: milestones }, { data: updates }, { data: documents }] = await Promise.all([
     supabase
@@ -40,10 +54,20 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
       .limit(20),
     supabase
       .from("project_documents")
-      .select("id, title, description, public_url:storage_path, category, file_size_bytes, created_at")
+      .select("id, title, description, storage_path, category, file_size_bytes, created_at")
       .eq("project_id", project.id)
       .order("created_at", { ascending: false }),
   ]);
+
+  // The project-documents bucket is private — mint short-lived signed URLs.
+  const signedDocs = await Promise.all(
+    (documents ?? []).map(async (d) => {
+      const { data: signed } = await supabase.storage
+        .from("project-documents")
+        .createSignedUrl(d.storage_path, 60 * 60);
+      return { ...d, url: signed?.signedUrl ?? null };
+    })
+  );
 
   return (
     <div className="px-6 md:px-10 lg:px-14 py-12 md:py-16 mx-auto max-w-7xl">
@@ -69,48 +93,18 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: timeline + updates */}
         <div className="lg:col-span-2 space-y-10">
-          {/* Milestones */}
+          {/* Schedule */}
           <section className="bg-paper border border-ink/15 p-8">
-            <h2 className="font-display text-2xl text-ink mb-6">Timeline</h2>
+            <div className="flex items-baseline justify-between mb-6">
+              <h2 className="font-display text-2xl text-ink">Schedule</h2>
+              <span className="eyebrow">— Build Timeline</span>
+            </div>
             {milestones && milestones.length > 0 ? (
-              <ol className="space-y-5">
-                {milestones.map((m, i) => (
-                  <li key={m.id} className="flex gap-5">
-                    <div className="flex flex-col items-center pt-1">
-                      <div
-                        className={`w-3 h-3 rounded-full ${
-                          m.status === "completed"
-                            ? "bg-emerald-500"
-                            : m.status === "in_progress"
-                            ? "bg-copper"
-                            : "bg-stone-300"
-                        }`}
-                      />
-                      {i < milestones.length - 1 && (
-                        <div className="flex-1 w-px bg-ink/15 mt-2" />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-6">
-                      <div className="flex items-center gap-3 mb-1">
-                        <h3 className="font-medium text-ink">{m.title}</h3>
-                        <span
-                          className={`text-[9px] font-mono tracking-[0.15em] uppercase px-1.5 py-0.5 border ${MILESTONE_STATUS_COLORS[m.status]}`}
-                        >
-                          {m.status.replace("_", " ")}
-                        </span>
-                      </div>
-                      {m.description && (
-                        <p className="text-sm text-ink/65 mt-1">{m.description}</p>
-                      )}
-                      {m.target_date && (
-                        <div className="text-xs text-stone-300 font-mono mt-2">
-                          Target: {new Date(m.target_date).toLocaleDateString()}
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ol>
+              <GanttChart
+                milestones={milestones}
+                projectStart={project.start_date}
+                projectTarget={project.target_completion_date}
+              />
             ) : (
               <p className="text-ink/50 italic text-sm">
                 Your project manager hasn't published milestones yet. They'll appear here as the project is broken down into phases.
@@ -196,11 +190,30 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
           {/* Documents */}
           <div className="bg-paper border border-ink/15 p-6">
             <h2 className="eyebrow mb-4">Documents</h2>
-            {documents && documents.length > 0 ? (
+            {signedDocs.length > 0 ? (
               <ul className="space-y-3">
-                {documents.map((d) => (
+                {signedDocs.map((d) => (
                   <li key={d.id} className="text-sm">
-                    <div className="font-medium text-ink">{d.title}</div>
+                    {d.url ? (
+                      <a
+                        href={d.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-baseline justify-between gap-3"
+                      >
+                        <span className="font-medium text-ink group-hover:text-copper transition-colors">
+                          {d.title}
+                          <span className="ml-1.5 text-copper opacity-0 group-hover:opacity-100 transition-opacity">↓</span>
+                        </span>
+                        {fmtBytes(d.file_size_bytes) && (
+                          <span className="text-[10px] font-mono text-stone-300 shrink-0">
+                            {fmtBytes(d.file_size_bytes)}
+                          </span>
+                        )}
+                      </a>
+                    ) : (
+                      <div className="font-medium text-ink/50">{d.title}</div>
+                    )}
                     {d.category && (
                       <div className="text-xs text-stone-300 font-mono mt-0.5 capitalize">
                         {d.category}
@@ -223,7 +236,7 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
               Reach your project manager directly.
             </p>
             <a
-              href="mailto:construction@8thandexchange.com"
+              href="mailto:hello@8thstreetconstruction.com"
               className="block w-full text-center h-11 leading-[44px] bg-copper text-bone hover:bg-copper-400 font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
             >
               Email Project Manager

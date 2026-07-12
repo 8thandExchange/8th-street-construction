@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { ProjectFormFields } from "@/components/admin/ProjectFormFields";
+import { GanttChart } from "@/components/portal/GanttChart";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -46,7 +47,17 @@ async function updateProject(formData: FormData) {
     payload.published_at = new Date().toISOString();
   }
 
-  await supabase.from("projects").update(payload).eq("id", id);
+  // Moving back to draft unpublishes the project
+  if (status === "draft") {
+    payload.published_at = null;
+  }
+
+  const { error } = await supabase.from("projects").update(payload).eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
   revalidatePath(`/admin/projects/${id}`);
   revalidatePath("/admin/projects");
   revalidatePath("/projects");
@@ -59,7 +70,13 @@ async function deleteImage(formData: FormData) {
   const supabase = await createClient();
   const imageId = String(formData.get("image_id"));
   const projectId = String(formData.get("project_id"));
-  await supabase.from("project_images").delete().eq("id", imageId);
+
+  const { error } = await supabase.from("project_images").delete().eq("id", imageId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
   revalidatePath(`/admin/projects/${projectId}`);
 }
 
@@ -77,7 +94,29 @@ async function addImage(formData: FormData) {
   // Extract storage path from public URL (best effort)
   const storagePath = publicUrl.split("/project-images/").pop() || publicUrl;
 
-  await supabase.from("project_images").insert({
+  // A project has a single hero — unset any existing hero image and point
+  // the project's hero_image_url at the new image so the public hero updates.
+  if (isHero) {
+    const { error: unsetError } = await supabase
+      .from("project_images")
+      .update({ is_hero: false })
+      .eq("project_id", projectId);
+
+    if (unsetError) {
+      throw new Error(unsetError.message);
+    }
+
+    const { error: heroError } = await supabase
+      .from("projects")
+      .update({ hero_image_url: publicUrl })
+      .eq("id", projectId);
+
+    if (heroError) {
+      throw new Error(heroError.message);
+    }
+  }
+
+  const { error } = await supabase.from("project_images").insert({
     project_id: projectId,
     storage_path: storagePath,
     public_url: publicUrl,
@@ -86,6 +125,10 @@ async function addImage(formData: FormData) {
     is_hero: isHero,
     visibility: "public",
   });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 
   revalidatePath(`/admin/projects/${projectId}`);
   revalidatePath("/projects");
@@ -102,11 +145,18 @@ export default async function EditProjectPage(props: { params: Promise<{ id: str
 
   if (!project) notFound();
 
-  const { data: images } = await supabase
-    .from("project_images")
-    .select("*")
-    .eq("project_id", project.id)
-    .order("display_order", { ascending: true });
+  const [{ data: images }, { data: milestones }] = await Promise.all([
+    supabase
+      .from("project_images")
+      .select("*")
+      .eq("project_id", project.id)
+      .order("display_order", { ascending: true }),
+    supabase
+      .from("project_milestones")
+      .select("*")
+      .eq("project_id", project.id)
+      .order("display_order", { ascending: true }),
+  ]);
 
   return (
     <div className="p-8 md:p-12 max-w-4xl">
@@ -148,6 +198,23 @@ export default async function EditProjectPage(props: { params: Promise<{ id: str
           </button>
         </div>
       </form>
+
+      {/* Schedule */}
+      {milestones && milestones.length > 0 && (
+        <div className="bg-paper border border-ink/15 p-8 md:p-12 mb-10">
+          <div className="flex items-baseline justify-between mb-6">
+            <h2 className="font-display text-2xl text-ink">Schedule</h2>
+            <span className="text-xs font-mono tracking-[0.15em] uppercase text-stone-300">
+              As the client sees it
+            </span>
+          </div>
+          <GanttChart
+            milestones={milestones}
+            projectStart={project.start_date}
+            projectTarget={project.target_completion_date}
+          />
+        </div>
+      )}
 
       {/* Images section */}
       <div className="bg-paper border border-ink/15 p-8 md:p-12">

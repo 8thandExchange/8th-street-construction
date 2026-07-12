@@ -11,17 +11,24 @@ async function updateLead(formData: FormData) {
   const supabase = await createClient();
   const id = String(formData.get("id"));
   const status = String(formData.get("status"));
+  const prevStatus = String(formData.get("prev_status") || "");
   const notes = String(formData.get("notes") || "");
 
   const update: Record<string, unknown> = { status, notes };
 
-  // Set status-driven timestamps
-  if (status === "contacted") update.contacted_at = new Date().toISOString();
-  if (status === "qualified") update.qualified_at = new Date().toISOString();
-  if (["won", "lost", "archived"].includes(status))
+  // Set status-driven timestamps only when the status is actually changing
+  const changed = status !== prevStatus;
+  if (changed && status === "contacted") update.contacted_at = new Date().toISOString();
+  if (changed && status === "qualified") update.qualified_at = new Date().toISOString();
+  if (changed && ["won", "lost", "archived"].includes(status))
     update.closed_at = new Date().toISOString();
 
-  await supabase.from("leads").update(update).eq("id", id);
+  const { error } = await supabase.from("leads").update(update).eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
   revalidatePath(`/admin/leads/${id}`);
   revalidatePath("/admin/leads");
   revalidatePath("/admin");
@@ -131,6 +138,7 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
         <div className="space-y-8">
           <form action={updateLead} className="bg-paper border border-ink/15 p-6">
             <input type="hidden" name="id" value={lead.id} />
+            <input type="hidden" name="prev_status" value={lead.status} />
             <h2 className="eyebrow mb-4">Update</h2>
             <div className="flex flex-col gap-5">
               <div>

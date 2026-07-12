@@ -68,6 +68,32 @@ export function PortalShell({ email, role, children }: PortalShellProps) {
             </button>
           </nav>
         </div>
+        {/* Mobile nav — compact second row so links and Sign Out stay reachable below md */}
+        <nav className="md:hidden border-t border-ink/10 px-6 h-12 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-6 min-w-0">
+            {nav.map((item) => {
+              const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "text-[11px] font-mono tracking-[0.15em] uppercase transition-colors whitespace-nowrap",
+                    active ? "text-copper" : "text-ink/70 hover:text-ink"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+          <button
+            onClick={signOut}
+            className="text-[11px] font-mono tracking-[0.15em] uppercase text-stone-300 hover:text-copper whitespace-nowrap"
+          >
+            Sign Out →
+          </button>
+        </nav>
       </header>
       <main className="flex-1">{children}</main>
     </div>

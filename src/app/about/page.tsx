@@ -1,5 +1,6 @@
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { StockDisclaimer } from "@/components/site/StockDisclaimer";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import Link from "next/link";
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
   title: "About — A Builder's Standard | Augusta, GA",
   description:
     "8th Street Construction is a residential and commercial builder in Augusta, GA. A division of 8th and Exchange Capital, we bring institutional planning to local construction.",
+  alternates: { canonical: "/about" },
 };
 
 const VALUES = [
@@ -30,7 +32,7 @@ const VALUES = [
   {
     n: "04",
     title: "Locally Rooted",
-    body: "Augusta is home. The CSRA is our market. We know the soil conditions, the permitting offices, the suppliers, and the trades — because we've worked with them for years.",
+    body: "Augusta is home. The CSRA is our market. We know the soil conditions, the permitting offices, the suppliers, and the trades — grounded in local relationships with suppliers, trades, and permitting offices.",
   },
 ];
 
@@ -170,6 +172,11 @@ export default function AboutPage() {
           </Container>
         </section>
       </main>
+
+        <div className="py-10 border-t border-ink/10 bg-inherit">
+          <StockDisclaimer />
+        </div>
+
       <SiteFooter />
     </>
   );
