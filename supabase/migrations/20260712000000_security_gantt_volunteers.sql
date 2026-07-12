@@ -14,37 +14,28 @@ create policy "Own profile update" on profiles
   for update using (auth.uid() = id)
   with check (auth.uid() = id and role = public.user_role());
 
--- 1b. Projects: the public-read policy exposed every column (including
--- contract_value, internal_notes, client_id) to anonymous visitors.
--- Scope the policy to anon and grant anon only public-safe columns.
--- Logged-in clients read their own rows via "Client reads own project";
--- admins via "Admin manages projects".
-drop policy if exists "Public reads published projects" on projects;
-create policy "Public reads published projects" on projects
-  for select to anon using (status <> 'draft');
-
-revoke select on table public.projects from anon;
-grant select (
-  id, slug, title, subtitle, category, status,
-  excerpt, narrative, hero_image_url, location,
-  year_completed, square_footage, budget_range,
-  meta_description, display_order, featured,
-  created_at, updated_at, published_at
-) on table public.projects to anon;
+-- 1b. Projects column exposure: anonymous reads still return internal
+-- columns (contract_value, internal_notes, client_id) because deployed
+-- code selects * on projects with the anon client. A column-level
+-- revoke/grant was applied and then REVERTED on 2026-07-12 — it broke
+-- select("*") in the deployed app. The durable fix is in code: public
+-- pages must select explicit column lists; only then can the anon grant
+-- be narrowed. Do not re-apply the revoke until that lands on main.
 
 -- 1c. Change orders: the client UPDATE policy was unrestricted (a client
 -- could self-approve, alter cost_impact, or move rows between projects).
 -- Clients may only act on orders awaiting their signature, and only to
--- approve or reject them.
+-- approve or reject them. Uses client_has_project_portal_access() from
+-- migration 20260701140000 (portal access toggles) on main.
 drop policy if exists "Client signs change orders" on change_orders;
 create policy "Client signs change orders" on change_orders
   for update using (
     status = 'pending_client'
-    and exists (select 1 from projects p where p.id = project_id and p.client_id = auth.uid())
+    and public.client_has_project_portal_access(project_id)
   )
   with check (
     status in ('approved', 'rejected')
-    and exists (select 1 from projects p where p.id = project_id and p.client_id = auth.uid())
+    and public.client_has_project_portal_access(project_id)
   );
 
 -- 1d. Audit log: entries must be attributed to their real author.
