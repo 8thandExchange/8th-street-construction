@@ -7,9 +7,10 @@ import {
   sendCustomInvoice,
 } from "@/lib/actions/billing";
 import { EditDraftInvoiceForm } from "@/components/billing/EditDraftInvoiceForm";
+import { InvoiceAttachments } from "@/components/billing/InvoiceAttachments";
 import { appStatusBadge } from "@/lib/project/status-badges";
 import { INVOICE_STATUS_LABELS } from "@/lib/project/labels";
-import { formatMoney } from "@/lib/billing/constants";
+import { formatMoney, invoiceAttachmentTag } from "@/lib/billing/constants";
 import { mercuryPayUrl } from "@/lib/mercury/invoices";
 
 export const dynamic = "force-dynamic";
@@ -63,6 +64,14 @@ export default async function InvoiceDetailPage(props: {
   ]);
   if (!invoice) notFound();
 
+  const { data: attachedDocs } = await supabase
+    .from("project_documents")
+    .select("id, title")
+    .eq("project_id", id)
+    .eq("category", "invoice")
+    .eq("description", invoiceAttachmentTag(invoice.invoice_number))
+    .order("created_at");
+
   const project = Array.isArray(invoice.project) ? invoice.project[0] : invoice.project;
   const isDraft = invoice.status === "draft";
   const isPaid = invoice.status === "paid";
@@ -114,11 +123,14 @@ export default async function InvoiceDetailPage(props: {
             />
           </div>
 
+          <InvoiceAttachments projectId={id} invoiceId={invoiceId} docs={attachedDocs ?? []} />
+
           <div className="app-card p-6 flex flex-wrap items-center justify-between gap-4">
             <div>
               <h3 className="app-h2 !text-[15px]">Ready to bill?</h3>
               <p className="mt-1 text-sm app-muted max-w-md">
-                Sending pushes the invoice to Mercury and emails the client an ACH pay link. Save
+                Sending pushes the invoice to Mercury and emails the client an ACH pay link
+                {(attachedDocs ?? []).length ? " with the attachments above included" : ""}. Save
                 any edits above first.
               </p>
             </div>
@@ -194,6 +206,10 @@ export default async function InvoiceDetailPage(props: {
             )}
           </div>
         </div>
+      )}
+
+      {!isDraft && (attachedDocs ?? []).length > 0 && (
+        <InvoiceAttachments projectId={id} invoiceId={invoiceId} docs={attachedDocs ?? []} sent />
       )}
     </div>
   );

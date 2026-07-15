@@ -32,6 +32,7 @@ export type AssistantToolName =
   | "create_portal_user"
   | "grant_project_access"
   | "file_document"
+  | "attach_document_to_invoice"
   | "get_schedule_pdf"
   | "list_purchase_orders";
 
@@ -340,6 +341,26 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "attach_document_to_invoice",
+    description:
+      "Attach an uploaded file to an EXISTING invoice (usually a draft) so it rides the invoice email to the client and is filed in the project's Documents. Use the staged storage_path from the attachment marker and the invoice from list_invoices / get_project_billing. For a brand-new invoice, prefer create_invoice's attachments field instead.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_id: { type: "string", description: "Project UUID" },
+        invoice_id: { type: "string", description: "Invoice UUID from list_invoices / get_project_billing" },
+        invoice_number: { type: "string", description: "Invoice number, shown on the approval card" },
+        title: { type: "string", description: "Display filename, e.g. 'Asbestos report.pdf'" },
+        storage_path: {
+          type: "string",
+          description: "Staged path from the attachment marker (assistant-inbox/…)",
+        },
+      },
+      required: ["project_id", "invoice_id", "title", "storage_path"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "get_schedule_pdf",
     description:
       "Generate a downloadable, printable PDF of a project's build schedule — branded Gantt chart plus a phase detail table. Returns a download link the admin can click to view, download, or print. Default shows client-facing committed dates; dates='internal' shows the internal planning window instead. Resolve the project with list_projects first.",
@@ -433,6 +454,7 @@ export function requiresConfirmation(name: string, input: unknown): boolean {
   if (name === "create_portal_user") return true;
   if (name === "grant_project_access") return true;
   if (name === "file_document") return true;
+  if (name === "attach_document_to_invoice") return true;
   if (name === "create_invoice") {
     return Boolean((input as CreateInvoiceInput)?.send_now);
   }
@@ -539,6 +561,10 @@ export async function describeConfirmation(name: string, input: unknown): Promis
         ? "the client will see it on their portal"
         : "internal only — the client will not see it";
     return `File "${String(i.title)}" under ${where} → Documents as ${String(i.category)} (${audience}).`;
+  }
+  if (name === "attach_document_to_invoice") {
+    const which = i.invoice_number ? ` ${String(i.invoice_number)}` : "";
+    return `Attach "${String(i.title)}" to invoice${which} — it will be emailed to the client with the invoice and filed in the project's Documents (client-visible).`;
   }
   return `Run ${name}.`;
 }
@@ -1132,6 +1158,24 @@ export async function executeAssistantTool(
         project: project.title,
         document: doc,
         client_visible: visibility === "client",
+      };
+    }
+
+    case "attach_document_to_invoice": {
+      const { attachInvoiceDocument } = await import("@/lib/actions/billing");
+      const result = await attachInvoiceDocument(
+        toFormData({
+          project_id: String(i.project_id ?? ""),
+          invoice_id: String(i.invoice_id ?? ""),
+          title: String(i.title ?? ""),
+          storage_path: String(i.storage_path ?? ""),
+        })
+      );
+      if (result && "error" in result && result.error) return { error: result.error };
+      return {
+        ok: true,
+        invoice_number: (result as { invoice_number?: string }).invoice_number ?? null,
+        note: "Attached — it will be emailed with the invoice when it sends (or was filed alongside it if already sent).",
       };
     }
 
