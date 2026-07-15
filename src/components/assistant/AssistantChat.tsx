@@ -6,11 +6,14 @@ import {
   Banknote,
   CircleCheck,
   CircleX,
+  FileText,
   Loader2,
   Mic,
+  Paperclip,
   ShieldCheck,
   Sparkles,
   Wrench,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -81,6 +84,11 @@ export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
   const [pending, setPending] = useState<PendingConfirmation | null>(null);
   const [listening, setListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
+  const [attachments, setAttachments] = useState<
+    { name: string; storage_path: string }[]
+  >([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const historyRef = useRef<HistoryMessage[]>([]);
   const autoSent = useRef(false);
@@ -125,6 +133,33 @@ export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
   }, [listening, input]);
 
   useEffect(() => () => recognitionRef.current?.stop(), []);
+
+  const handleFileSelect = useCallback(async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploading(true);
+    try {
+      for (const file of Array.from(files).slice(0, 5)) {
+        const form = new FormData();
+        form.set("file", file);
+        const res = await fetch("/api/assistant/upload", { method: "POST", body: form });
+        const json = await res.json().catch(() => null);
+        if (res.ok && json?.storage_path) {
+          setAttachments((prev) => [
+            ...prev,
+            { name: String(json.name), storage_path: String(json.storage_path) },
+          ]);
+        } else {
+          setItems((prev) => [
+            ...prev,
+            { kind: "error", text: json?.error ?? `Upload failed for ${file.name}` },
+          ]);
+        }
+      }
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -249,13 +284,28 @@ export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
       const trimmed = text.trim();
       if (!trimmed || busy || pending) return;
       setInput("");
-      setItems((prev) => [...prev, { kind: "user", text: trimmed }]);
-      const userMessage: HistoryMessage = { role: "user", content: trimmed };
+      // Attached files ride along as metadata the model can hand to tools.
+      const attachmentBlock = attachments.length
+        ? `\n\n[Attached files:\n${attachments
+            .map((a) => `- "${a.name}" — storage_path: ${a.storage_path}`)
+            .join("\n")}]`
+        : "";
+      setAttachments([]);
+      setItems((prev) => [
+        ...prev,
+        {
+          kind: "user",
+          text: attachments.length
+            ? `${trimmed}\n📎 ${attachments.map((a) => a.name).join(", ")}`
+            : trimmed,
+        },
+      ]);
+      const userMessage: HistoryMessage = { role: "user", content: trimmed + attachmentBlock };
       const messages = [...historyRef.current, userMessage];
       setHistory(messages);
       await streamTurn({ messages });
     },
-    [busy, pending, streamTurn]
+    [busy, pending, streamTurn, attachments]
   );
 
   // Query handed off from the command palette (?q=) — send it once on mount.
@@ -417,7 +467,52 @@ export function AssistantChat({ initialPrompt }: { initialPrompt?: string }) {
         }}
         className="mx-auto w-full max-w-2xl pb-2"
       >
+        {(attachments.length > 0 || uploading) && (
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            {attachments.map((a, idx) => (
+              <span
+                key={`${a.storage_path}-${idx}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-navy/15 bg-white px-2.5 py-1 text-[12px] text-navy/80"
+              >
+                <FileText size={13} className="text-copper" />
+                {a.name}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setAttachments((prev) => prev.filter((_, i2) => i2 !== idx))
+                  }
+                  className="text-navy/40 hover:text-navy"
+                  title="Remove"
+                >
+                  <X size={13} />
+                </button>
+              </span>
+            ))}
+            {uploading && (
+              <span className="inline-flex items-center gap-1.5 text-[12px] app-muted">
+                <Loader2 size={13} className="animate-spin text-copper" /> Uploading…
+              </span>
+            )}
+          </div>
+        )}
         <div className="flex items-end gap-2 rounded-xl border border-navy/15 bg-white p-2 shadow-sm focus-within:border-copper/50">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx,.csv"
+            className="hidden"
+            onChange={(e) => handleFileSelect(e.target.files)}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={Boolean(pending) || uploading}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-navy/15 bg-white text-navy/60 transition-colors hover:text-navy disabled:opacity-30"
+            title="Attach a file (PDF, image, document)"
+          >
+            <Paperclip size={15} strokeWidth={1.75} />
+          </button>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}

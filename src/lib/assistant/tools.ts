@@ -38,6 +38,7 @@ export type CreateInvoiceInput = {
   due_date?: string;
   notes?: string;
   send_now?: boolean;
+  attachments?: { title: string; storage_path: string }[];
 };
 
 export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
@@ -166,6 +167,20 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
         send_now: {
           type: "boolean",
           description: "true = send to client now (Mercury + email). false = save draft.",
+        },
+        attachments: {
+          type: "array",
+          description:
+            "Supporting documents to attach — e.g. an asbestos report, inspection cert. Use the storage_path from files the admin uploaded in this chat ([Attached file: ...] blocks). Attachments are emailed with the invoice AND filed in the project's Documents tab (client-visible).",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string", description: "Display filename, e.g. 'Asbestos report.pdf'" },
+              storage_path: { type: "string", description: "storage_path from the upload" },
+            },
+            required: ["title", "storage_path"],
+            additionalProperties: false,
+          },
         },
       },
       required: ["project_id", "title", "line_items"],
@@ -311,7 +326,13 @@ export function describeConfirmation(name: string, input: unknown): string {
       (sum, li) => sum + Math.round(Number(li.quantity) * Number(li.unit_amount) * 100) / 100,
       0
     );
-    return `Create and send invoice "${String(i.title)}" for ${formatMoney(total)} — the client will receive a Mercury ACH pay link by email.`;
+    const atts = (i.attachments as { title: string }[]) ?? [];
+    const attNote = atts.length
+      ? ` ${atts.length} document${atts.length === 1 ? "" : "s"} attached (${atts
+          .map((a) => a.title)
+          .join(", ")}).`
+      : "";
+    return `Create and send invoice "${String(i.title)}" for ${formatMoney(total)} — the client will receive a Mercury ACH pay link by email.${attNote}`;
   }
   if (name === "send_invoice") {
     return "Send this draft invoice to the client — pushes to Mercury and emails the ACH pay link.";
@@ -531,6 +552,7 @@ export async function executeAssistantTool(
           due_date: input.due_date ?? "",
           send_now: input.send_now ? "on" : "off",
           line_items: JSON.stringify(input.line_items ?? []),
+          attachments: JSON.stringify(input.attachments ?? []),
         })
       );
       const invoice = await latestInvoiceForProject(input.project_id);

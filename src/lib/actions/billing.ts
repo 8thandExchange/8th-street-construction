@@ -90,6 +90,36 @@ function parseCustomLineItems(raw: string): CustomLineItem[] {
   });
 }
 
+export type InvoiceAttachment = { title: string; storage_path: string };
+
+/**
+ * File attachments into the project's Documents tab (client-visible,
+ * category 'invoice') and return 7-day signed URLs for the email.
+ */
+async function fileInvoiceAttachments(
+  projectId: string,
+  attachments: InvoiceAttachment[]
+): Promise<{ filename: string; url: string }[]> {
+  if (!attachments.length) return [];
+  const admin = createAdminClient();
+  const out: { filename: string; url: string }[] = [];
+  for (const att of attachments) {
+    if (!att.storage_path || !att.title) continue;
+    await admin.from("project_documents").insert({
+      project_id: projectId,
+      title: att.title,
+      storage_path: att.storage_path,
+      category: "invoice",
+      visibility: "client",
+    });
+    const { data: signed } = await admin.storage
+      .from("project-documents")
+      .createSignedUrl(att.storage_path, 60 * 60 * 24 * 7);
+    if (signed?.signedUrl) out.push({ filename: att.title, url: signed.signedUrl });
+  }
+  return out;
+}
+
 async function deliverInvoice(
   invoice: {
     id: string;
@@ -99,7 +129,8 @@ async function deliverInvoice(
     due_date: string | null;
   },
   project: { id: string; title: string | null; client_id: string | null; slug: string | null },
-  lineItems: CustomLineItem[]
+  lineItems: CustomLineItem[],
+  attachments: { filename: string; url: string }[] = []
 ) {
   let mercuryPayLink: string | null = null;
   if (!project.client_id) return mercuryPayLink;
@@ -148,6 +179,7 @@ async function deliverInvoice(
       dueDateFormatted: formatDueDateLabel(invoice.due_date),
       mercuryPayUrl: mercuryPayLink,
       isHabitat: isHabitat608Project(project.slug ?? ""),
+      attachments,
     });
   }
 
@@ -414,6 +446,17 @@ export async function createCustomInvoice(formData: FormData) {
   const dueDate = String(formData.get("due_date") ?? "").trim() || null;
   const sendNow = formData.get("send_now") === "on";
   const lineItems = parseCustomLineItems(String(formData.get("line_items") ?? "[]"));
+  let attachments: InvoiceAttachment[] = [];
+  try {
+    const parsed = JSON.parse(String(formData.get("attachments") ?? "[]"));
+    if (Array.isArray(parsed)) {
+      attachments = parsed
+        .filter((a) => a && typeof a.title === "string" && typeof a.storage_path === "string")
+        .slice(0, 10);
+    }
+  } catch {
+    // no attachments
+  }
 
   if (!title) throw new Error("Invoice title is required.");
 
@@ -466,6 +509,8 @@ export async function createCustomInvoice(formData: FormData) {
     }))
   );
 
+  const emailAttachments = await fileInvoiceAttachments(projectId, attachments);
+
   if (sendNow) {
     await deliverInvoice(
       {
@@ -481,7 +526,8 @@ export async function createCustomInvoice(formData: FormData) {
         client_id: project.client_id ?? null,
         slug: project.slug ?? null,
       },
-      lineItems
+      lineItems,
+      emailAttachments
     );
   }
 

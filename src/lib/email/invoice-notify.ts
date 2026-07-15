@@ -22,6 +22,8 @@ export async function sendInvoiceReadyEmail(payload: {
   dueDateFormatted?: string | null;
   mercuryPayUrl?: string | null;
   isHabitat?: boolean;
+  /** Supporting documents (signed URLs) attached to the email itself */
+  attachments?: { filename: string; url: string }[];
 }) {
   const resend = client();
   if (!resend) return { skipped: true };
@@ -45,6 +47,14 @@ export async function sendInvoiceReadyEmail(payload: {
     subject,
     html,
     text,
+    ...(payload.attachments?.length
+      ? {
+          attachments: payload.attachments.map((a) => ({
+            filename: a.filename,
+            path: a.url,
+          })),
+        }
+      : {}),
   });
 }
 
