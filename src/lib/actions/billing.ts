@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe/client";
-import { formatMoney, invoiceJobPrefix } from "@/lib/billing/constants";
+import { formatMoney, invoiceJobPrefix, invoiceAttachmentTag } from "@/lib/billing/constants";
 import { sendInvoiceReadyEmail } from "@/lib/email/invoice-notify";
 import {
   getDrawTemplateForProject,
@@ -98,10 +98,6 @@ export type InvoiceAttachment = { title: string; storage_path: string };
  * uploads (assistant-inbox/…) are moved into the project folder first, same
  * as the assistant's file_document tool.
  */
-function invoiceAttachmentTag(invoiceNumber: string) {
-  return `Attached to invoice ${invoiceNumber}`;
-}
-
 async function fileInvoiceAttachments(
   projectId: string,
   invoiceNumber: string,
@@ -648,6 +644,54 @@ export async function deleteDraftInvoice(formData: FormData) {
   const { error } = await supabase.from("invoices").delete().eq("id", invoiceId);
   if (error) throw new Error(error.message);
   revalidate(projectId);
+}
+
+/** Attach a staged upload to an existing invoice — it rides the invoice email and files into Documents. */
+export async function attachInvoiceDocument(formData: FormData) {
+  await requireAdmin();
+  const projectId = String(formData.get("project_id"));
+  const invoiceId = String(formData.get("invoice_id"));
+  const title = String(formData.get("title") ?? "").trim();
+  const storagePath = String(formData.get("storage_path") ?? "").trim();
+  if (!title || !storagePath) return { error: "File and title are required" };
+
+  const admin = createAdminClient();
+  const { data: invoice } = await admin
+    .from("invoices")
+    .select("invoice_number, status")
+    .eq("id", invoiceId)
+    .eq("project_id", projectId)
+    .single();
+  if (!invoice) return { error: "Invoice not found" };
+
+  const filed = await fileInvoiceAttachments(projectId, invoice.invoice_number, [
+    { title, storage_path: storagePath },
+  ]);
+  if (!filed.length) return { error: "Could not attach the file — try uploading it again" };
+
+  revalidatePath(`/admin/projects/${projectId}/billing/invoices/${invoiceId}`);
+  return { ok: true, invoice_number: invoice.invoice_number, status: invoice.status };
+}
+
+export async function removeInvoiceAttachment(formData: FormData) {
+  await requireAdmin();
+  const projectId = String(formData.get("project_id"));
+  const invoiceId = String(formData.get("invoice_id"));
+  const documentId = String(formData.get("document_id"));
+
+  const admin = createAdminClient();
+  const { data: doc } = await admin
+    .from("project_documents")
+    .select("storage_path")
+    .eq("id", documentId)
+    .eq("project_id", projectId)
+    .single();
+  if (doc?.storage_path) {
+    await admin.storage.from("project-documents").remove([doc.storage_path]);
+  }
+  await admin.from("project_documents").delete().eq("id", documentId);
+  revalidatePath(`/admin/projects/${projectId}/billing/invoices/${invoiceId}`);
+  return { ok: true };
 }
 
 export async function sendCustomInvoice(formData: FormData) {

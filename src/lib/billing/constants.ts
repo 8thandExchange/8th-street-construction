@@ -125,3 +125,8 @@ export function invoiceJobPrefix(slug: string | null | undefined): string {
   if (!tokens.length) return "JOB";
   return tokens.slice(0, 2).join("-").slice(0, 16);
 }
+
+/** Tag stored in project_documents.description linking a document to an invoice. */
+export function invoiceAttachmentTag(invoiceNumber: string): string {
+  return `Attached to invoice ${invoiceNumber}`;
+}
