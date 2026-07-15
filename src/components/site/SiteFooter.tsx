@@ -1,38 +1,46 @@
 import Link from "next/link";
 import { PORTAL_LOGIN_LINKS } from "@/lib/portal-links";
-import { BRAND, brandPhoneTel } from "@/lib/brand/assets";
+import { getSiteContact, contactTelHref } from "@/lib/site-contact";
 
-const COLUMNS = [
-  {
-    heading: "Studio",
-    links: [
-      { href: "/about", label: "About" },
-      { href: "/services", label: "Services" },
-      { href: "/projects", label: "Selected Work" },
-      { href: "/contact", label: "Contact" },
-    ],
-  },
-  {
-    heading: "Services",
-    links: [
-      { href: "/services#custom-homes", label: "Custom Homes" },
-      { href: "/services#commercial", label: "Commercial Construction" },
-      { href: "/services#renovations", label: "Renovations" },
-      { href: "/services#design-build", label: "Design-Build" },
-    ],
-  },
-  {
-    heading: "Service Area",
-    links: [
-      { href: "/contact", label: "Augusta" },
-      { href: "/contact", label: "Evans · Martinez" },
-      { href: "/contact", label: "Grovetown" },
-      { href: "/contact", label: "North Augusta · Aiken" },
-    ],
-  },
-];
+/** Pair up service areas so the footer column stays compact ("Evans · Martinez") */
+function serviceAreaLabels(areas: string[]) {
+  const labels: string[] = [];
+  for (let i = 0; i < areas.length; i += 2) {
+    labels.push(areas.slice(i, i + 2).join(" · "));
+  }
+  return labels;
+}
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const contact = await getSiteContact();
+  const columns = [
+    {
+      heading: "Studio",
+      links: [
+        { href: "/about", label: "About" },
+        { href: "/services", label: "Services" },
+        { href: "/projects", label: "Selected Work" },
+        { href: "/volunteer", label: "Volunteer" },
+        { href: "/contact", label: "Contact" },
+      ],
+    },
+    {
+      heading: "Services",
+      links: [
+        { href: "/services#custom-homes", label: "Custom Homes" },
+        { href: "/services#commercial-construction", label: "Commercial Construction" },
+        { href: "/services#residential-renovations", label: "Renovations" },
+        { href: "/services#design-build", label: "Design-Build" },
+      ],
+    },
+    {
+      heading: "Service Area",
+      links: serviceAreaLabels(contact.serviceArea).map((label) => ({
+        href: "/contact",
+        label,
+      })),
+    },
+  ];
   return (
     <footer className="bg-navy text-bone relative overflow-hidden">
       <div className="grain-overlay">
@@ -55,7 +63,7 @@ export function SiteFooter() {
                   Book a Consultation
                 </Link>
                 <Link
-                  href="mailto:hello@8thstreetconstruction.com"
+                  href={`mailto:${contact.email}`}
                   className="inline-flex h-14 items-center justify-center border border-bone/25 hover:border-bone hover:bg-bone hover:text-ink font-mono text-xs tracking-[0.2em] uppercase transition-all duration-500"
                 >
                   Email the Studio
@@ -65,7 +73,7 @@ export function SiteFooter() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12">
-            {COLUMNS.map((col) => (
+            {columns.map((col) => (
               <div key={col.heading}>
                 <div className="eyebrow text-bone/40 mb-4">{col.heading}</div>
                 <ul className="space-y-2.5">
@@ -88,21 +96,21 @@ export function SiteFooter() {
               <ul className="space-y-2.5 text-[15px] text-bone/75">
                 <li>
                   <a
-                    href={`tel:${brandPhoneTel()}`}
+                    href={`tel:${contactTelHref(contact.phone)}`}
                     className="hover:text-copper-100 transition-colors duration-300"
                   >
-                    {BRAND.phone}
+                    {contact.phone}
                   </a>
                 </li>
                 <li>
                   <a
-                    href="mailto:hello@8thstreetconstruction.com"
+                    href={`mailto:${contact.email}`}
                     className="hover:text-copper-100 transition-colors duration-300"
                   >
-                    hello@8thstreetconstruction.com
+                    {contact.email}
                   </a>
                 </li>
-                <li>Augusta, GA · CSRA</li>
+                <li>{contact.city} · CSRA</li>
               </ul>
             </div>
           </div>

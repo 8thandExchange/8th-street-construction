@@ -27,7 +27,10 @@ export default async function AdminAssistantPage(props: {
 
       {configured ? (
         <div className="mx-auto mt-2 flex w-full min-h-0 max-w-3xl flex-1 flex-col">
-          <AssistantChat initialPrompt={q?.trim() || undefined} />
+          <AssistantChat
+            initialPrompt={q?.trim() || undefined}
+            config={{ allowAttachments: true }}
+          />
         </div>
       ) : (
         <div className="mx-auto mt-8 w-full max-w-2xl rounded-xl border border-navy/10 bg-white p-6">

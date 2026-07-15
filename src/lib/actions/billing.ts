@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe/client";
-import { formatMoney } from "@/lib/billing/constants";
+import { formatMoney, invoiceJobPrefix } from "@/lib/billing/constants";
 import { sendInvoiceReadyEmail } from "@/lib/email/invoice-notify";
 import {
   getDrawTemplateForProject,
@@ -46,19 +46,19 @@ async function nextInvoiceNumber(
   supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"],
   projectId: string
 ) {
-  const { data: lastInv } = await supabase
-    .from("invoices")
-    .select("invoice_number")
-    .eq("project_id", projectId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [{ data: project }, { data: existing }] = await Promise.all([
+    supabase.from("projects").select("slug").eq("id", projectId).single(),
+    supabase.from("invoices").select("invoice_number").eq("project_id", projectId),
+  ]);
 
-  const seq = lastInv?.invoice_number
-    ? Number(String(lastInv.invoice_number).replace(/\D/g, "")) + 1
-    : 1;
+  // Highest trailing sequence across the job's invoices (handles both the
+  // old INV-0001 style and the job-prefixed style).
+  const maxSeq = (existing ?? []).reduce((max, inv) => {
+    const match = String(inv.invoice_number ?? "").match(/(\d+)\s*$/);
+    return match ? Math.max(max, Number(match[1])) : max;
+  }, 0);
 
-  return `INV-${String(seq).padStart(4, "0")}`;
+  return `${invoiceJobPrefix(project?.slug)}-${String(maxSeq + 1).padStart(3, "0")}`;
 }
 
 function parseCustomLineItems(raw: string): CustomLineItem[] {
@@ -93,29 +93,72 @@ function parseCustomLineItems(raw: string): CustomLineItem[] {
 export type InvoiceAttachment = { title: string; storage_path: string };
 
 /**
- * File attachments into the project's Documents tab (client-visible,
- * category 'invoice') and return 7-day signed URLs for the email.
+ * File invoice attachments into the project's Documents tab (client-visible,
+ * category 'invoice') and return 7-day signed URLs for the email. Staged chat
+ * uploads (assistant-inbox/…) are moved into the project folder first, same
+ * as the assistant's file_document tool.
  */
+function invoiceAttachmentTag(invoiceNumber: string) {
+  return `Attached to invoice ${invoiceNumber}`;
+}
+
 async function fileInvoiceAttachments(
   projectId: string,
+  invoiceNumber: string,
   attachments: InvoiceAttachment[]
 ): Promise<{ filename: string; url: string }[]> {
   if (!attachments.length) return [];
   const admin = createAdminClient();
   const out: { filename: string; url: string }[] = [];
   for (const att of attachments) {
-    if (!att.storage_path || !att.title) continue;
+    if (!att.storage_path || !att.title || att.storage_path.includes("..")) continue;
+    let path = att.storage_path;
+    if (path.startsWith("assistant-inbox/")) {
+      const ext = path.split(".").pop() || "bin";
+      const finalPath = `${projectId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: moveError } = await admin.storage
+        .from("project-documents")
+        .move(path, finalPath);
+      if (moveError) {
+        console.error("Invoice attachment move failed:", moveError.message);
+        continue;
+      }
+      path = finalPath;
+    }
     await admin.from("project_documents").insert({
       project_id: projectId,
       title: att.title,
-      storage_path: att.storage_path,
+      description: invoiceAttachmentTag(invoiceNumber),
+      storage_path: path,
       category: "invoice",
       visibility: "client",
     });
     const { data: signed } = await admin.storage
       .from("project-documents")
-      .createSignedUrl(att.storage_path, 60 * 60 * 24 * 7);
+      .createSignedUrl(path, 60 * 60 * 24 * 7);
     if (signed?.signedUrl) out.push({ filename: att.title, url: signed.signedUrl });
+  }
+  return out;
+}
+
+/** Signed URLs for documents previously filed against this invoice (draft-then-send flow). */
+async function invoiceEmailAttachments(
+  projectId: string,
+  invoiceNumber: string
+): Promise<{ filename: string; url: string }[]> {
+  const admin = createAdminClient();
+  const { data: docs } = await admin
+    .from("project_documents")
+    .select("title, storage_path")
+    .eq("project_id", projectId)
+    .eq("category", "invoice")
+    .eq("description", invoiceAttachmentTag(invoiceNumber));
+  const out: { filename: string; url: string }[] = [];
+  for (const doc of docs ?? []) {
+    const { data: signed } = await admin.storage
+      .from("project-documents")
+      .createSignedUrl(doc.storage_path, 60 * 60 * 24 * 7);
+    if (signed?.signedUrl) out.push({ filename: doc.title, url: signed.signedUrl });
   }
   return out;
 }
@@ -509,7 +552,7 @@ export async function createCustomInvoice(formData: FormData) {
     }))
   );
 
-  const emailAttachments = await fileInvoiceAttachments(projectId, attachments);
+  const emailAttachments = await fileInvoiceAttachments(projectId, invoiceNumber, attachments);
 
   if (sendNow) {
     await deliverInvoice(
@@ -531,6 +574,79 @@ export async function createCustomInvoice(formData: FormData) {
     );
   }
 
+  revalidate(projectId);
+}
+
+/** Edit a DRAFT invoice in place: title, due date, notes, and line items. */
+export async function updateDraftInvoice(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const projectId = String(formData.get("project_id"));
+  const invoiceId = String(formData.get("invoice_id"));
+  const title = String(formData.get("title") ?? "").trim();
+  const notes = String(formData.get("notes") ?? "").trim() || null;
+  const dueDate = String(formData.get("due_date") ?? "").trim() || null;
+  const lineItems = parseCustomLineItems(String(formData.get("line_items") ?? "[]"));
+
+  if (!title) throw new Error("Invoice title is required.");
+
+  const { data: invoice } = await supabase
+    .from("invoices")
+    .select("id, status")
+    .eq("id", invoiceId)
+    .eq("project_id", projectId)
+    .single();
+  if (!invoice) throw new Error("Invoice not found.");
+  if (invoice.status !== "draft") {
+    throw new Error("Only draft invoices can be edited — this one has already been sent.");
+  }
+
+  const subtotal = lineItems.reduce(
+    (sum, item) => sum + Math.round(item.quantity * item.unit_amount * 100) / 100,
+    0
+  );
+
+  const { error } = await supabase
+    .from("invoices")
+    .update({ title, notes, due_date: dueDate, subtotal, total: subtotal })
+    .eq("id", invoiceId);
+  if (error) throw new Error(error.message);
+
+  await supabase.from("invoice_line_items").delete().eq("invoice_id", invoiceId);
+  const { error: lineError } = await supabase.from("invoice_line_items").insert(
+    lineItems.map((item, index) => ({
+      invoice_id: invoiceId,
+      description: item.description,
+      quantity: item.quantity,
+      unit_amount: item.unit_amount,
+      amount: Math.round(item.quantity * item.unit_amount * 100) / 100,
+      display_order: index,
+    }))
+  );
+  if (lineError) throw new Error(lineError.message);
+
+  revalidate(projectId);
+  revalidatePath(`/admin/projects/${projectId}/billing/invoices/${invoiceId}`);
+}
+
+/** Delete a DRAFT invoice entirely (line items cascade). Sent invoices can only be voided. */
+export async function deleteDraftInvoice(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const projectId = String(formData.get("project_id"));
+  const invoiceId = String(formData.get("invoice_id"));
+
+  const { data: invoice } = await supabase
+    .from("invoices")
+    .select("id, status")
+    .eq("id", invoiceId)
+    .eq("project_id", projectId)
+    .single();
+  if (!invoice) throw new Error("Invoice not found.");
+  if (invoice.status !== "draft") {
+    throw new Error("Only draft invoices can be deleted.");
+  }
+
+  const { error } = await supabase.from("invoices").delete().eq("id", invoiceId);
+  if (error) throw new Error(error.message);
   revalidate(projectId);
 }
 
@@ -579,6 +695,8 @@ export async function sendCustomInvoice(formData: FormData) {
     })
     .eq("id", invoiceId);
 
+  const emailAttachments = await invoiceEmailAttachments(projectId, invoice.invoice_number);
+
   await deliverInvoice(
     {
       id: invoice.id,
@@ -593,7 +711,8 @@ export async function sendCustomInvoice(formData: FormData) {
       client_id: project.client_id ?? null,
       slug: project.slug ?? null,
     },
-    lineItems
+    lineItems,
+    emailAttachments
   );
 
   revalidate(projectId);

@@ -11,7 +11,7 @@ import "@fontsource/barlow-condensed/600.css";
 import "./globals.css";
 import { LeadConnectorChat } from "@/components/site/LeadConnectorChat";
 import { PwaProvider } from "@/components/pwa/PwaProvider";
-import { BRAND, brandPhoneTel } from "@/lib/brand/assets";
+import { getSiteContact, contactTelHref } from "@/lib/site-contact";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://8thstreetconstruction.com";
 
@@ -65,21 +65,22 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const contact = await getSiteContact();
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "GeneralContractor",
     name: "8th Street Construction",
     alternateName: "8th Street Construction, a division of 8th and Exchange Capital",
     url: SITE_URL,
-    email: "construction@8thandexchange.com",
-    telephone: brandPhoneTel(),
+    email: contact.email,
+    telephone: contactTelHref(contact.phone),
     image: `${SITE_URL}/opengraph-image`,
     description:
       "Custom homes, residential renovations, and commercial construction in Augusta, Georgia and the CSRA.",
     address: {
       "@type": "PostalAddress",
-      addressLocality: "Augusta",
+      addressLocality: contact.city.split(",")[0].trim(),
       addressRegion: "GA",
       addressCountry: "US",
     },
@@ -88,10 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       latitude: 33.4734978,
       longitude: -81.9748689,
     },
-    areaServed: [
-      "Augusta", "Evans", "Martinez", "Grovetown",
-      "North Augusta", "Columbia County", "Aiken",
-    ],
+    areaServed: contact.serviceArea,
     parentOrganization: {
       "@type": "Organization",
       name: "8th and Exchange Capital",

@@ -41,7 +41,7 @@ export default async function AdminInvoicingPage() {
 
   const invoiceStats = new Map<
     string,
-    { count: number; openCount: number; outstanding: number }
+    { count: number; openCount: number; outstanding: number; draftCount: number }
   >();
 
   for (const invoice of invoices ?? []) {
@@ -49,9 +49,13 @@ export default async function AdminInvoicingPage() {
       count: 0,
       openCount: 0,
       outstanding: 0,
+      draftCount: 0,
     };
     stats.count += 1;
-    if (invoice.status !== "paid" && invoice.status !== "void") {
+    if (invoice.status === "draft") {
+      // Drafts haven't been sent — they are not money owed yet.
+      stats.draftCount += 1;
+    } else if (invoice.status !== "paid" && invoice.status !== "void") {
       stats.openCount += 1;
       stats.outstanding += Math.max(
         0,
@@ -66,6 +70,7 @@ export default async function AdminInvoicingPage() {
       count: 0,
       openCount: 0,
       outstanding: 0,
+      draftCount: 0,
     };
 
     return {
@@ -76,6 +81,7 @@ export default async function AdminInvoicingPage() {
       invoiceCount: stats.count,
       openCount: stats.openCount,
       outstanding: stats.outstanding,
+      draftCount: stats.draftCount,
     };
   });
 

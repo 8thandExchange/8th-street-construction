@@ -68,13 +68,19 @@ export async function requireClientProjectAccess(projectId: string) {
     .eq("id", user.id)
     .single();
 
-  if (!profile || profile.role !== "client" || !profile.portal_active) notFound();
+  if (!profile) notFound();
 
-  const { data: allowed } = await supabase.rpc("client_has_project_portal_access", {
-    project_uuid: projectId,
-  });
+  // Admins may preview any project's client portal (the admin command
+  // center links here as "Preview portal"); clients need real access.
+  if (profile.role !== "admin") {
+    if (profile.role !== "client" || !profile.portal_active) notFound();
 
-  if (!allowed) notFound();
+    const { data: allowed } = await supabase.rpc("client_has_project_portal_access", {
+      project_uuid: projectId,
+    });
+
+    if (!allowed) notFound();
+  }
 
   const { data: project } = await supabase
     .from("projects")

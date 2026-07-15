@@ -1,12 +1,22 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { createChangeOrder, deleteChangeOrder } from "@/lib/actions/change-orders";
-import {
-  CHANGE_ORDER_STATUS_LABELS,
-  CHANGE_ORDER_STATUS_STYLES,
-} from "@/lib/project/labels";
+import { CHANGE_ORDER_STATUS_LABELS } from "@/lib/project/labels";
+import { appStatusBadge } from "@/lib/project/status-badges";
 
 export const dynamic = "force-dynamic";
+
+// Form actions must be module-level "use server" functions returning void —
+// inline closures in a server component can't be serialized to the client.
+async function createChangeOrderAction(formData: FormData) {
+  "use server";
+  await createChangeOrder(formData);
+}
+
+async function deleteChangeOrderAction(formData: FormData) {
+  "use server";
+  await deleteChangeOrder(formData);
+}
 
 export default async function ProjectChangeOrdersPage(props: {
   params: Promise<{ id: string }>;
@@ -25,19 +35,17 @@ export default async function ProjectChangeOrdersPage(props: {
   return (
     <div className="max-w-3xl">
       <h2 className="app-h1 !text-[18px] mb-2">Change Orders</h2>
-      <p className="text-sm text-ink/60 mb-8">
+      <p className="text-sm app-muted mb-8">
         Document scope changes. Send to client for approval — approved orders update contract
         value.
       </p>
 
       <form
-        action={async (fd) => {
-          await createChangeOrder(fd);
-        }}
-        className="p-8 border border-ink/15 bg-paper space-y-5 mb-10"
+        action={createChangeOrderAction}
+        className="app-card p-6 md:p-8 space-y-5 mb-10"
       >
         <input type="hidden" name="project_id" value={id} />
-        <h3 className="eyebrow">New Change Order</h3>
+        <h3 className="app-h2 !text-[16px]">New Change Order</h3>
         <div>
           <label className="field-label">Title *</label>
           <input name="title" required className="field-input" />
@@ -58,7 +66,7 @@ export default async function ProjectChangeOrdersPage(props: {
         </div>
         <label className="flex items-center gap-3 cursor-pointer">
           <input type="checkbox" name="send_to_client" className="w-5 h-5 accent-copper" />
-          <span className="text-sm text-ink">Send to client immediately for approval</span>
+          <span className="text-sm text-navy">Send to client immediately for approval</span>
         </label>
         <button
           type="submit"
@@ -70,18 +78,16 @@ export default async function ProjectChangeOrdersPage(props: {
 
       <ul className="space-y-4">
         {(orders ?? []).map((co) => (
-          <li key={co.id} className="p-6 bg-paper border border-ink/15">
+          <li key={co.id} className="app-card p-6">
             <div className="flex flex-wrap items-center gap-3 mb-2">
-              <span className="font-mono text-xs text-stone-300">#{co.number}</span>
+              <span className="text-xs app-muted tabular-nums">#{co.number}</span>
               <h3 className="app-h2">{co.title}</h3>
-              <span
-                className={`text-[9px] font-mono tracking-[0.15em] uppercase px-1.5 py-0.5 border ${CHANGE_ORDER_STATUS_STYLES[co.status]}`}
-              >
+              <span className={appStatusBadge("change_order", co.status)}>
                 {CHANGE_ORDER_STATUS_LABELS[co.status]}
               </span>
             </div>
-            <p className="text-sm text-ink/75 whitespace-pre-wrap">{co.description}</p>
-            <div className="mt-3 flex flex-wrap gap-4 text-xs font-mono text-stone-300">
+            <p className="text-sm text-navy/80 whitespace-pre-wrap">{co.description}</p>
+            <div className="mt-3 flex flex-wrap gap-4 text-xs app-muted tabular-nums">
               {co.cost_impact != null && (
                 <span>Cost: ${Number(co.cost_impact).toLocaleString()}</span>
               )}
@@ -90,17 +96,12 @@ export default async function ProjectChangeOrdersPage(props: {
               )}
             </div>
             {co.status === "draft" && (
-              <form
-                action={async (fd) => {
-                  await deleteChangeOrder(fd);
-                }}
-                className="mt-4"
-              >
+              <form action={deleteChangeOrderAction} className="mt-4">
                 <input type="hidden" name="id" value={co.id} />
                 <input type="hidden" name="project_id" value={id} />
                 <button
                   type="submit"
-                  className="app-label hover:text-red-600"
+                  className="app-btn app-btn-ghost !h-8 !px-2.5 !text-[12.5px] hover:!text-red-600"
                 >
                   Delete draft
                 </button>
@@ -110,9 +111,9 @@ export default async function ProjectChangeOrdersPage(props: {
         ))}
       </ul>
       {!orders?.length && (
-        <p className="text-ink/50 italic py-8 text-center border border-dashed border-ink/20">
-          No change orders yet.
-        </p>
+        <div className="app-card p-12 text-center">
+          <p className="app-muted text-sm">No change orders yet.</p>
+        </div>
       )}
     </div>
   );

@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { PROJECT_CATEGORY_LABELS } from "@/lib/utils";
 import { convertConsultationToProject } from "@/lib/actions/consultations";
 import { ConvertToProjectButton } from "@/components/admin/ConvertToProjectButton";
+import { appStatusBadge } from "@/lib/project/status-badges";
 
 export const dynamic = "force-dynamic";
 
@@ -12,14 +13,6 @@ const STATUS_LABELS: Record<string, string> = {
   completed: "Completed",
   cancelled: "Cancelled",
   no_show: "No Show",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  requested: "border-copper/50 text-copper bg-copper/5",
-  confirmed: "border-emerald-500/50 text-emerald-600 bg-emerald-50",
-  completed: "border-blue-500/50 text-blue-600",
-  cancelled: "border-stone-300 text-stone-300",
-  no_show: "border-amber-500/50 text-amber-600",
 };
 
 async function updateConsultationStatus(formData: FormData) {
@@ -60,9 +53,7 @@ export default async function AdminConsultations() {
                     <h3 className="app-h1 !text-[18px]">
                       {c.first_name} {c.last_name}
                     </h3>
-                    <span
-                      className={`inline-block app-badge border !text-[11px] ${STATUS_COLORS[c.status]}`}
-                    >
+                    <span className={appStatusBadge("consultation", c.status)}>
                       {STATUS_LABELS[c.status]}
                     </span>
                   </div>

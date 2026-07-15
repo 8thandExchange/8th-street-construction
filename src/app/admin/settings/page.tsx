@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { SITE_CONTACT_TAG } from "@/lib/site-contact";
 import { SettingField } from "@/components/admin/SettingField";
+import { ContactSettingField } from "@/components/admin/ContactSettingField";
+import { isContactValue } from "@/lib/contact-value";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +24,8 @@ async function updateSetting(formData: FormData) {
     .from("site_settings")
     .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
 
-  revalidatePath("/");
+  revalidateTag(SITE_CONTACT_TAG);
+  revalidatePath("/", "layout");
   revalidatePath("/admin/settings");
 }
 
@@ -60,7 +64,11 @@ export default async function AdminSettings() {
                 Updated {new Date(setting.updated_at).toLocaleString()}
               </span>
             </div>
-            <SettingField value={setting.value} />
+            {setting.key === "contact" && isContactValue(setting.value) ? (
+              <ContactSettingField value={setting.value} />
+            ) : (
+              <SettingField value={setting.value} />
+            )}
             <button
               type="submit"
               className="mt-4 app-btn app-btn-primary"

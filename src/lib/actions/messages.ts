@@ -79,13 +79,13 @@ export async function sendClientMessage(formData: FormData) {
   const body = String(formData.get("body")).trim();
   if (!body) return { error: "Message cannot be empty" };
 
-  const { data: project } = await supabase
-    .from("projects")
-    .select("title, client_id")
-    .eq("id", projectId)
-    .single();
+  // Primary client OR added portal member — same rule the RLS insert policy enforces.
+  const [{ data: project }, { data: allowed }] = await Promise.all([
+    supabase.from("projects").select("title, client_id").eq("id", projectId).single(),
+    supabase.rpc("client_has_project_portal_access", { project_uuid: projectId }),
+  ]);
 
-  if (!project || project.client_id !== user.id) {
+  if (!project || !allowed) {
     return { error: "Unauthorized" };
   }
 

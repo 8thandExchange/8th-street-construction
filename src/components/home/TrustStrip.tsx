@@ -1,15 +1,21 @@
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
+import { getSiteContact } from "@/lib/site-contact";
 
-const FACTS = [
-  "Licensed & insured — Georgia and South Carolina",
-  "Habitat for Humanity partner builds",
-  "Serving Augusta, Evans, Martinez, Grovetown, North Augusta & Aiken",
-  "A division of 8th and Exchange Capital",
-] as const;
+function servingLine(areas: string[]) {
+  if (areas.length === 1) return `Serving ${areas[0]}`;
+  return `Serving ${areas.slice(0, -1).join(", ")} & ${areas[areas.length - 1]}`;
+}
 
 /** Quiet, factual trust strip — no badges, no noise. */
-export function TrustStrip() {
+export async function TrustStrip() {
+  const contact = await getSiteContact();
+  const FACTS = [
+    "Licensed & insured — Georgia and South Carolina",
+    "Habitat for Humanity partner builds",
+    servingLine(contact.serviceArea),
+    "A division of 8th and Exchange Capital",
+  ];
   return (
     <section className="border-y border-ink/10 bg-bone-50 py-8">
       <Container size="wide">

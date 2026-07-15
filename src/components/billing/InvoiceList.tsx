@@ -1,4 +1,4 @@
-import { markInvoicePaid, sendCustomInvoice } from "@/lib/actions/billing";
+import { markInvoicePaid } from "@/lib/actions/billing";
 import type { InvoiceRecord } from "@/lib/billing/summary";
 import { InvoiceCard, type InvoiceCardData } from "./InvoiceCard";
 
@@ -38,26 +38,12 @@ export function InvoiceList({ projectId, invoices }: InvoiceListProps) {
               <InvoiceCard
                 invoice={inv as InvoiceCardData}
                 variant="admin"
+                detailHref={`/admin/projects/${projectId}/billing/invoices/${inv.id}`}
                 markPaidAction={
                   inv.status === "draft" ? (
-                    <form
-                      action={async (fd) => {
-                        "use server";
-                        await sendCustomInvoice(fd);
-                      }}
-                    >
-                      <input type="hidden" name="project_id" value={projectId} />
-                      <input type="hidden" name="invoice_id" value={inv.id} />
-                      <button
-                        type="submit"
-                        className="h-10 px-4 app-btn app-btn-accent"
-                      >
-                        Send invoice
-                      </button>
-                      <p className="text-[10px] text-ink/45 mt-2 max-w-[9rem] text-right leading-relaxed">
-                        Draft — not sent yet
-                      </p>
-                    </form>
+                    <p className="text-[11px] app-muted max-w-[10rem] text-right leading-relaxed">
+                      Draft — the client hasn&apos;t seen this. Open it to edit, send, or delete.
+                    </p>
                   ) : inv.status !== "paid" && inv.status !== "void" ? (
                     <form
                       action={async (fd) => {

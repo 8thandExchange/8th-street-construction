@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { deleteLead } from "@/lib/actions/leads";
 import { DeleteLeadButton } from "@/components/admin/DeleteLeadButton";
-import { LEAD_STATUS_LABELS, LEAD_STATUS_COLORS, PROJECT_CATEGORY_LABELS } from "@/lib/utils";
+import { LEAD_STATUS_LABELS, PROJECT_CATEGORY_LABELS } from "@/lib/utils";
+import { appStatusBadge } from "@/lib/project/status-badges";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +36,7 @@ export default async function AdminLeads(
           <span className="eyebrow">— Inbox</span>
           <h1 className="mt-2 app-h1">Leads</h1>
         </div>
-        <div className="text-sm text-stone-300 font-mono tracking-wider">
+        <div className="text-sm app-muted">
           {leads?.length ?? 0} {status ? `${LEAD_STATUS_LABELS[status]}` : "total"}
         </div>
       </div>
@@ -44,10 +45,8 @@ export default async function AdminLeads(
       <div className="flex flex-wrap gap-2 mb-10">
         <Link
           href="/admin/leads"
-          className={`inline-flex items-center px-3 h-8 font-mono text-[11px] tracking-[0.18em] uppercase border transition-colors ${
-            !status
-              ? "app-btn app-btn-primary !h-8 !px-3.5 !text-[12.5px]"
-              : "app-btn app-btn-secondary !h-8 !px-3.5 !text-[12.5px]"
+          className={`app-btn !h-8 !px-3.5 !text-[12.5px] ${
+            !status ? "app-btn-primary" : "app-btn-secondary"
           }`}
         >
           All
@@ -56,10 +55,8 @@ export default async function AdminLeads(
           <Link
             key={s}
             href={`/admin/leads?status=${s}`}
-            className={`inline-flex items-center px-3 h-8 font-mono text-[11px] tracking-[0.18em] uppercase border transition-colors ${
-              status === s
-                ? "app-btn app-btn-primary !h-8 !px-3.5 !text-[12.5px]"
-                : "app-btn app-btn-secondary !h-8 !px-3.5 !text-[12.5px]"
+            className={`app-btn !h-8 !px-3.5 !text-[12.5px] ${
+              status === s ? "app-btn-primary" : "app-btn-secondary"
             }`}
           >
             {LEAD_STATUS_LABELS[s]}
@@ -91,7 +88,7 @@ export default async function AdminLeads(
                       {lead.first_name} {lead.last_name}
                     </Link>
                     {lead.phone && (
-                      <div className="text-xs text-stone-300 font-mono mt-1">{lead.phone}</div>
+                      <div className="text-xs app-muted mt-1">{lead.phone}</div>
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm text-ink/70 hidden md:table-cell">
@@ -103,15 +100,11 @@ export default async function AdminLeads(
                     {lead.project_type ? PROJECT_CATEGORY_LABELS[lead.project_type] : "—"}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-block app-badge border !text-[11px] ${
-                        LEAD_STATUS_COLORS[lead.status]
-                      }`}
-                    >
+                    <span className={appStatusBadge("lead", lead.status)}>
                       {LEAD_STATUS_LABELS[lead.status]}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right text-xs text-stone-300 font-mono">
+                  <td className="px-4 py-3 text-right text-xs app-muted tabular-nums">
                     {new Date(lead.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -128,8 +121,8 @@ export default async function AdminLeads(
           </table>
         </div>
       ) : (
-        <div className="border border-ink/15 p-16 text-center bg-paper">
-          <p className="text-ink/50 italic">
+        <div className="app-card p-16 text-center">
+          <p className="app-muted text-sm">
             {status
               ? `No leads with status "${LEAD_STATUS_LABELS[status]}".`
               : "No leads yet."}

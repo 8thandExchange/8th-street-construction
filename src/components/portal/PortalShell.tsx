@@ -13,6 +13,7 @@ interface PortalShellProps {
 
 const NAV_CLIENT = [
   { href: "/client", label: "My Projects", exact: true },
+  { href: "/client/assistant", label: "Concierge", exact: false },
 ];
 
 const NAV_SUB = [

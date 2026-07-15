@@ -5,7 +5,7 @@ import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/ui/Reveal";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { SITE_IMAGES } from "@/lib/site-images";
-import { BRAND, brandPhoneTel } from "@/lib/brand/assets";
+import { getSiteContact, contactTelHref } from "@/lib/site-contact";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 
@@ -16,7 +16,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/contact" },
 };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const contact = await getSiteContact();
   return (
     <>
       <SiteHeader dark />
@@ -46,10 +47,10 @@ export default function ContactPage() {
                       <div>
                         <div className="eyebrow text-bone/40 mb-2">Phone</div>
                         <a
-                          href={`tel:${brandPhoneTel()}`}
+                          href={`tel:${contactTelHref(contact.phone)}`}
                           className="font-display text-xl sm:text-2xl text-bone hover:text-copper-100 transition-colors"
                         >
-                          {BRAND.phone}
+                          {contact.phone}
                         </a>
                       </div>
                     </Reveal>
@@ -57,10 +58,10 @@ export default function ContactPage() {
                       <div>
                         <div className="eyebrow text-bone/40 mb-2">Direct Email</div>
                         <a
-                          href="mailto:hello@8thstreetconstruction.com"
+                          href={`mailto:${contact.email}`}
                           className="font-display text-xl sm:text-2xl text-bone hover:text-copper-100 transition-colors break-all"
                         >
-                          hello@8thstreetconstruction.com
+                          {contact.email}
                         </a>
                       </div>
                     </Reveal>
@@ -68,7 +69,7 @@ export default function ContactPage() {
                       <div>
                         <div className="eyebrow text-bone/40 mb-2">Studio</div>
                         <div className="font-display text-xl sm:text-2xl text-bone leading-snug">
-                          Augusta, Georgia
+                          {contact.city}
                           <br />
                           <span className="italic-display text-bone/60 text-lg">Serving the CSRA</span>
                         </div>

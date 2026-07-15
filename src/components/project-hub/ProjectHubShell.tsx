@@ -20,8 +20,9 @@ type ProjectHubShellProps = {
 export function ProjectHubShell({ project, children }: ProjectHubShellProps) {
   return (
     <div className="min-h-full">
-      <header className="sticky top-14 lg:top-0 z-10 border-b border-navy/[0.08] bg-white/85 backdrop-blur-md">
-        <div className="px-4 md:px-8 lg:px-10 pt-6 pb-3">
+      {/* Title block scrolls away; only the slim nav bar below stays pinned. */}
+      <header className="border-b border-navy/[0.08] bg-white">
+        <div className="px-4 md:px-8 lg:px-10 pt-6 pb-4">
           <Link
             href="/admin/projects"
             className="app-muted text-[13px] font-medium hover:text-copper transition-colors"
@@ -59,11 +60,13 @@ export function ProjectHubShell({ project, children }: ProjectHubShellProps) {
               </Link>
             )}
           </div>
-          <div className="mt-6">
-            <ProjectHubNav projectId={project.id} />
-          </div>
         </div>
       </header>
+      <div className="sticky top-14 lg:top-0 z-40 border-b border-navy/[0.08] bg-white">
+        <div className="px-4 md:px-8 lg:px-10 py-2.5">
+          <ProjectHubNav projectId={project.id} />
+        </div>
+      </div>
       <div className="px-4 md:px-8 lg:px-10 py-6 md:py-8">{children}</div>
     </div>
   );

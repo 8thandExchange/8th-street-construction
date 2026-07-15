@@ -79,7 +79,12 @@ export default async function ProjectDetail(props: { params: Promise<{ slug: str
 
   const { data: project } = await supabase
     .from("projects")
-    .select("*")
+    // Explicit public-safe columns — the anon role is column-restricted at
+    // the DB level (20260712100000_narrow_anon_project_grant.sql), so a
+    // select("*") here would fail and would also expose internal fields.
+    .select(
+      "id, slug, title, subtitle, category, status, excerpt, narrative, hero_image_url, location, year_completed, square_footage, budget_range, meta_description, published_at"
+    )
     .eq("slug", params.slug)
     .neq("status", "draft")
     .neq("status", "archived")

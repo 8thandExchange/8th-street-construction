@@ -41,6 +41,8 @@ export type GanttBar = {
   /** completion fill inside the bar (0-100) */
   progress: number;
   hasDates: boolean;
+  /** Inclusive calendar days the bar spans (null without dates) */
+  durationDays: number | null;
   scheduled_start: string | null;
   scheduled_end: string | null;
   predecessor_id: string | null;
@@ -49,8 +51,11 @@ export type GanttBar = {
 export type GanttModel = {
   bars: GanttBar[];
   months: { label: string; left: number; width: number }[];
+  /** Week tick marks (Mondays); empty when the span is too long to be readable */
+  weeks: { label: string; left: number }[];
   rangeStartLabel: string;
   rangeEndLabel: string;
+  spanDays: number;
   todayLeft: number | null;
   overallProgress: number;
   totalPhases: number;
@@ -97,7 +102,11 @@ export function buildGanttModel(
     today?: Date;
   } = {}
 ): GanttModel {
-  const { dateMode = "internal", today = new Date() } = options;
+  const { dateMode = "internal" } = options;
+  // Normalize to noon so server and client render identical percentages
+  // (a raw `new Date()` differs by milliseconds between the two passes).
+  const today = new Date(options.today ?? Date.now());
+  today.setHours(12, 0, 0, 0);
   const range = resolveGanttDateRange(milestones, options);
   const { minDate, maxDate, spanDays: span } = range;
 
@@ -124,6 +133,8 @@ export function buildGanttModel(
       width,
       progress: statusProgress(m.status, m.progress),
       hasDates,
+      durationDays:
+        start && end ? Math.max(1, Math.round(daysBetween(start, end)) + 1) : null,
       scheduled_start: toIsoDate(start),
       scheduled_end: toIsoDate(end),
       predecessor_id: m.predecessor_id ?? null,
@@ -147,6 +158,20 @@ export function buildGanttModel(
     cursor.setMonth(cursor.getMonth() + 1);
   }
 
+  // Week ticks (Mondays) — only when the span keeps them readable.
+  const weeks: GanttModel["weeks"] = [];
+  if (span <= 240) {
+    const tick = new Date(minDate);
+    tick.setDate(tick.getDate() + ((8 - tick.getDay()) % 7)); // next Monday (or today if Monday)
+    while (tick <= maxDate) {
+      weeks.push({
+        label: String(tick.getDate()),
+        left: (daysBetween(minDate, tick) / span) * 100,
+      });
+      tick.setDate(tick.getDate() + 7);
+    }
+  }
+
   const todayLeft =
     today >= minDate && today <= maxDate ? (daysBetween(minDate, today) / span) * 100 : null;
 
@@ -159,8 +184,10 @@ export function buildGanttModel(
   return {
     bars,
     months,
+    weeks,
     rangeStartLabel: minDate.toLocaleDateString("en-US", DAY_LABEL),
     rangeEndLabel: maxDate.toLocaleDateString("en-US", DAY_LABEL),
+    spanDays: span,
     todayLeft,
     overallProgress,
     totalPhases,
