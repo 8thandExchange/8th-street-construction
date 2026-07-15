@@ -10,8 +10,15 @@ import { EditDraftInvoiceForm } from "@/components/billing/EditDraftInvoiceForm"
 import { InvoiceAttachments } from "@/components/billing/InvoiceAttachments";
 import { appStatusBadge } from "@/lib/project/status-badges";
 import { INVOICE_STATUS_LABELS } from "@/lib/project/labels";
-import { formatMoney, invoiceAttachmentTag } from "@/lib/billing/constants";
+import {
+  formatMoney,
+  invoiceAttachmentTag,
+  isHabitat608Project,
+} from "@/lib/billing/constants";
 import { mercuryPayUrl } from "@/lib/mercury/invoices";
+import { invoiceReadyEmail } from "@/lib/email/templates/invoice-ready";
+import { getSiteUrl } from "@/lib/brand/assets";
+import { FileText } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +58,7 @@ export default async function InvoiceDetailPage(props: {
     supabase
       .from("invoices")
       .select(
-        "id, invoice_number, title, status, subtotal, total, amount_paid, due_date, notes, sent_at, paid_at, created_at, mercury_pay_slug, mercury_status, project:projects(title)"
+        "id, invoice_number, title, status, subtotal, total, amount_paid, due_date, notes, sent_at, paid_at, created_at, mercury_pay_slug, mercury_status, project:projects(title, slug, client_id)"
       )
       .eq("id", invoiceId)
       .eq("project_id", id)
@@ -76,6 +83,30 @@ export default async function InvoiceDetailPage(props: {
   const isDraft = invoice.status === "draft";
   const isPaid = invoice.status === "paid";
   const payUrl = invoice.mercury_pay_slug ? mercuryPayUrl(invoice.mercury_pay_slug) : null;
+
+  // Exact render of the email the client receives, for the pre-send preview.
+  let clientPreview: { to: string | null; subject: string; html: string } | null = null;
+  if (isDraft) {
+    const { data: client } = project?.client_id
+      ? await supabase
+          .from("profiles")
+          .select("first_name, email")
+          .eq("id", project.client_id)
+          .single()
+      : { data: null };
+    const { subject, html } = invoiceReadyEmail({
+      firstName: client?.first_name || "there",
+      projectTitle: project?.title ?? "Your project",
+      invoiceNumber: invoice.invoice_number,
+      invoiceTitle: invoice.title ?? "Invoice",
+      amountFormatted: formatMoney(Number(invoice.total)),
+      dueDateFormatted: fmt(invoice.due_date),
+      portalUrl: `${getSiteUrl()}/client/projects/${id}/billing`,
+      mercuryPayUrl: "#mercury-pay-link",
+      isHabitat: isHabitat608Project(project?.slug ?? ""),
+    });
+    clientPreview = { to: client?.email ?? null, subject, html };
+  }
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -125,35 +156,76 @@ export default async function InvoiceDetailPage(props: {
 
           <InvoiceAttachments projectId={id} invoiceId={invoiceId} docs={attachedDocs ?? []} />
 
-          <div className="app-card p-6 flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h3 className="app-h2 !text-[15px]">Ready to bill?</h3>
-              <p className="mt-1 text-sm app-muted max-w-md">
-                Sending pushes the invoice to Mercury and emails the client an ACH pay link
-                {(attachedDocs ?? []).length ? " with the attachments above included" : ""}. Save
-                any edits above first.
-              </p>
+          {clientPreview && (
+            <div className="app-card overflow-hidden">
+              <div className="border-b border-navy/[0.08] p-6">
+                <h3 className="app-h2 !text-[15px]">
+                  What {clientPreview.to ? "the client" : "your client"} will receive
+                </h3>
+                <p className="mt-1 text-sm app-muted">
+                  This is the exact email
+                  {clientPreview.to ? (
+                    <>
+                      {" "}
+                      going to <span className="font-medium text-navy">{clientPreview.to}</span>
+                    </>
+                  ) : (
+                    " — link a client to this job before sending"
+                  )}
+                  . The pay button connects to a live Mercury ACH link at send time.
+                </p>
+                <p className="mt-3 text-[13px] text-navy/70">
+                  <span className="app-label !mb-0 mr-2 inline">Subject</span>
+                  {clientPreview.subject}
+                </p>
+                {(attachedDocs ?? []).length > 0 && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="app-label !mb-0 inline">Attached</span>
+                    {(attachedDocs ?? []).map((doc) => (
+                      <span
+                        key={doc.id}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-navy/10 bg-white px-2 py-0.5 text-[12px] text-navy/75"
+                      >
+                        <FileText size={12} className="text-copper" />
+                        {doc.title}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <iframe
+                srcDoc={clientPreview.html}
+                sandbox=""
+                title="Client email preview"
+                className="h-[560px] w-full bg-white"
+              />
+
+              <div className="flex flex-wrap items-center justify-between gap-4 border-t border-navy/[0.08] bg-navy/[0.02] p-6">
+                <p className="text-sm app-muted max-w-md">
+                  Sending pushes the invoice to Mercury and emails exactly what you see above
+                  {(attachedDocs ?? []).length ? ", attachments included" : ""}. Save any edits
+                  first.
+                </p>
+                <div className="flex items-center gap-2">
+                  <form action={deleteDraftAction}>
+                    <input type="hidden" name="project_id" value={id} />
+                    <input type="hidden" name="invoice_id" value={invoiceId} />
+                    <button type="submit" className="app-btn app-btn-ghost hover:!text-red-600">
+                      Delete draft
+                    </button>
+                  </form>
+                  <form action={sendInvoiceAction}>
+                    <input type="hidden" name="project_id" value={id} />
+                    <input type="hidden" name="invoice_id" value={invoiceId} />
+                    <button type="submit" className="app-btn app-btn-accent">
+                      Send to client
+                    </button>
+                  </form>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <form action={deleteDraftAction}>
-                <input type="hidden" name="project_id" value={id} />
-                <input type="hidden" name="invoice_id" value={invoiceId} />
-                <button
-                  type="submit"
-                  className="app-btn app-btn-ghost hover:!text-red-600"
-                >
-                  Delete draft
-                </button>
-              </form>
-              <form action={sendInvoiceAction}>
-                <input type="hidden" name="project_id" value={id} />
-                <input type="hidden" name="invoice_id" value={invoiceId} />
-                <button type="submit" className="app-btn app-btn-accent">
-                  Send to client
-                </button>
-              </form>
-            </div>
-          </div>
+          )}
         </>
       ) : (
         <div className="app-card p-6 md:p-8">
