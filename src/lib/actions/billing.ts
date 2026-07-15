@@ -90,6 +90,79 @@ function parseCustomLineItems(raw: string): CustomLineItem[] {
   });
 }
 
+export type InvoiceAttachment = { title: string; storage_path: string };
+
+/**
+ * File invoice attachments into the project's Documents tab (client-visible,
+ * category 'invoice') and return 7-day signed URLs for the email. Staged chat
+ * uploads (assistant-inbox/…) are moved into the project folder first, same
+ * as the assistant's file_document tool.
+ */
+function invoiceAttachmentTag(invoiceNumber: string) {
+  return `Attached to invoice ${invoiceNumber}`;
+}
+
+async function fileInvoiceAttachments(
+  projectId: string,
+  invoiceNumber: string,
+  attachments: InvoiceAttachment[]
+): Promise<{ filename: string; url: string }[]> {
+  if (!attachments.length) return [];
+  const admin = createAdminClient();
+  const out: { filename: string; url: string }[] = [];
+  for (const att of attachments) {
+    if (!att.storage_path || !att.title || att.storage_path.includes("..")) continue;
+    let path = att.storage_path;
+    if (path.startsWith("assistant-inbox/")) {
+      const ext = path.split(".").pop() || "bin";
+      const finalPath = `${projectId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: moveError } = await admin.storage
+        .from("project-documents")
+        .move(path, finalPath);
+      if (moveError) {
+        console.error("Invoice attachment move failed:", moveError.message);
+        continue;
+      }
+      path = finalPath;
+    }
+    await admin.from("project_documents").insert({
+      project_id: projectId,
+      title: att.title,
+      description: invoiceAttachmentTag(invoiceNumber),
+      storage_path: path,
+      category: "invoice",
+      visibility: "client",
+    });
+    const { data: signed } = await admin.storage
+      .from("project-documents")
+      .createSignedUrl(path, 60 * 60 * 24 * 7);
+    if (signed?.signedUrl) out.push({ filename: att.title, url: signed.signedUrl });
+  }
+  return out;
+}
+
+/** Signed URLs for documents previously filed against this invoice (draft-then-send flow). */
+async function invoiceEmailAttachments(
+  projectId: string,
+  invoiceNumber: string
+): Promise<{ filename: string; url: string }[]> {
+  const admin = createAdminClient();
+  const { data: docs } = await admin
+    .from("project_documents")
+    .select("title, storage_path")
+    .eq("project_id", projectId)
+    .eq("category", "invoice")
+    .eq("description", invoiceAttachmentTag(invoiceNumber));
+  const out: { filename: string; url: string }[] = [];
+  for (const doc of docs ?? []) {
+    const { data: signed } = await admin.storage
+      .from("project-documents")
+      .createSignedUrl(doc.storage_path, 60 * 60 * 24 * 7);
+    if (signed?.signedUrl) out.push({ filename: doc.title, url: signed.signedUrl });
+  }
+  return out;
+}
+
 async function deliverInvoice(
   invoice: {
     id: string;
@@ -99,7 +172,8 @@ async function deliverInvoice(
     due_date: string | null;
   },
   project: { id: string; title: string | null; client_id: string | null; slug: string | null },
-  lineItems: CustomLineItem[]
+  lineItems: CustomLineItem[],
+  attachments: { filename: string; url: string }[] = []
 ) {
   let mercuryPayLink: string | null = null;
   if (!project.client_id) return mercuryPayLink;
@@ -148,6 +222,7 @@ async function deliverInvoice(
       dueDateFormatted: formatDueDateLabel(invoice.due_date),
       mercuryPayUrl: mercuryPayLink,
       isHabitat: isHabitat608Project(project.slug ?? ""),
+      attachments,
     });
   }
 
@@ -414,6 +489,17 @@ export async function createCustomInvoice(formData: FormData) {
   const dueDate = String(formData.get("due_date") ?? "").trim() || null;
   const sendNow = formData.get("send_now") === "on";
   const lineItems = parseCustomLineItems(String(formData.get("line_items") ?? "[]"));
+  let attachments: InvoiceAttachment[] = [];
+  try {
+    const parsed = JSON.parse(String(formData.get("attachments") ?? "[]"));
+    if (Array.isArray(parsed)) {
+      attachments = parsed
+        .filter((a) => a && typeof a.title === "string" && typeof a.storage_path === "string")
+        .slice(0, 10);
+    }
+  } catch {
+    // no attachments
+  }
 
   if (!title) throw new Error("Invoice title is required.");
 
@@ -466,6 +552,8 @@ export async function createCustomInvoice(formData: FormData) {
     }))
   );
 
+  const emailAttachments = await fileInvoiceAttachments(projectId, invoiceNumber, attachments);
+
   if (sendNow) {
     await deliverInvoice(
       {
@@ -481,7 +569,8 @@ export async function createCustomInvoice(formData: FormData) {
         client_id: project.client_id ?? null,
         slug: project.slug ?? null,
       },
-      lineItems
+      lineItems,
+      emailAttachments
     );
   }
 
@@ -606,6 +695,8 @@ export async function sendCustomInvoice(formData: FormData) {
     })
     .eq("id", invoiceId);
 
+  const emailAttachments = await invoiceEmailAttachments(projectId, invoice.invoice_number);
+
   await deliverInvoice(
     {
       id: invoice.id,
@@ -620,7 +711,8 @@ export async function sendCustomInvoice(formData: FormData) {
       client_id: project.client_id ?? null,
       slug: project.slug ?? null,
     },
-    lineItems
+    lineItems,
+    emailAttachments
   );
 
   revalidate(projectId);

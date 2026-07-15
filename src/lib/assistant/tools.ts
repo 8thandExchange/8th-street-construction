@@ -45,6 +45,7 @@ export type CreateInvoiceInput = {
   due_date?: string;
   notes?: string;
   send_now?: boolean;
+  attachments?: { title: string; storage_path: string }[];
 };
 
 export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
@@ -192,6 +193,26 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
         send_now: {
           type: "boolean",
           description: "true = send to client now (Mercury + email). false = save draft.",
+        },
+        attachments: {
+          type: "array",
+          description:
+            "Supporting documents to ride WITH the invoice — e.g. an asbestos report, inspection cert. Use the staged storage_path from an attachment the admin uploaded in this chat. Each is emailed to the client with the invoice AND filed in the project's Documents tab (client-visible, category 'invoice').",
+          items: {
+            type: "object",
+            properties: {
+              title: {
+                type: "string",
+                description: "Display filename, e.g. 'Asbestos report.pdf'",
+              },
+              storage_path: {
+                type: "string",
+                description: "Staged path from the attachment marker (assistant-inbox/…)",
+              },
+            },
+            required: ["title", "storage_path"],
+            additionalProperties: false,
+          },
         },
       },
       required: ["project_id", "title", "line_items"],
@@ -477,7 +498,11 @@ export async function describeConfirmation(name: string, input: unknown): Promis
       0
     );
     const where = i.project_title ? ` on ${String(i.project_title)}` : "";
-    return `Create and send invoice "${String(i.title)}"${where} for ${formatMoney(total)}:\n${lineItemBreakdown(items)}\n\nThe client will receive a Mercury ACH pay link by email.`;
+    const atts = (i.attachments as { title: string }[]) ?? [];
+    const attNote = atts.length
+      ? `\nAttached document${atts.length === 1 ? "" : "s"}: ${atts.map((a) => a.title).join(", ")} (emailed with the invoice + filed in Documents).`
+      : "";
+    return `Create and send invoice "${String(i.title)}"${where} for ${formatMoney(total)}:\n${lineItemBreakdown(items)}${attNote}\n\nThe client will receive a Mercury ACH pay link by email.`;
   }
   if (name === "send_invoice") {
     const detail = await invoiceCardDetail(String(i.invoice_id ?? ""));
@@ -753,6 +778,7 @@ export async function executeAssistantTool(
           due_date: input.due_date ?? "",
           send_now: input.send_now ? "on" : "off",
           line_items: JSON.stringify(input.line_items ?? []),
+          attachments: JSON.stringify(input.attachments ?? []),
         })
       );
       const invoice = await latestInvoiceForProject(input.project_id);
