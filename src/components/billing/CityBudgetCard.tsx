@@ -10,7 +10,7 @@ export type CityBudgetRow = {
   city_number: number;
   description: string;
   budget_amount: number;
-  /** Collected on PAID invoices — unpaid/sent invoices don't count yet */
+  /** Money actually collected — paid invoices in full, partial payments pro-rata */
   billed: number;
 };
 
@@ -38,7 +38,8 @@ export function CityBudgetCard({
         <p className="mt-1 text-sm text-ink/55 max-w-2xl leading-relaxed">
           The city-approved budget for this house. Every invoice line bills against one of these
           City #s — this table shows what&apos;s been paid and what&apos;s left on each line.
-          Invoices count once they&apos;re paid, not when they&apos;re sent.
+          Invoices count as they&apos;re paid (partial payments count the portion paid), not
+          when they&apos;re sent.
         </p>
       </div>
 

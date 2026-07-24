@@ -98,7 +98,9 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
         .order("city_number"),
       supabase
         .from("invoice_line_items")
-        .select("city_budget_line_id, amount, invoice:invoices!inner(status, project_id)")
+        .select(
+          "city_budget_line_id, amount, invoice:invoices!inner(status, total, amount_paid, project_id)"
+        )
         .eq("invoice.project_id", id)
         .not("city_budget_line_id", "is", null),
       project.client_id
@@ -137,16 +139,26 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
       clientRes.data.email
     : null;
 
-  // Paid per city budget line — only PAID invoices count against the budget.
+  // Paid per city budget line — only money actually collected counts.
+  // Partial payments count pro-rata: each line takes its share of amount_paid.
   const billedByBudgetLine = new Map<string, number>();
   for (const row of billedLineItems ?? []) {
     const inv = Array.isArray(row.invoice) ? row.invoice[0] : row.invoice;
-    if (!row.city_budget_line_id || !inv || inv.status !== "paid") {
+    if (!row.city_budget_line_id || !inv || inv.status === "draft" || inv.status === "void") {
       continue;
     }
+    const total = Number(inv.total);
+    const paidFraction =
+      inv.status === "paid"
+        ? 1
+        : total > 0
+          ? Math.min(1, Number(inv.amount_paid ?? 0) / total)
+          : 0;
+    if (paidFraction <= 0) continue;
     billedByBudgetLine.set(
       row.city_budget_line_id,
-      (billedByBudgetLine.get(row.city_budget_line_id) ?? 0) + Number(row.amount)
+      (billedByBudgetLine.get(row.city_budget_line_id) ?? 0) +
+        Math.round(Number(row.amount) * paidFraction * 100) / 100
     );
   }
   const cityBudgetRows: CityBudgetRow[] = (budgetLines ?? []).map((line) => ({

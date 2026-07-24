@@ -243,7 +243,7 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
   {
     name: "get_city_budget",
     description:
-      "The city-approved budget lines for a Habitat job — every invoice line bills against one of these City #s. Returns each line's city_number, description, budget, billed (only PAID invoices count — sent-but-unpaid doesn't), and what's left. Call before create_invoice on a Habitat job so city_number values are valid, and to answer 'how much is left on line 26?'.",
+      "The city-approved budget lines for a Habitat job — every invoice line bills against one of these City #s. Returns each line's city_number, description, budget, billed (only money actually collected counts: paid invoices in full, partial payments pro-rata; sent-but-unpaid doesn't), and what's left. Call before create_invoice on a Habitat job so city_number values are valid, and to answer 'how much is left on line 26?'.",
     input_schema: {
       type: "object",
       properties: {
@@ -940,7 +940,9 @@ export async function executeAssistantTool(
           .order("city_number"),
         admin
           .from("invoice_line_items")
-          .select("city_budget_line_id, amount, invoice:invoices!inner(status, project_id)")
+          .select(
+            "city_budget_line_id, amount, invoice:invoices!inner(status, total, amount_paid, project_id)"
+          )
           .eq("invoice.project_id", projectId)
           .not("city_budget_line_id", "is", null),
       ]);
@@ -954,13 +956,23 @@ export async function executeAssistantTool(
       const billed = new Map<string, number>();
       for (const row of billedItems ?? []) {
         const inv = Array.isArray(row.invoice) ? row.invoice[0] : row.invoice;
-        // Only PAID invoices count against the city budget.
-        if (!row.city_budget_line_id || !inv || inv.status !== "paid") {
+        // Only money actually collected counts against the city budget;
+        // partial payments count pro-rata across the invoice's lines.
+        if (!row.city_budget_line_id || !inv || inv.status === "draft" || inv.status === "void") {
           continue;
         }
+        const total = Number(inv.total);
+        const paidFraction =
+          inv.status === "paid"
+            ? 1
+            : total > 0
+              ? Math.min(1, Number(inv.amount_paid ?? 0) / total)
+              : 0;
+        if (paidFraction <= 0) continue;
         billed.set(
           row.city_budget_line_id,
-          (billed.get(row.city_budget_line_id) ?? 0) + Number(row.amount)
+          (billed.get(row.city_budget_line_id) ?? 0) +
+            Math.round(Number(row.amount) * paidFraction * 100) / 100
         );
       }
 
