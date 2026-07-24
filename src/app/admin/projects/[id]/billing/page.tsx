@@ -8,6 +8,7 @@ import { BillingMetricsRow } from "@/components/billing/BillingMetricsRow";
 import { BillingStatusBanner } from "@/components/billing/BillingStatusBanner";
 import { DrawTimeline } from "@/components/billing/DrawTimeline";
 import { CustomInvoiceForm } from "@/components/billing/CustomInvoiceForm";
+import { InvoiceBuilderDropzone } from "@/components/billing/InvoiceBuilderDropzone";
 import { CityBudgetCard, type CityBudgetRow } from "@/components/billing/CityBudgetCard";
 import { InvoiceList } from "@/components/billing/InvoiceList";
 import { updateContractValue, createDraw } from "@/lib/actions/billing";
@@ -181,6 +182,8 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
       <BillingStatusBanner stripeReady={stripeReady} mercuryReady={mercuryReady} variant="admin" />
 
       {isHabitat && <HabitatProjectBanner projectId={id} />}
+
+      <InvoiceBuilderDropzone projectId={id} />
 
       <CustomInvoiceForm
         projectId={id}

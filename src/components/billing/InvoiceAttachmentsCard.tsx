@@ -37,6 +37,7 @@ export function InvoiceAttachmentsCard({
   const fileInput = useRef<HTMLInputElement>(null);
   const [targetLineId, setTargetLineId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [dragLineId, setDragLineId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -51,13 +52,13 @@ export function InvoiceAttachmentsCard({
     fileInput.current?.click();
   }
 
-  async function upload(file: File) {
+  async function upload(file: File, lineId: string | null = targetLineId) {
     setUploading(true);
     setError(null);
     try {
       const fd = new FormData();
       fd.set("file", file);
-      if (targetLineId) fd.set("line_item_id", targetLineId);
+      if (lineId) fd.set("line_item_id", lineId);
       const res = await fetch(`/api/invoices/${invoiceId}/attachments`, {
         method: "POST",
         body: fd,
@@ -102,9 +103,9 @@ export function InvoiceAttachmentsCard({
         ) : null}
       </div>
       <p className="text-sm app-muted mb-5 max-w-lg">
-        Attach the invoice behind each line — the PDF the vendor or sub sent you. They print
-        behind the cover sheet in the invoice packet, and the invoice total is the sum of these
-        backups.
+        Attach the invoice behind each line — drag the vendor&apos;s PDF straight onto its line,
+        or use the button. They print behind the cover sheet in the invoice packet, and the
+        invoice total is the sum of these backups.
       </p>
 
       <input
@@ -122,7 +123,23 @@ export function InvoiceAttachmentsCard({
         {lines.map((li) => {
           const files = forLine(li.id);
           return (
-            <li key={li.id} className="py-3">
+            <li
+              key={li.id}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragLineId(li.id);
+              }}
+              onDragLeave={() => setDragLineId((cur) => (cur === li.id ? null : cur))}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragLineId(null);
+                const file = e.dataTransfer.files?.[0];
+                if (file && !uploading) void upload(file, li.id);
+              }}
+              className={`py-3 -mx-2 px-2 rounded-lg transition-colors ${
+                dragLineId === li.id ? "bg-copper/[0.08] ring-2 ring-copper/50" : ""
+              }`}
+            >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm text-navy/85 truncate">
