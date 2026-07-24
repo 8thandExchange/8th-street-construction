@@ -7,6 +7,7 @@ import {
 } from "@/lib/actions/billing";
 import { formatMoney } from "@/lib/billing/constants";
 import { ATTACHMENT_BUCKET, STAGING_PREFIX } from "@/lib/assistant/attachments";
+import { INVOICE_BACKUP_PREFIX } from "@/lib/billing/backup-attachments";
 
 /**
  * Admin assistant tool surface. Read tools run directly against the admin
@@ -34,9 +35,19 @@ export type AssistantToolName =
   | "file_document"
   | "attach_document_to_invoice"
   | "get_schedule_pdf"
-  | "list_purchase_orders";
+  | "list_purchase_orders"
+  | "get_city_budget"
+  | "attach_invoice_backup";
 
-type LineItemInput = { description: string; quantity: number; unit_amount: number };
+type LineItemInput = {
+  description: string;
+  quantity: number;
+  unit_amount: number;
+  /** Backup invoice number — "Inv. #" on the cover sheet */
+  reference_number?: string;
+  /** City budget line number — "City #" on the cover sheet (Habitat jobs) */
+  city_number?: number;
+};
 
 export type CreateInvoiceInput = {
   project_id: string;
@@ -168,7 +179,7 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
   {
     name: "create_invoice",
     description:
-      "Create an invoice on a project. DEFAULT TO A DRAFT (omit send_now or set false) so the admin can review before anything reaches the client — the result includes the saved draft with its job-prefixed invoice number and every line item; present that in full and ask whether to send. Only use send_now=true when the admin explicitly said to send immediately. Amounts are in dollars. Confirm the project and amounts with get_project_billing / list_projects first.",
+      "Create an invoice on a project. DEFAULT TO A DRAFT (omit send_now or set false) so the admin can review before anything reaches the client — the result includes the saved draft with its job-prefixed invoice number and every line item (with line ids for attach_invoice_backup); present that in full and ask whether to send. Only use send_now=true when the admin explicitly said to send immediately. Amounts are in dollars. Confirm the project and amounts with get_project_billing / list_projects first. On Habitat jobs, each line is ONE backup invoice: set reference_number to the vendor/sub invoice number and city_number to the city budget line it bills (get_city_budget lists them), then attach the backup PDF with attach_invoice_backup.",
     input_schema: {
       type: "object",
       properties: {
@@ -177,13 +188,22 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
         title: { type: "string", description: "Invoice title, e.g. 'Draw 3: Framing complete'" },
         line_items: {
           type: "array",
-          description: "One or more billable lines",
+          description: "One or more billable lines — on Habitat jobs, one line per backup invoice",
           items: {
             type: "object",
             properties: {
               description: { type: "string" },
               quantity: { type: "number" },
               unit_amount: { type: "number", description: "Dollar amount per unit" },
+              reference_number: {
+                type: "string",
+                description: "Backup invoice number ('Inv. #' on the cover sheet), e.g. '2120'",
+              },
+              city_number: {
+                type: "number",
+                description:
+                  "City budget line number this amount bills against ('City #'). Must exist on the job — check get_city_budget.",
+              },
             },
             required: ["description", "quantity", "unit_amount"],
             additionalProperties: false,
@@ -217,6 +237,41 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ["project_id", "title", "line_items"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "get_city_budget",
+    description:
+      "The city-approved budget lines for a Habitat job — every invoice line bills against one of these City #s. Returns each line's city_number, description, budget, billed so far (drafts/voids excluded), and what's left. Call before create_invoice on a Habitat job so city_number values are valid, and to answer 'how much is left on line 26?'.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_id: { type: "string", description: "Project UUID from list_projects" },
+      },
+      required: ["project_id"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "attach_invoice_backup",
+    description:
+      "Attach a backup invoice file (the vendor/sub PDF the admin uploaded in chat) to an invoice, behind its cover sheet in the invoice packet PDF. Use the staged storage_path from the attachment marker. Pass line_item_id (from create_invoice's result) to tie the backup to its cover-sheet line — every line should get its backup attached before the invoice is sent.",
+    input_schema: {
+      type: "object",
+      properties: {
+        invoice_id: { type: "string", description: "Invoice UUID (from create_invoice / list_invoices)" },
+        storage_path: {
+          type: "string",
+          description: "Staged attachment path from the chat upload (assistant-inbox/…)",
+        },
+        file_name: { type: "string", description: "Original file name, e.g. 'ferguson-6392476.pdf'" },
+        line_item_id: {
+          type: "string",
+          description: "Line item UUID this backup belongs to (optional but strongly preferred)",
+        },
+      },
+      required: ["invoice_id", "storage_path", "file_name"],
       additionalProperties: false,
     },
   },
@@ -455,6 +510,7 @@ export function requiresConfirmation(name: string, input: unknown): boolean {
   if (name === "grant_project_access") return true;
   if (name === "file_document") return true;
   if (name === "attach_document_to_invoice") return true;
+  if (name === "attach_invoice_backup") return true;
   if (name === "create_invoice") {
     return Boolean((input as CreateInvoiceInput)?.send_now);
   }
@@ -469,7 +525,13 @@ function lineItemBreakdown(items: LineItemInput[]): string {
         Number(li.quantity) !== 1
           ? ` (${li.quantity} × ${formatMoney(Number(li.unit_amount))})`
           : "";
-      return `• ${li.description}${qty} — ${formatMoney(amount)}`;
+      const refs = [
+        li.reference_number ? `Inv. #${li.reference_number}` : null,
+        li.city_number != null ? `City #${li.city_number}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      return `• ${li.description}${qty}${refs ? ` (${refs})` : ""} — ${formatMoney(amount)}`;
     })
     .join("\n");
 }
@@ -565,6 +627,12 @@ export async function describeConfirmation(name: string, input: unknown): Promis
   if (name === "attach_document_to_invoice") {
     const which = i.invoice_number ? ` ${String(i.invoice_number)}` : "";
     return `Attach "${String(i.title)}" to invoice${which} — it will be emailed to the client with the invoice and filed in the project's Documents (client-visible).`;
+  }
+  if (name === "attach_invoice_backup") {
+    const detail = await invoiceCardDetail(String(i.invoice_id ?? ""));
+    return `Attach "${String(i.file_name)}" as a backup invoice — it prints behind the cover sheet in the invoice packet PDF${
+      detail ? ` for:\n\n${detail}` : "."
+    }`;
   }
   return `Run ${name}.`;
 }
@@ -796,6 +864,29 @@ export async function executeAssistantTool(
 
     case "create_invoice": {
       const input = i as unknown as CreateInvoiceInput;
+
+      // Resolve City #s to budget-line ids; reject unknown numbers so the
+      // cover sheet never carries a City # the city didn't approve.
+      const cityNumbers = (input.line_items ?? [])
+        .map((li) => li.city_number)
+        .filter((n): n is number => n != null);
+      const budgetLinesByNumber = new Map<number, string>();
+      if (cityNumbers.length) {
+        const { data: budgetLines } = await admin
+          .from("city_budget_lines")
+          .select("id, city_number")
+          .eq("project_id", input.project_id);
+        for (const line of budgetLines ?? []) {
+          budgetLinesByNumber.set(line.city_number, line.id);
+        }
+        const unknown = cityNumbers.filter((n) => !budgetLinesByNumber.has(n));
+        if (unknown.length) {
+          return {
+            error: `City #${unknown.join(", #")} not found on this job's budget. Call get_city_budget for the valid lines.`,
+          };
+        }
+      }
+
       await createCustomInvoice(
         toFormData({
           project_id: input.project_id,
@@ -803,7 +894,16 @@ export async function executeAssistantTool(
           notes: input.notes ?? "",
           due_date: input.due_date ?? "",
           send_now: input.send_now ? "on" : "off",
-          line_items: JSON.stringify(input.line_items ?? []),
+          line_items: JSON.stringify(
+            (input.line_items ?? []).map((li) => ({
+              description: li.description,
+              quantity: li.quantity,
+              unit_amount: li.unit_amount,
+              reference_number: li.reference_number ?? null,
+              city_budget_line_id:
+                li.city_number != null ? budgetLinesByNumber.get(li.city_number) : null,
+            }))
+          ),
           attachments: JSON.stringify(input.attachments ?? []),
         })
       );
@@ -811,7 +911,9 @@ export async function executeAssistantTool(
       const { data: items } = invoice
         ? await admin
             .from("invoice_line_items")
-            .select("description, quantity, unit_amount, amount")
+            .select(
+              "id, description, quantity, unit_amount, amount, reference_number, city_budget_line:city_budget_lines(city_number)"
+            )
             .eq("invoice_id", invoice.id)
             .order("display_order")
         : { data: [] };
@@ -822,9 +924,141 @@ export async function executeAssistantTool(
         ...(input.send_now
           ? {}
           : {
-              note: "Draft saved — NOT sent. Show the admin the full draft (invoice number, every line item with amount, total, due date) and tell them they can open, edit, send, or delete it at the admin_page link. Ask if they want it sent; sending happens via send_invoice with an approval card.",
+              note: "Draft saved — NOT sent. Show the admin the full draft (invoice number, every line item with amount, total, due date) and tell them they can open, edit, send, or delete it at the admin_page link. If the admin attached backup invoice PDFs, attach each to its line via attach_invoice_backup (line ids are in line_items). Ask if they want it sent; sending happens via send_invoice with an approval card.",
               admin_page: invoice ? `/admin/projects/${input.project_id}/billing/invoices/${invoice.id}` : `/admin/projects/${input.project_id}/billing`,
             }),
+      };
+    }
+
+    case "get_city_budget": {
+      const projectId = String(i.project_id ?? "");
+      const [{ data: budgetLines }, { data: billedItems }] = await Promise.all([
+        admin
+          .from("city_budget_lines")
+          .select("id, city_number, description, budget_amount")
+          .eq("project_id", projectId)
+          .order("city_number"),
+        admin
+          .from("invoice_line_items")
+          .select("city_budget_line_id, amount, invoice:invoices!inner(status, project_id)")
+          .eq("invoice.project_id", projectId)
+          .not("city_budget_line_id", "is", null),
+      ]);
+      if (!budgetLines?.length) {
+        return {
+          lines: [],
+          note: "No city budget loaded for this job. The admin can load or add one on the job's Billing page (City budget section).",
+        };
+      }
+
+      const billed = new Map<string, number>();
+      for (const row of billedItems ?? []) {
+        const inv = Array.isArray(row.invoice) ? row.invoice[0] : row.invoice;
+        if (!row.city_budget_line_id || !inv || inv.status === "draft" || inv.status === "void") {
+          continue;
+        }
+        billed.set(
+          row.city_budget_line_id,
+          (billed.get(row.city_budget_line_id) ?? 0) + Number(row.amount)
+        );
+      }
+
+      const lines = budgetLines.map((line) => {
+        const billedAmount = billed.get(line.id) ?? 0;
+        return {
+          city_number: line.city_number,
+          description: line.description,
+          budget: Number(line.budget_amount),
+          billed: billedAmount,
+          left: Math.round((Number(line.budget_amount) - billedAmount) * 100) / 100,
+        };
+      });
+      return {
+        lines,
+        total_budget: lines.reduce((s, l) => s + l.budget, 0),
+        total_billed: lines.reduce((s, l) => s + l.billed, 0),
+      };
+    }
+
+    case "attach_invoice_backup": {
+      const invoiceId = String(i.invoice_id ?? "");
+      const storagePath = String(i.storage_path ?? "");
+      const fileName = String(i.file_name ?? "").trim();
+      const lineItemId = String(i.line_item_id ?? "").trim() || null;
+      if (!invoiceId || !fileName) return { error: "invoice_id and file_name are required" };
+      // Only files staged by the chat upload can be attached — never move existing docs.
+      if (!storagePath.startsWith(STAGING_PREFIX) || storagePath.includes("..")) {
+        return { error: "storage_path must be a staged attachment path (assistant-inbox/…)" };
+      }
+
+      const { data: invoice } = await admin
+        .from("invoices")
+        .select("id, invoice_number, project_id, status")
+        .eq("id", invoiceId)
+        .single();
+      if (!invoice) return { error: "Invoice not found — use list_invoices or create_invoice first" };
+
+      if (lineItemId) {
+        const { data: lineItem } = await admin
+          .from("invoice_line_items")
+          .select("id")
+          .eq("id", lineItemId)
+          .eq("invoice_id", invoiceId)
+          .single();
+        if (!lineItem) {
+          return { error: "line_item_id does not belong to this invoice — use the ids from create_invoice's result" };
+        }
+      }
+
+      const { requireAdmin } = await import("@/lib/actions/admin-auth");
+      const { user } = await requireAdmin();
+
+      const ext = storagePath.split(".").pop() || "pdf";
+      const finalPath = `${INVOICE_BACKUP_PREFIX}${invoiceId}/${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}.${ext}`;
+      const { error: moveError } = await admin.storage
+        .from(ATTACHMENT_BUCKET)
+        .move(storagePath, finalPath);
+      if (moveError) {
+        return { error: `Could not move the file: ${moveError.message}` };
+      }
+
+      const { count } = await admin
+        .from("invoice_attachments")
+        .select("id", { count: "exact", head: true })
+        .eq("invoice_id", invoiceId);
+
+      const { data: attachment, error } = await admin
+        .from("invoice_attachments")
+        .insert({
+          invoice_id: invoiceId,
+          line_item_id: lineItemId,
+          file_name: fileName,
+          storage_path: finalPath,
+          media_type: ext === "pdf" ? "application/pdf" : `image/${ext === "jpg" ? "jpeg" : ext}`,
+          display_order: count ?? 0,
+          uploaded_by: user.id,
+        })
+        .select("id, file_name, line_item_id")
+        .single();
+      if (error) {
+        // Put the file back so a retry can find it at the staged path.
+        await admin.storage.from(ATTACHMENT_BUCKET).move(finalPath, storagePath);
+        return { error: error.message };
+      }
+
+      const { revalidatePath } = await import("next/cache");
+      revalidatePath(`/admin/projects/${invoice.project_id}/billing/invoices/${invoiceId}`);
+      revalidatePath(`/admin/projects/${invoice.project_id}/billing`);
+
+      return {
+        ok: true,
+        action: "backup_attached",
+        invoice_number: invoice.invoice_number,
+        attachment,
+        packet_pdf: `/api/invoices/${invoiceId}/packet`,
+        note: "The backup prints behind the cover sheet in the invoice packet PDF. Every line should have its backup attached before sending.",
       };
     }
 

@@ -47,6 +47,8 @@ export function InvoiceCard({
   const isPaid = invoice.status === "paid";
   const mercuryUrl = invoice.mercury_pay_slug ? mercuryPayUrl(invoice.mercury_pay_slug) : null;
   const pdfUrl = invoice.mercury_pay_slug ? `/api/invoices/${invoice.id}/mercury-pdf` : null;
+  // Cover sheet + backups; drafts stay internal until sent
+  const packetUrl = invoice.status !== "draft" ? `/api/invoices/${invoice.id}/packet` : null;
   const lineItems = invoice.line_items ?? [];
 
   return (
@@ -154,10 +156,11 @@ export function InvoiceCard({
           </div>
         )}
 
-        {(mercuryUrl || pdfUrl) && (
+        {(mercuryUrl || pdfUrl || packetUrl) && (
           <InvoiceActions
             mercuryPayUrl={mercuryUrl}
             pdfUrl={pdfUrl}
+            packetUrl={packetUrl}
             variant={variant}
           />
         )}

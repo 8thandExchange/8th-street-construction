@@ -8,8 +8,10 @@ import { BillingMetricsRow } from "@/components/billing/BillingMetricsRow";
 import { BillingStatusBanner } from "@/components/billing/BillingStatusBanner";
 import { DrawTimeline } from "@/components/billing/DrawTimeline";
 import { CustomInvoiceForm } from "@/components/billing/CustomInvoiceForm";
+import { CityBudgetCard, type CityBudgetRow } from "@/components/billing/CityBudgetCard";
 import { InvoiceList } from "@/components/billing/InvoiceList";
 import { updateContractValue, createDraw } from "@/lib/actions/billing";
+import { isHabitat608Project } from "@/lib/billing/constants";
 import { isHabitatProject } from "@/lib/project/funding";
 import {
   computeBillingSummary,
@@ -63,8 +65,14 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
 
   if (!project) notFound();
 
-  const [{ data: draws }, { data: invoices }, { data: changeOrders }, clientRes] =
-    await Promise.all([
+  const [
+    { data: draws },
+    { data: invoices },
+    { data: changeOrders },
+    { data: budgetLines },
+    { data: billedLineItems },
+    clientRes,
+  ] = await Promise.all([
       supabase
         .from("payment_draws")
         .select(
@@ -83,6 +91,16 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
         .from("change_orders")
         .select("cost_impact, status")
         .eq("project_id", id),
+      supabase
+        .from("city_budget_lines")
+        .select("id, city_number, description, budget_amount")
+        .eq("project_id", id)
+        .order("city_number"),
+      supabase
+        .from("invoice_line_items")
+        .select("city_budget_line_id, amount, invoice:invoices!inner(status, project_id)")
+        .eq("invoice.project_id", id)
+        .not("city_budget_line_id", "is", null),
       project.client_id
         ? supabase
             .from("profiles")
@@ -119,6 +137,26 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
       clientRes.data.email
     : null;
 
+  // Billed per city budget line — drafts and voided invoices don't count.
+  const billedByBudgetLine = new Map<string, number>();
+  for (const row of billedLineItems ?? []) {
+    const inv = Array.isArray(row.invoice) ? row.invoice[0] : row.invoice;
+    if (!row.city_budget_line_id || !inv || inv.status === "draft" || inv.status === "void") {
+      continue;
+    }
+    billedByBudgetLine.set(
+      row.city_budget_line_id,
+      (billedByBudgetLine.get(row.city_budget_line_id) ?? 0) + Number(row.amount)
+    );
+  }
+  const cityBudgetRows: CityBudgetRow[] = (budgetLines ?? []).map((line) => ({
+    id: line.id,
+    city_number: line.city_number,
+    description: line.description,
+    budget_amount: Number(line.budget_amount),
+    billed: billedByBudgetLine.get(line.id) ?? 0,
+  }));
+
   return (
     <div className="max-w-4xl">
       <BillingBrandHeader
@@ -136,7 +174,20 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
         projectId={id}
         projectTitle={project.title}
         clientName={clientName}
+        budgetLines={(budgetLines ?? []).map((l) => ({
+          id: l.id,
+          city_number: l.city_number,
+          description: l.description,
+        }))}
       />
+
+      {isHabitat && (
+        <CityBudgetCard
+          projectId={id}
+          rows={cityBudgetRows}
+          is608Macon={isHabitat608Project(project.slug ?? "")}
+        />
+      )}
 
       <BillingSetupWizard
         projectId={id}

@@ -5,10 +5,12 @@ import { useState } from "react";
 type InvoiceActionsProps = {
   mercuryPayUrl?: string | null;
   pdfUrl?: string | null;
+  /** Cover sheet + backup invoices merged into one PDF */
+  packetUrl?: string | null;
   variant: "admin" | "client";
 };
 
-export function InvoiceActions({ mercuryPayUrl, pdfUrl, variant }: InvoiceActionsProps) {
+export function InvoiceActions({ mercuryPayUrl, pdfUrl, packetUrl, variant }: InvoiceActionsProps) {
   const [copied, setCopied] = useState(false);
 
   async function copyPayLink() {
@@ -38,6 +40,16 @@ export function InvoiceActions({ mercuryPayUrl, pdfUrl, variant }: InvoiceAction
             Open Mercury page ↗
           </a>
         </>
+      )}
+      {packetUrl && (
+        <a
+          href={packetUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="h-9 inline-flex items-center px-4 app-btn app-btn-secondary"
+        >
+          Invoice packet (PDF)
+        </a>
       )}
       {pdfUrl && (
         <a

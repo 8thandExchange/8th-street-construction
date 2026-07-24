@@ -37,9 +37,15 @@ function revalidate(projectId: string) {
 }
 
 type CustomLineItem = {
+  /** Existing line id — present when editing a draft, keeps attachments linked */
+  id?: string | null;
   description: string;
   quantity: number;
   unit_amount: number;
+  /** Backup invoice number — "Inv. #" on the cover sheet */
+  reference_number?: string | null;
+  /** City budget line this amount bills against — "City #" on the cover sheet */
+  city_budget_line_id?: string | null;
 };
 
 async function nextInvoiceNumber(
@@ -77,6 +83,9 @@ function parseCustomLineItems(raw: string): CustomLineItem[] {
     const description = String(item?.description ?? "").trim();
     const quantity = Number(item?.quantity);
     const unit_amount = Number(item?.unit_amount);
+    const id = String(item?.id ?? "").trim() || null;
+    const reference_number = String(item?.reference_number ?? "").trim() || null;
+    const city_budget_line_id = String(item?.city_budget_line_id ?? "").trim() || null;
 
     if (!description) throw new Error(`Line item ${index + 1} needs a description.`);
     if (!Number.isFinite(quantity) || quantity <= 0) {
@@ -86,7 +95,7 @@ function parseCustomLineItems(raw: string): CustomLineItem[] {
       throw new Error(`Line item ${index + 1} needs a valid amount.`);
     }
 
-    return { description, quantity, unit_amount };
+    return { id, description, quantity, unit_amount, reference_number, city_budget_line_id };
   });
 }
 
@@ -544,6 +553,8 @@ export async function createCustomInvoice(formData: FormData) {
       quantity: item.quantity,
       unit_amount: item.unit_amount,
       amount: Math.round(item.quantity * item.unit_amount * 100) / 100,
+      reference_number: item.reference_number ?? null,
+      city_budget_line_id: item.city_budget_line_id ?? null,
       display_order: index,
     }))
   );
@@ -607,18 +618,44 @@ export async function updateDraftInvoice(formData: FormData) {
     .eq("id", invoiceId);
   if (error) throw new Error(error.message);
 
-  await supabase.from("invoice_line_items").delete().eq("invoice_id", invoiceId);
-  const { error: lineError } = await supabase.from("invoice_line_items").insert(
-    lineItems.map((item, index) => ({
-      invoice_id: invoiceId,
+  // Diff-update lines instead of delete-and-reinsert so backup attachments
+  // linked to a line (invoice_attachments.line_item_id) survive draft edits.
+  const { data: existingLines } = await supabase
+    .from("invoice_line_items")
+    .select("id")
+    .eq("invoice_id", invoiceId);
+  const existingIds = new Set((existingLines ?? []).map((l) => l.id));
+  const keptIds = new Set(
+    lineItems.map((item) => item.id).filter((lid): lid is string => !!lid && existingIds.has(lid))
+  );
+
+  const removedIds = [...existingIds].filter((lid) => !keptIds.has(lid));
+  if (removedIds.length) {
+    const { error: deleteError } = await supabase
+      .from("invoice_line_items")
+      .delete()
+      .in("id", removedIds);
+    if (deleteError) throw new Error(deleteError.message);
+  }
+
+  for (const [index, item] of lineItems.entries()) {
+    const row = {
       description: item.description,
       quantity: item.quantity,
       unit_amount: item.unit_amount,
       amount: Math.round(item.quantity * item.unit_amount * 100) / 100,
+      reference_number: item.reference_number ?? null,
+      city_budget_line_id: item.city_budget_line_id ?? null,
       display_order: index,
-    }))
-  );
-  if (lineError) throw new Error(lineError.message);
+    };
+    const { error: lineError } =
+      item.id && keptIds.has(item.id)
+        ? await supabase.from("invoice_line_items").update(row).eq("id", item.id)
+        : await supabase
+            .from("invoice_line_items")
+            .insert({ ...row, invoice_id: invoiceId });
+    if (lineError) throw new Error(lineError.message);
+  }
 
   revalidate(projectId);
   revalidatePath(`/admin/projects/${projectId}/billing/invoices/${invoiceId}`);
