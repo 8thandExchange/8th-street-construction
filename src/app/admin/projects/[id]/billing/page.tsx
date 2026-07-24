@@ -137,11 +137,11 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
       clientRes.data.email
     : null;
 
-  // Billed per city budget line — drafts and voided invoices don't count.
+  // Paid per city budget line — only PAID invoices count against the budget.
   const billedByBudgetLine = new Map<string, number>();
   for (const row of billedLineItems ?? []) {
     const inv = Array.isArray(row.invoice) ? row.invoice[0] : row.invoice;
-    if (!row.city_budget_line_id || !inv || inv.status === "draft" || inv.status === "void") {
+    if (!row.city_budget_line_id || !inv || inv.status !== "paid") {
       continue;
     }
     billedByBudgetLine.set(

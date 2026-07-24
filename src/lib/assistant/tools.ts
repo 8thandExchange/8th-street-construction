@@ -243,7 +243,7 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
   {
     name: "get_city_budget",
     description:
-      "The city-approved budget lines for a Habitat job — every invoice line bills against one of these City #s. Returns each line's city_number, description, budget, billed so far (drafts/voids excluded), and what's left. Call before create_invoice on a Habitat job so city_number values are valid, and to answer 'how much is left on line 26?'.",
+      "The city-approved budget lines for a Habitat job — every invoice line bills against one of these City #s. Returns each line's city_number, description, budget, billed (only PAID invoices count — sent-but-unpaid doesn't), and what's left. Call before create_invoice on a Habitat job so city_number values are valid, and to answer 'how much is left on line 26?'.",
     input_schema: {
       type: "object",
       properties: {
@@ -954,7 +954,8 @@ export async function executeAssistantTool(
       const billed = new Map<string, number>();
       for (const row of billedItems ?? []) {
         const inv = Array.isArray(row.invoice) ? row.invoice[0] : row.invoice;
-        if (!row.city_budget_line_id || !inv || inv.status === "draft" || inv.status === "void") {
+        // Only PAID invoices count against the city budget.
+        if (!row.city_budget_line_id || !inv || inv.status !== "paid") {
           continue;
         }
         billed.set(

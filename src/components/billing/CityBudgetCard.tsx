@@ -10,7 +10,7 @@ export type CityBudgetRow = {
   city_number: number;
   description: string;
   budget_amount: number;
-  /** Billed on sent/paid invoices (drafts and voids excluded) */
+  /** Collected on PAID invoices — unpaid/sent invoices don't count yet */
   billed: number;
 };
 
@@ -37,7 +37,8 @@ export function CityBudgetCard({
         <h3 className="font-display text-xl text-ink">City budget</h3>
         <p className="mt-1 text-sm text-ink/55 max-w-2xl leading-relaxed">
           The city-approved budget for this house. Every invoice line bills against one of these
-          City #s — this table shows what&apos;s been billed and what&apos;s left on each line.
+          City #s — this table shows what&apos;s been paid and what&apos;s left on each line.
+          Invoices count once they&apos;re paid, not when they&apos;re sent.
         </p>
       </div>
 
@@ -66,7 +67,7 @@ export function CityBudgetCard({
                 <th className="px-4 py-3 w-16">City #</th>
                 <th className="px-4 py-3">Description</th>
                 <th className="px-4 py-3 text-right">Budget</th>
-                <th className="px-4 py-3 text-right">Billed</th>
+                <th className="px-4 py-3 text-right">Paid</th>
                 <th className="px-4 py-3 text-right">Left</th>
                 <th className="px-2 py-3 w-10" />
               </tr>
