@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteInvoiceAttachment } from "@/lib/actions/invoice-attachments";
-import { formatMoney } from "@/lib/billing/constants";
+import { formatMoneyExact } from "@/lib/billing/constants";
 
 type LineSummary = {
   id: string;
@@ -131,7 +131,7 @@ export function InvoiceAttachmentsCard({
                       <span className="app-muted"> · Inv. #{li.reference_number}</span>
                     ) : null}
                   </p>
-                  <p className="text-xs app-muted app-num">{formatMoney(li.amount)}</p>
+                  <p className="text-xs app-muted app-num">{formatMoneyExact(li.amount)}</p>
                 </div>
                 <button
                   type="button"

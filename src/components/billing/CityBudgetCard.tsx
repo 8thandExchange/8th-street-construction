@@ -3,7 +3,7 @@ import {
   deleteCityBudgetLine,
   loadCityBudget608,
 } from "@/lib/actions/city-budget";
-import { formatMoney } from "@/lib/billing/constants";
+import { formatMoneyExact } from "@/lib/billing/constants";
 
 export type CityBudgetRow = {
   id: string;
@@ -33,14 +33,24 @@ export function CityBudgetCard({
 
   return (
     <section className="mt-10">
-      <div className="mb-4">
-        <h3 className="font-display text-xl text-ink">City budget</h3>
-        <p className="mt-1 text-sm text-ink/55 max-w-2xl leading-relaxed">
-          The city-approved budget for this house. Every invoice line bills against one of these
-          City #s — this table shows what&apos;s been paid and what&apos;s left on each line.
-          Invoices count as they&apos;re paid (partial payments count the portion paid), not
-          when they&apos;re sent.
-        </p>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h3 className="font-display text-xl text-ink">City budget</h3>
+          <p className="mt-1 text-sm text-ink/55 max-w-2xl leading-relaxed">
+            The city-approved budget for this house. Every invoice line bills against one of these
+            City #s — this table shows what&apos;s been paid and what&apos;s left on each line.
+            Invoices count as they&apos;re paid (partial payments count the portion paid), not
+            when they&apos;re sent.
+          </p>
+        </div>
+        {rows.length > 0 && (
+          <a
+            href={`/api/projects/${projectId}/city-budget-export`}
+            className="app-btn app-btn-secondary !h-9 shrink-0"
+          >
+            Download city Excel
+          </a>
+        )}
       </div>
 
       {rows.length === 0 ? (
@@ -81,17 +91,17 @@ export function CityBudgetCard({
                     <td className="px-4 py-2 font-mono text-xs text-ink/70">{row.city_number}</td>
                     <td className="px-4 py-2 text-ink/85">{row.description}</td>
                     <td className="px-4 py-2 text-right tabular-nums">
-                      {formatMoney(row.budget_amount)}
+                      {formatMoneyExact(row.budget_amount)}
                     </td>
                     <td className="px-4 py-2 text-right tabular-nums">
-                      {row.billed ? formatMoney(row.billed) : "—"}
+                      {row.billed ? formatMoneyExact(row.billed) : "—"}
                     </td>
                     <td
                       className={`px-4 py-2 text-right tabular-nums ${
                         left < 0 ? "text-red-600 font-semibold" : "text-ink/70"
                       }`}
                     >
-                      {formatMoney(left)}
+                      {formatMoneyExact(left)}
                     </td>
                     <td className="px-2 py-2 text-right">
                       {row.billed === 0 && (
@@ -117,10 +127,10 @@ export function CityBudgetCard({
                 <td className="px-4 py-3" colSpan={2}>
                   Total
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums">{formatMoney(totalBudget)}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{formatMoney(totalBilled)}</td>
+                <td className="px-4 py-3 text-right tabular-nums">{formatMoneyExact(totalBudget)}</td>
+                <td className="px-4 py-3 text-right tabular-nums">{formatMoneyExact(totalBilled)}</td>
                 <td className="px-4 py-3 text-right tabular-nums">
-                  {formatMoney(totalBudget - totalBilled)}
+                  {formatMoneyExact(totalBudget - totalBilled)}
                 </td>
                 <td />
               </tr>

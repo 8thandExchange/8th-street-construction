@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { CustomInvoiceForm } from "./CustomInvoiceForm";
-import { formatMoney } from "@/lib/billing/constants";
+import { formatMoneyExact } from "@/lib/billing/constants";
 
 export type InvoicingProject = {
   id: string;
@@ -78,7 +78,7 @@ export function InvoicingPortal({ projects }: InvoicingPortalProps) {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="app-num text-lg font-medium text-navy">
-                        {formatMoney(project.outstanding)}
+                        {formatMoneyExact(project.outstanding)}
                       </p>
                       <p className="mt-1 text-xs app-muted">
                         {project.openCount} open · {project.invoiceCount} total

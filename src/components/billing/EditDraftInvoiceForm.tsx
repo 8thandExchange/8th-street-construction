@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateDraftInvoice } from "@/lib/actions/billing";
-import { formatMoney } from "@/lib/billing/constants";
+import { formatMoneyExact } from "@/lib/billing/constants";
 import type { BudgetLineOption } from "./CustomInvoiceForm";
 
 type LineDraft = {
@@ -233,7 +233,7 @@ export function EditDraftInvoiceForm({
 
       <div className="flex items-center justify-between gap-4">
         <span className="text-sm app-muted">
-          New total: <span className="font-semibold text-navy">{formatMoney(total)}</span>
+          New total: <span className="font-semibold text-navy">{formatMoneyExact(total)}</span>
         </span>
         <button type="submit" disabled={pending} className="app-btn app-btn-primary">
           {pending ? "Saving…" : "Save draft"}

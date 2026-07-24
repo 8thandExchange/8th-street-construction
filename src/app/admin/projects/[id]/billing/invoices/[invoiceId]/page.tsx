@@ -12,7 +12,7 @@ import { InvoiceAttachmentsCard } from "@/components/billing/InvoiceAttachmentsC
 import { appStatusBadge } from "@/lib/project/status-badges";
 import { INVOICE_STATUS_LABELS } from "@/lib/project/labels";
 import {
-  formatMoney,
+  formatMoneyExact,
   invoiceAttachmentTag,
   isHabitat608Project,
 } from "@/lib/billing/constants";
@@ -119,7 +119,7 @@ export default async function InvoiceDetailPage(props: {
       projectTitle: project?.title ?? "Your project",
       invoiceNumber: invoice.invoice_number,
       invoiceTitle: invoice.title ?? "Invoice",
-      amountFormatted: formatMoney(Number(invoice.total)),
+      amountFormatted: formatMoneyExact(Number(invoice.total)),
       dueDateFormatted: fmt(invoice.due_date),
       portalUrl: `${getSiteUrl()}/client/projects/${id}/billing`,
       mercuryPayUrl: "#mercury-pay-link",
@@ -143,7 +143,7 @@ export default async function InvoiceDetailPage(props: {
             {INVOICE_STATUS_LABELS[invoice.status] ?? invoice.status}
           </span>
           <span className="ml-auto text-xl font-semibold text-navy tabular-nums">
-            {formatMoney(Number(invoice.total))}
+            {formatMoneyExact(Number(invoice.total))}
           </span>
         </div>
         <p className="mt-1 text-sm app-muted">
@@ -288,14 +288,14 @@ export default async function InvoiceDetailPage(props: {
                     )}
                   </span>
                   <span className="tabular-nums text-navy shrink-0">
-                    {formatMoney(Number(li.amount))}
+                    {formatMoneyExact(Number(li.amount))}
                   </span>
                 </li>
               ))}
             </ul>
             <div className="mt-4 flex justify-end text-sm">
               <span className="font-semibold text-navy tabular-nums">
-                Total {formatMoney(Number(invoice.total))}
+                Total {formatMoneyExact(Number(invoice.total))}
               </span>
             </div>
             {invoice.notes && (

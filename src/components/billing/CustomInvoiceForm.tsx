@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { createCustomInvoice } from "@/lib/actions/billing";
-import { formatMoney } from "@/lib/billing/constants";
+import { formatMoneyExact } from "@/lib/billing/constants";
 
 type LineItemDraft = {
   description: string;
@@ -165,7 +165,7 @@ export function CustomInvoiceForm({
           <div>
             <label className="field-label">Total preview</label>
             <div className="h-10 flex items-center font-display text-2xl text-ink px-1">
-              {formatMoney(total)}
+              {formatMoneyExact(total)}
             </div>
           </div>
           <div className="md:col-span-2">
@@ -235,7 +235,7 @@ export function CustomInvoiceForm({
                     <div>
                       <p className="field-label">Amount</p>
                       <p className="h-10 flex items-center font-mono text-sm text-ink">
-                        {formatMoney(lineTotal(item))}
+                        {formatMoneyExact(lineTotal(item))}
                       </p>
                     </div>
                     {lineItems.length > 1 && (

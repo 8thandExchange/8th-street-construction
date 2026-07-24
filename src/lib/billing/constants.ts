@@ -149,11 +149,25 @@ export function isHabitat608Project(slug: string): boolean {
   return slug === HABITAT_608_MACON.slug;
 }
 
+/** Rounded money for budgets, contract values, and schedule figures. */
 export function formatMoney(amount: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+/**
+ * Exact money for invoice amounts — always shows cents. An amount due of
+ * $63,834.90 must never display as $63,835.
+ */
+export function formatMoneyExact(amount: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 }
 

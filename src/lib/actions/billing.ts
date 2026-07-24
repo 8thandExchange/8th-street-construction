@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe/client";
-import { formatMoney, invoiceJobPrefix, invoiceAttachmentTag } from "@/lib/billing/constants";
+import { formatMoneyExact, invoiceJobPrefix, invoiceAttachmentTag } from "@/lib/billing/constants";
 import { sendInvoiceReadyEmail } from "@/lib/email/invoice-notify";
 import {
   getDrawTemplateForProject,
@@ -168,6 +168,55 @@ async function invoiceEmailAttachments(
   return out;
 }
 
+/**
+ * City-budget jobs (Habitat) must send the Budget-vs-Actuals Excel with
+ * every invoice. Built fresh at send time, filed against the invoice in
+ * Documents, and attached to the client email.
+ */
+async function cityBudgetEmailAttachment(
+  projectId: string,
+  invoiceNumber: string
+): Promise<{ filename: string; url: string } | null> {
+  const { buildCityBudgetWorkbook } = await import("@/lib/billing/city-budget-excel");
+  const workbook = await buildCityBudgetWorkbook(projectId);
+  if (!workbook) return null;
+
+  const admin = createAdminClient();
+  const path = `${projectId}/${Date.now()}-${workbook.fileName}`;
+  const { error: uploadError } = await admin.storage
+    .from("project-documents")
+    .upload(path, workbook.buffer, {
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      upsert: false,
+    });
+  if (uploadError) {
+    console.error("City budget Excel upload failed:", uploadError.message);
+    return null;
+  }
+
+  const title = "City Budget vs Actuals.xlsx";
+  // Replace any stale copy filed against this invoice so it never doubles up.
+  await admin
+    .from("project_documents")
+    .delete()
+    .eq("project_id", projectId)
+    .eq("description", invoiceAttachmentTag(invoiceNumber))
+    .eq("title", title);
+  await admin.from("project_documents").insert({
+    project_id: projectId,
+    title,
+    description: invoiceAttachmentTag(invoiceNumber),
+    storage_path: path,
+    category: "invoice",
+    visibility: "client",
+  });
+
+  const { data: signed } = await admin.storage
+    .from("project-documents")
+    .createSignedUrl(path, 60 * 60 * 24 * 7);
+  return signed?.signedUrl ? { filename: workbook.fileName, url: signed.signedUrl } : null;
+}
+
 async function deliverInvoice(
   invoice: {
     id: string;
@@ -182,6 +231,12 @@ async function deliverInvoice(
 ) {
   let mercuryPayLink: string | null = null;
   if (!project.client_id) return mercuryPayLink;
+
+  // Habitat/city jobs: the city's Excel rides every invoice email.
+  const cityExcel = await cityBudgetEmailAttachment(project.id, invoice.invoice_number);
+  if (cityExcel && !attachments.some((a) => a.filename === cityExcel.filename)) {
+    attachments = [...attachments, cityExcel];
+  }
 
   const admin = createAdminClient();
   const { data: client } = await admin
@@ -223,7 +278,7 @@ async function deliverInvoice(
       projectId: project.id,
       invoiceNumber: invoice.invoice_number,
       invoiceTitle: invoice.title,
-      amountFormatted: formatMoney(Number(invoice.total)),
+      amountFormatted: formatMoneyExact(Number(invoice.total)),
       dueDateFormatted: formatDueDateLabel(invoice.due_date),
       mercuryPayUrl: mercuryPayLink,
       isHabitat: isHabitat608Project(project.slug ?? ""),
@@ -234,11 +289,11 @@ async function deliverInvoice(
   await sendSms({
     phone: client?.phone,
     firstName: client?.first_name ?? undefined,
-    message: `8th Street Construction: invoice ${invoice.invoice_number} (${formatMoney(Number(invoice.total))}) is ready for ${project.title ?? "your project"}.${mercuryPayLink ? ` Pay securely: ${mercuryPayLink}` : " Details are in your portal."}`,
+    message: `8th Street Construction: invoice ${invoice.invoice_number} (${formatMoneyExact(Number(invoice.total))}) is ready for ${project.title ?? "your project"}.${mercuryPayLink ? ` Pay securely: ${mercuryPayLink}` : " Details are in your portal."}`,
   });
   await sendPushToProfile(project.client_id, {
     title: project.title ?? "8th Street Construction",
-    body: `Invoice ${invoice.invoice_number} for ${formatMoney(Number(invoice.total))} is ready`,
+    body: `Invoice ${invoice.invoice_number} for ${formatMoneyExact(Number(invoice.total))} is ready`,
     url: `/client/projects/${project.id}/billing`,
   });
 

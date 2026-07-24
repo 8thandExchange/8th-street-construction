@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatMoney } from "@/lib/billing/constants";
+import { formatMoneyExact } from "@/lib/billing/constants";
 import { sendInvoicePaidEmail } from "@/lib/email/invoice-notify";
 import { mercuryConfigured } from "./config";
 import { getMercuryInvoice } from "./invoices";
@@ -60,7 +60,7 @@ export async function markInvoicePaidLocally(
         projectId,
         invoiceNumber: inv.invoice_number,
         invoiceTitle: inv.title ?? "Invoice",
-        amountFormatted: formatMoney(Number(inv.total)),
+        amountFormatted: formatMoneyExact(Number(inv.total)),
       });
     }
   }

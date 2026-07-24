@@ -55,7 +55,7 @@ describe("describeConfirmation", () => {
     expect(summary).toContain("Framing draw");
     expect(summary).toContain("$12,500");
     expect(summary).toContain("Framing labor");
-    expect(summary).toContain("Materials (2 × $1,250)");
+    expect(summary).toContain("Materials (2 × $1,250.00)");
     expect(summary.toLowerCase()).toContain("mercury");
   });
 });

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { formatMoney } from "@/lib/billing/constants";
+import { formatMoneyExact } from "@/lib/billing/constants";
 import { mercuryPayUrl } from "@/lib/mercury/invoices";
 import { INVOICE_STATUS_LABELS, INVOICE_STATUS_STYLES } from "@/lib/project/labels";
 import { PayInvoiceButton } from "./PayInvoiceButton";
@@ -85,7 +85,7 @@ export function InvoiceCard({
             </h4>
 
             <p className="mt-3 app-num text-[28px] md:text-[32px] font-medium text-navy tracking-tight">
-              {formatMoney(Number(invoice.total))}
+              {formatMoneyExact(Number(invoice.total))}
             </p>
 
             {!isPaid && invoice.due_date && (
@@ -149,7 +149,7 @@ export function InvoiceCard({
                   className="flex justify-between gap-4 text-sm text-navy/80 py-1.5 border-b border-navy/[0.05] last:border-0"
                 >
                   <span>{li.description}</span>
-                  <span className="app-num text-navy shrink-0">{formatMoney(Number(li.amount))}</span>
+                  <span className="app-num text-navy shrink-0">{formatMoneyExact(Number(li.amount))}</span>
                 </li>
               ))}
             </ul>

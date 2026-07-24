@@ -5,7 +5,7 @@ import {
   sendCustomInvoice,
   markInvoicePaid,
 } from "@/lib/actions/billing";
-import { formatMoney } from "@/lib/billing/constants";
+import { formatMoneyExact } from "@/lib/billing/constants";
 import { ATTACHMENT_BUCKET, STAGING_PREFIX } from "@/lib/assistant/attachments";
 import { INVOICE_BACKUP_PREFIX } from "@/lib/billing/backup-attachments";
 
@@ -523,7 +523,7 @@ function lineItemBreakdown(items: LineItemInput[]): string {
       const amount = Math.round(Number(li.quantity) * Number(li.unit_amount) * 100) / 100;
       const qty =
         Number(li.quantity) !== 1
-          ? ` (${li.quantity} × ${formatMoney(Number(li.unit_amount))})`
+          ? ` (${li.quantity} × ${formatMoneyExact(Number(li.unit_amount))})`
           : "";
       const refs = [
         li.reference_number ? `Inv. #${li.reference_number}` : null,
@@ -531,7 +531,7 @@ function lineItemBreakdown(items: LineItemInput[]): string {
       ]
         .filter(Boolean)
         .join(" · ");
-      return `• ${li.description}${qty}${refs ? ` (${refs})` : ""} — ${formatMoney(amount)}`;
+      return `• ${li.description}${qty}${refs ? ` (${refs})` : ""} — ${formatMoneyExact(amount)}`;
     })
     .join("\n");
 }
@@ -569,7 +569,7 @@ async function invoiceCardDetail(invoiceId: string): Promise<string | null> {
         year: "numeric",
       })}`
     : "";
-  return `${invoice.invoice_number} — "${invoice.title}" on ${project?.title ?? "this job"} for ${formatMoney(Number(invoice.total))}\n${lines}${due}`;
+  return `${invoice.invoice_number} — "${invoice.title}" on ${project?.title ?? "this job"} for ${formatMoneyExact(Number(invoice.total))}\n${lines}${due}`;
 }
 
 /** Human-readable summary of a gated action for the confirmation card. */
@@ -586,7 +586,7 @@ export async function describeConfirmation(name: string, input: unknown): Promis
     const attNote = atts.length
       ? `\nAttached document${atts.length === 1 ? "" : "s"}: ${atts.map((a) => a.title).join(", ")} (emailed with the invoice + filed in Documents).`
       : "";
-    return `Create and send invoice "${String(i.title)}"${where} for ${formatMoney(total)}:\n${lineItemBreakdown(items)}${attNote}\n\nThe client will receive a Mercury ACH pay link by email.`;
+    return `Create and send invoice "${String(i.title)}"${where} for ${formatMoneyExact(total)}:\n${lineItemBreakdown(items)}${attNote}\n\nThe client will receive a Mercury ACH pay link by email.`;
   }
   if (name === "send_invoice") {
     const detail = await invoiceCardDetail(String(i.invoice_id ?? ""));
@@ -819,7 +819,7 @@ export async function executeAssistantTool(
         total_projects: (projects ?? []).length,
         open_invoices: open.length,
         outstanding_receivables: outstanding,
-        outstanding_formatted: formatMoney(outstanding),
+        outstanding_formatted: formatMoneyExact(outstanding),
       };
     }
 

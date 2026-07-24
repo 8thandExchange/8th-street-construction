@@ -1,7 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
-import { formatMoney } from "@/lib/billing/constants";
+import { formatMoneyExact } from "@/lib/billing/constants";
 
 /**
  * Client concierge tool surface. Every read runs on the signed-in client's
@@ -248,7 +248,7 @@ export async function executeClientAssistantTool(
       return {
         project: project.title,
         outstanding,
-        outstanding_formatted: formatMoney(outstanding),
+        outstanding_formatted: formatMoneyExact(outstanding),
         invoices: (invoices ?? []).filter((inv) => inv.status !== "draft"),
         draws: draws ?? [],
         billing_page: `/client/projects/${project.id}/billing`,
