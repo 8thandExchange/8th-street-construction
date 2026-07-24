@@ -271,7 +271,9 @@ async function deliverInvoice(
   }
 
   if (client?.email) {
-    await sendInvoiceReadyEmail({
+    // Resend reports failures in the result, not by throwing — a swallowed
+    // error here means "sent" in the UI while the client never got it.
+    const emailResult = await sendInvoiceReadyEmail({
       to: client.email,
       firstName: client.first_name || "there",
       projectTitle: project.title ?? "Your project",
@@ -284,6 +286,16 @@ async function deliverInvoice(
       isHabitat: isHabitat608Project(project.slug ?? ""),
       attachments,
     });
+    if ("error" in emailResult && emailResult.error) {
+      console.error(
+        `Invoice ${invoice.invoice_number}: email to ${client.email} FAILED —`,
+        emailResult.error
+      );
+    } else if ("data" in emailResult && emailResult.data?.id) {
+      console.log(
+        `Invoice ${invoice.invoice_number}: email accepted by Resend (${emailResult.data.id}) for ${client.email}`
+      );
+    }
   }
 
   await sendSms({
