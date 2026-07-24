@@ -217,6 +217,41 @@ async function cityBudgetEmailAttachment(
   return signed?.signedUrl ? { filename: workbook.fileName, url: signed.signedUrl } : null;
 }
 
+/**
+ * The full packet (cover sheet + backup invoices) attached to the client
+ * email — the document the city reviewer actually needs, not just a link.
+ */
+async function packetEmailAttachment(
+  invoiceId: string
+): Promise<{ filename: string; url: string } | null> {
+  try {
+    const { buildInvoicePacket } = await import("@/lib/billing/invoice-packet");
+    const packet = await buildInvoicePacket(invoiceId);
+    if (!packet) return null;
+    // Resend caps message size — a huge packet stays portal-only.
+    if (packet.buffer.length > 12 * 1024 * 1024) {
+      console.warn(`Invoice packet for ${invoiceId} is ${packet.buffer.length} bytes — too big to email, portal only.`);
+      return null;
+    }
+    const admin = createAdminClient();
+    const path = `invoice-backups/${invoiceId}/packet-${Date.now()}.pdf`;
+    const { error } = await admin.storage
+      .from("project-documents")
+      .upload(path, packet.buffer, { contentType: "application/pdf", upsert: false });
+    if (error) {
+      console.error("Invoice packet upload failed:", error.message);
+      return null;
+    }
+    const { data: signed } = await admin.storage
+      .from("project-documents")
+      .createSignedUrl(path, 60 * 60 * 24 * 7);
+    return signed?.signedUrl ? { filename: packet.fileName, url: signed.signedUrl } : null;
+  } catch (err) {
+    console.error("Invoice packet email attachment failed:", err);
+    return null;
+  }
+}
+
 async function deliverInvoice(
   invoice: {
     id: string;
@@ -232,7 +267,10 @@ async function deliverInvoice(
   let mercuryPayLink: string | null = null;
   if (!project.client_id) return mercuryPayLink;
 
-  // Habitat/city jobs: the city's Excel rides every invoice email.
+  // The email carries the real paperwork: the full packet (cover sheet +
+  // backup invoices), plus the city's Excel on Habitat/city-budget jobs.
+  const packetAttachment = await packetEmailAttachment(invoice.id);
+  if (packetAttachment) attachments = [...attachments, packetAttachment];
   const cityExcel = await cityBudgetEmailAttachment(project.id, invoice.invoice_number);
   if (cityExcel && !attachments.some((a) => a.filename === cityExcel.filename)) {
     attachments = [...attachments, cityExcel];
