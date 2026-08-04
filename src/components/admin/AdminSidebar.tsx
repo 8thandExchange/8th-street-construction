@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Banknote,
   BookOpenCheck,
+  Landmark,
   Building2,
   CalendarClock,
   FileStack,
@@ -57,6 +58,7 @@ const NAV_GROUPS: {
     label: "Money",
     items: [
       { href: "/admin/invoicing", label: "Invoicing", icon: Banknote },
+      { href: "/admin/vendors", label: "Vendors & Bills", icon: Landmark },
       { href: "/admin/accounting", label: "Accounting", icon: BookOpenCheck },
     ],
   },
