@@ -6,6 +6,7 @@ import { RecordBillForm, VendorLogoUpload } from "@/components/vendors/VendorFor
 import { setVendorBillStatus, deleteVendorBill } from "@/lib/actions/vendors";
 import { formatMoney } from "@/lib/billing/constants";
 import { ATTACHMENT_BUCKET } from "@/lib/assistant/attachments";
+import { publicVendorLogo } from "@/lib/vendors/logos";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,7 @@ export default async function VendorDetailPage(props: {
       .createSignedUrl(vendor.logo_path, 3600);
     logoUrl = signed?.signedUrl ?? null;
   }
+  if (!logoUrl) logoUrl = publicVendorLogo(vendor.name);
 
   const fileUrls = new Map<string, string>();
   for (const b of bills ?? []) {

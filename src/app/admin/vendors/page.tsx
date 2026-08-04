@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { AddVendorForm } from "@/components/vendors/VendorForms";
 import { formatMoney } from "@/lib/billing/constants";
 import { ATTACHMENT_BUCKET } from "@/lib/assistant/attachments";
+import { publicVendorLogo } from "@/lib/vendors/logos";
 
 export const dynamic = "force-dynamic";
 
@@ -16,11 +17,17 @@ export default async function VendorsPage() {
 
   const logoUrls = new Map<string, string>();
   for (const v of vendors ?? []) {
-    if (!v.logo_path) continue;
-    const { data: signed } = await admin.storage
-      .from(ATTACHMENT_BUCKET)
-      .createSignedUrl(v.logo_path, 3600);
-    if (signed?.signedUrl) logoUrls.set(v.id, signed.signedUrl);
+    if (v.logo_path) {
+      const { data: signed } = await admin.storage
+        .from(ATTACHMENT_BUCKET)
+        .createSignedUrl(v.logo_path, 3600);
+      if (signed?.signedUrl) {
+        logoUrls.set(v.id, signed.signedUrl);
+        continue;
+      }
+    }
+    const fallback = publicVendorLogo(v.name);
+    if (fallback) logoUrls.set(v.id, fallback);
   }
 
   const openByVendor = new Map<string, number>();
