@@ -84,9 +84,12 @@ export function emailSecondaryButton(href: string, label: string) {
 }
 
 export function emailAmountBlock(amount: string, label: string) {
+  // The figure itself is set in the system sans with lining tabular numerals
+  // (Mercury-style) — serif faces like Georgia render oldstyle digits that
+  // look uneven at display sizes.
   return `<div style="margin:24px 0;padding:20px 24px;background:${paper};border-left:3px solid ${rust};">
     <div style="font-family:${EMAIL_FONT.sans};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:${pencil};">${escapeHtml(label)}</div>
-    <div style="font-family:${EMAIL_FONT.display};font-size:36px;color:${ink};margin-top:8px;line-height:1;">${escapeHtml(amount)}</div>
+    <div style="font-family:${EMAIL_FONT.sans};font-size:32px;font-weight:600;letter-spacing:-0.02em;font-variant-numeric:lining-nums tabular-nums;color:${ink};margin-top:8px;line-height:1;">${escapeHtml(amount)}</div>
   </div>`;
 }
 

@@ -1,8 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatMoney } from "@/lib/billing/constants";
+import { formatMoneyExact, isHabitat608Project } from "@/lib/billing/constants";
 import { sendInvoicePaidEmail } from "@/lib/email/invoice-notify";
 import { mercuryConfigured } from "./config";
 import { getMercuryInvoice } from "./invoices";
+import { pushInvoiceToMercury } from "./service";
 
 async function revalidateBilling(projectId: string) {
   // Dynamic import avoids circular deps in server actions. Swallow errors:
@@ -60,7 +61,7 @@ export async function markInvoicePaidLocally(
         projectId,
         invoiceNumber: inv.invoice_number,
         invoiceTitle: inv.title ?? "Invoice",
-        amountFormatted: formatMoney(Number(inv.total)),
+        amountFormatted: formatMoneyExact(Number(inv.total)),
       });
     }
   }
@@ -98,8 +99,83 @@ export async function syncMercuryInvoiceById(invoiceId: string) {
   return { synced: true, status: mercury.status };
 }
 
+/**
+ * Backfill: push any SENT invoice that never made it to Mercury (e.g. sent
+ * while Mercury was unreachable) so it gets its ACH pay link. Runs on the
+ * billing pages and the cron — self-healing, no button needed.
+ */
+export async function backfillMissingMercuryInvoices(projectId?: string) {
+  if (!mercuryConfigured()) return { pushed: 0 };
+
+  const admin = createAdminClient();
+  let query = admin
+    .from("invoices")
+    .select("id, invoice_number, title, total, due_date, project_id, client_id")
+    .is("mercury_invoice_id", null)
+    .in("status", ["sent", "viewed", "overdue"]);
+  if (projectId) query = query.eq("project_id", projectId);
+  const { data: missing } = await query;
+
+  let pushed = 0;
+  for (const invoice of missing ?? []) {
+    try {
+      const [{ data: project }, { data: lines }] = await Promise.all([
+        admin
+          .from("projects")
+          .select("id, title, slug, client_id")
+          .eq("id", invoice.project_id)
+          .single(),
+        admin
+          .from("invoice_line_items")
+          .select("description, quantity, unit_amount")
+          .eq("invoice_id", invoice.id)
+          .order("display_order"),
+      ]);
+      const clientId = invoice.client_id ?? project?.client_id ?? null;
+      if (!clientId) continue;
+      const { data: client } = await admin
+        .from("profiles")
+        .select("email, first_name, last_name")
+        .eq("id", clientId)
+        .single();
+      if (!client?.email) continue;
+
+      const mercury = await pushInvoiceToMercury({
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoice_number,
+        title: invoice.title ?? `Invoice ${invoice.invoice_number}`,
+        amount: Number(invoice.total),
+        dueDate: invoice.due_date,
+        lineItems: (lines ?? []).map((li) => ({
+          description: li.description,
+          quantity: Number(li.quantity),
+          unit_amount: Number(li.unit_amount),
+        })),
+        projectId: invoice.project_id,
+        projectTitle: project?.title ?? "Project",
+        clientId,
+        clientEmail: client.email,
+        clientName:
+          [client.first_name, client.last_name].filter(Boolean).join(" ") || client.email,
+        payerMemo: isHabitat608Project(project?.slug ?? "")
+          ? "Habitat for Humanity draw payment — ACH bank transfer."
+          : undefined,
+      });
+      if (mercury) {
+        pushed += 1;
+        console.log(`Mercury backfill: ${invoice.invoice_number} -> slug ${mercury.slug}`);
+      }
+    } catch (err) {
+      console.error(`Mercury backfill failed for ${invoice.invoice_number}:`, err);
+    }
+  }
+  return { pushed };
+}
+
 export async function syncProjectMercuryInvoices(projectId: string) {
   if (!mercuryConfigured()) return { checked: 0, paid: 0 };
+
+  await backfillMissingMercuryInvoices(projectId);
 
   const admin = createAdminClient();
   const { data: open } = await admin
@@ -126,6 +202,8 @@ export async function syncAllOpenMercuryInvoices() {
   if (!mercuryConfigured()) {
     return { checked: 0, paid: 0, errors: 0, reason: "not_configured" as const };
   }
+
+  await backfillMissingMercuryInvoices();
 
   const admin = createAdminClient();
   const { data: open } = await admin

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe/client";
-import { formatMoney, invoiceJobPrefix, invoiceAttachmentTag } from "@/lib/billing/constants";
+import { formatMoneyExact, invoiceJobPrefix, invoiceAttachmentTag } from "@/lib/billing/constants";
 import { sendInvoiceReadyEmail } from "@/lib/email/invoice-notify";
 import {
   getDrawTemplateForProject,
@@ -37,9 +37,15 @@ function revalidate(projectId: string) {
 }
 
 type CustomLineItem = {
+  /** Existing line id — present when editing a draft, keeps attachments linked */
+  id?: string | null;
   description: string;
   quantity: number;
   unit_amount: number;
+  /** Backup invoice number — "Inv. #" on the cover sheet */
+  reference_number?: string | null;
+  /** City budget line this amount bills against — "City #" on the cover sheet */
+  city_budget_line_id?: string | null;
 };
 
 async function nextInvoiceNumber(
@@ -77,6 +83,9 @@ function parseCustomLineItems(raw: string): CustomLineItem[] {
     const description = String(item?.description ?? "").trim();
     const quantity = Number(item?.quantity);
     const unit_amount = Number(item?.unit_amount);
+    const id = String(item?.id ?? "").trim() || null;
+    const reference_number = String(item?.reference_number ?? "").trim() || null;
+    const city_budget_line_id = String(item?.city_budget_line_id ?? "").trim() || null;
 
     if (!description) throw new Error(`Line item ${index + 1} needs a description.`);
     if (!Number.isFinite(quantity) || quantity <= 0) {
@@ -86,7 +95,7 @@ function parseCustomLineItems(raw: string): CustomLineItem[] {
       throw new Error(`Line item ${index + 1} needs a valid amount.`);
     }
 
-    return { description, quantity, unit_amount };
+    return { id, description, quantity, unit_amount, reference_number, city_budget_line_id };
   });
 }
 
@@ -159,6 +168,90 @@ async function invoiceEmailAttachments(
   return out;
 }
 
+/**
+ * City-budget jobs (Habitat) must send the Budget-vs-Actuals Excel with
+ * every invoice. Built fresh at send time, filed against the invoice in
+ * Documents, and attached to the client email.
+ */
+async function cityBudgetEmailAttachment(
+  projectId: string,
+  invoiceNumber: string
+): Promise<{ filename: string; url: string } | null> {
+  const { buildCityBudgetWorkbook } = await import("@/lib/billing/city-budget-excel");
+  const workbook = await buildCityBudgetWorkbook(projectId);
+  if (!workbook) return null;
+
+  const admin = createAdminClient();
+  const path = `${projectId}/${Date.now()}-${workbook.fileName}`;
+  const { error: uploadError } = await admin.storage
+    .from("project-documents")
+    .upload(path, workbook.buffer, {
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      upsert: false,
+    });
+  if (uploadError) {
+    console.error("City budget Excel upload failed:", uploadError.message);
+    return null;
+  }
+
+  const title = "City Budget vs Actuals.xlsx";
+  // Replace any stale copy filed against this invoice so it never doubles up.
+  await admin
+    .from("project_documents")
+    .delete()
+    .eq("project_id", projectId)
+    .eq("description", invoiceAttachmentTag(invoiceNumber))
+    .eq("title", title);
+  await admin.from("project_documents").insert({
+    project_id: projectId,
+    title,
+    description: invoiceAttachmentTag(invoiceNumber),
+    storage_path: path,
+    category: "invoice",
+    visibility: "client",
+  });
+
+  const { data: signed } = await admin.storage
+    .from("project-documents")
+    .createSignedUrl(path, 60 * 60 * 24 * 7);
+  return signed?.signedUrl ? { filename: workbook.fileName, url: signed.signedUrl } : null;
+}
+
+/**
+ * The full packet (cover sheet + backup invoices) attached to the client
+ * email — the document the city reviewer actually needs, not just a link.
+ */
+async function packetEmailAttachment(
+  invoiceId: string
+): Promise<{ filename: string; url: string } | null> {
+  try {
+    const { buildInvoicePacket } = await import("@/lib/billing/invoice-packet");
+    const packet = await buildInvoicePacket(invoiceId);
+    if (!packet) return null;
+    // Resend caps message size — a huge packet stays portal-only.
+    if (packet.buffer.length > 12 * 1024 * 1024) {
+      console.warn(`Invoice packet for ${invoiceId} is ${packet.buffer.length} bytes — too big to email, portal only.`);
+      return null;
+    }
+    const admin = createAdminClient();
+    const path = `invoice-backups/${invoiceId}/packet-${Date.now()}.pdf`;
+    const { error } = await admin.storage
+      .from("project-documents")
+      .upload(path, packet.buffer, { contentType: "application/pdf", upsert: false });
+    if (error) {
+      console.error("Invoice packet upload failed:", error.message);
+      return null;
+    }
+    const { data: signed } = await admin.storage
+      .from("project-documents")
+      .createSignedUrl(path, 60 * 60 * 24 * 7);
+    return signed?.signedUrl ? { filename: packet.fileName, url: signed.signedUrl } : null;
+  } catch (err) {
+    console.error("Invoice packet email attachment failed:", err);
+    return null;
+  }
+}
+
 async function deliverInvoice(
   invoice: {
     id: string;
@@ -173,6 +266,15 @@ async function deliverInvoice(
 ) {
   let mercuryPayLink: string | null = null;
   if (!project.client_id) return mercuryPayLink;
+
+  // The email carries the real paperwork: the full packet (cover sheet +
+  // backup invoices), plus the city's Excel on Habitat/city-budget jobs.
+  const packetAttachment = await packetEmailAttachment(invoice.id);
+  if (packetAttachment) attachments = [...attachments, packetAttachment];
+  const cityExcel = await cityBudgetEmailAttachment(project.id, invoice.invoice_number);
+  if (cityExcel && !attachments.some((a) => a.filename === cityExcel.filename)) {
+    attachments = [...attachments, cityExcel];
+  }
 
   const admin = createAdminClient();
   const { data: client } = await admin
@@ -207,29 +309,41 @@ async function deliverInvoice(
   }
 
   if (client?.email) {
-    await sendInvoiceReadyEmail({
+    // Resend reports failures in the result, not by throwing — a swallowed
+    // error here means "sent" in the UI while the client never got it.
+    const emailResult = await sendInvoiceReadyEmail({
       to: client.email,
       firstName: client.first_name || "there",
       projectTitle: project.title ?? "Your project",
       projectId: project.id,
       invoiceNumber: invoice.invoice_number,
       invoiceTitle: invoice.title,
-      amountFormatted: formatMoney(Number(invoice.total)),
+      amountFormatted: formatMoneyExact(Number(invoice.total)),
       dueDateFormatted: formatDueDateLabel(invoice.due_date),
       mercuryPayUrl: mercuryPayLink,
       isHabitat: isHabitat608Project(project.slug ?? ""),
       attachments,
     });
+    if ("error" in emailResult && emailResult.error) {
+      console.error(
+        `Invoice ${invoice.invoice_number}: email to ${client.email} FAILED —`,
+        emailResult.error
+      );
+    } else if ("data" in emailResult && emailResult.data?.id) {
+      console.log(
+        `Invoice ${invoice.invoice_number}: email accepted by Resend (${emailResult.data.id}) for ${client.email}`
+      );
+    }
   }
 
   await sendSms({
     phone: client?.phone,
     firstName: client?.first_name ?? undefined,
-    message: `8th Street Construction: invoice ${invoice.invoice_number} (${formatMoney(Number(invoice.total))}) is ready for ${project.title ?? "your project"}.${mercuryPayLink ? ` Pay securely: ${mercuryPayLink}` : " Details are in your portal."}`,
+    message: `8th Street Construction: invoice ${invoice.invoice_number} (${formatMoneyExact(Number(invoice.total))}) is ready for ${project.title ?? "your project"}.${mercuryPayLink ? ` Pay securely: ${mercuryPayLink}` : " Details are in your portal."}`,
   });
   await sendPushToProfile(project.client_id, {
     title: project.title ?? "8th Street Construction",
-    body: `Invoice ${invoice.invoice_number} for ${formatMoney(Number(invoice.total))} is ready`,
+    body: `Invoice ${invoice.invoice_number} for ${formatMoneyExact(Number(invoice.total))} is ready`,
     url: `/client/projects/${project.id}/billing`,
   });
 
@@ -544,6 +658,8 @@ export async function createCustomInvoice(formData: FormData) {
       quantity: item.quantity,
       unit_amount: item.unit_amount,
       amount: Math.round(item.quantity * item.unit_amount * 100) / 100,
+      reference_number: item.reference_number ?? null,
+      city_budget_line_id: item.city_budget_line_id ?? null,
       display_order: index,
     }))
   );
@@ -607,18 +723,44 @@ export async function updateDraftInvoice(formData: FormData) {
     .eq("id", invoiceId);
   if (error) throw new Error(error.message);
 
-  await supabase.from("invoice_line_items").delete().eq("invoice_id", invoiceId);
-  const { error: lineError } = await supabase.from("invoice_line_items").insert(
-    lineItems.map((item, index) => ({
-      invoice_id: invoiceId,
+  // Diff-update lines instead of delete-and-reinsert so backup attachments
+  // linked to a line (invoice_attachments.line_item_id) survive draft edits.
+  const { data: existingLines } = await supabase
+    .from("invoice_line_items")
+    .select("id")
+    .eq("invoice_id", invoiceId);
+  const existingIds = new Set((existingLines ?? []).map((l) => l.id));
+  const keptIds = new Set(
+    lineItems.map((item) => item.id).filter((lid): lid is string => !!lid && existingIds.has(lid))
+  );
+
+  const removedIds = [...existingIds].filter((lid) => !keptIds.has(lid));
+  if (removedIds.length) {
+    const { error: deleteError } = await supabase
+      .from("invoice_line_items")
+      .delete()
+      .in("id", removedIds);
+    if (deleteError) throw new Error(deleteError.message);
+  }
+
+  for (const [index, item] of lineItems.entries()) {
+    const row = {
       description: item.description,
       quantity: item.quantity,
       unit_amount: item.unit_amount,
       amount: Math.round(item.quantity * item.unit_amount * 100) / 100,
+      reference_number: item.reference_number ?? null,
+      city_budget_line_id: item.city_budget_line_id ?? null,
       display_order: index,
-    }))
-  );
-  if (lineError) throw new Error(lineError.message);
+    };
+    const { error: lineError } =
+      item.id && keptIds.has(item.id)
+        ? await supabase.from("invoice_line_items").update(row).eq("id", item.id)
+        : await supabase
+            .from("invoice_line_items")
+            .insert({ ...row, invoice_id: invoiceId });
+    if (lineError) throw new Error(lineError.message);
+  }
 
   revalidate(projectId);
   revalidatePath(`/admin/projects/${projectId}/billing/invoices/${invoiceId}`);
