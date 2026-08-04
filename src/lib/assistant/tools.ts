@@ -34,7 +34,9 @@ export type AssistantToolName =
   | "file_document"
   | "attach_document_to_invoice"
   | "get_schedule_pdf"
-  | "list_purchase_orders";
+  | "list_purchase_orders"
+  | "list_vendors"
+  | "record_vendor_bill";
 
 type LineItemInput = { description: string; quantity: number; unit_amount: number };
 
@@ -357,6 +359,43 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ["project_id", "invoice_id", "title", "storage_path"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "list_vendors",
+    description:
+      "List vendors/creditors (companies that bill us — e.g. Monte Cristo Consulting) with open and paid totals. Call to resolve a vendor by name before recording a bill.",
+    input_schema: {
+      type: "object",
+      properties: {},
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "record_vendor_bill",
+    description:
+      "Record a bill FROM a vendor/creditor (accounts payable — money WE owe). Not a client invoice. Optionally tie it to a job and attach their invoice file (staged storage_path from a chat attachment). Shows up on the vendor's page with open/paid tracking.",
+    input_schema: {
+      type: "object",
+      properties: {
+        vendor_id: { type: "string", description: "Vendor UUID from list_vendors" },
+        title: { type: "string", description: "What the bill is for, e.g. 'Consulting — July'" },
+        amount: { type: "number", description: "Dollar amount" },
+        bill_number: { type: "string", description: "The vendor's own invoice number (optional)" },
+        project_id: {
+          type: "string",
+          description: "Job UUID to allocate the cost to (optional — omit for company overhead)",
+        },
+        issued_date: { type: "string", description: "YYYY-MM-DD (optional)" },
+        due_date: { type: "string", description: "YYYY-MM-DD (optional)" },
+        file_staged_path: {
+          type: "string",
+          description: "Staged path of the vendor's invoice file from a chat attachment (optional)",
+        },
+        notes: { type: "string" },
+      },
+      required: ["vendor_id", "title", "amount"],
       additionalProperties: false,
     },
   },
@@ -1158,6 +1197,48 @@ export async function executeAssistantTool(
         project: project.title,
         document: doc,
         client_visible: visibility === "client",
+      };
+    }
+
+    case "list_vendors": {
+      const [{ data: vendors }, { data: bills }] = await Promise.all([
+        admin.from("vendors").select("id, name, contact_email, notes").order("name"),
+        admin.from("vendor_bills").select("vendor_id, amount, status"),
+      ]);
+      return (vendors ?? []).map((v) => ({
+        id: v.id,
+        name: v.name,
+        contact_email: v.contact_email,
+        notes: v.notes,
+        open_total: (bills ?? [])
+          .filter((b) => b.vendor_id === v.id && b.status === "open")
+          .reduce((s, b) => s + Number(b.amount), 0),
+        paid_total: (bills ?? [])
+          .filter((b) => b.vendor_id === v.id && b.status === "paid")
+          .reduce((s, b) => s + Number(b.amount), 0),
+      }));
+    }
+
+    case "record_vendor_bill": {
+      const { recordVendorBill } = await import("@/lib/actions/vendors");
+      const result = await recordVendorBill(
+        toFormData({
+          vendor_id: String(i.vendor_id ?? ""),
+          title: String(i.title ?? ""),
+          amount: String(i.amount ?? ""),
+          bill_number: String(i.bill_number ?? ""),
+          project_id: String(i.project_id ?? ""),
+          issued_date: String(i.issued_date ?? ""),
+          due_date: String(i.due_date ?? ""),
+          file_staged_path: String(i.file_staged_path ?? ""),
+          notes: String(i.notes ?? ""),
+        })
+      );
+      if (result && "error" in result && result.error) return { error: result.error };
+      return {
+        ok: true,
+        action: "vendor_bill_recorded",
+        note: "Recorded as an OPEN payable on the vendor's page (Admin → Vendors & Bills). This does not send anything to anyone.",
       };
     }
 
