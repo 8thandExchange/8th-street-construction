@@ -1,0 +1,30 @@
+name: Verify live asset
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Absolute URL to verify (expects HTTP 200)"
+        required: true
+        type: string
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Curl until 200 (15s interval, 3 min max)
+        run: |
+          URL="${{ inputs.url }}"
+          for i in $(seq 1 12); do
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" "$URL")
+            TYPE=$(curl -s -o /dev/null -w "%{content_type}" -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" "$URL")
+            echo "attempt $i: HTTP $CODE ($TYPE)"
+            if [ "$CODE" = "200" ]; then
+              echo "VERIFIED: $URL -> HTTP 200 ($TYPE)"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "FAILED: $URL never returned 200"
+          exit 1
