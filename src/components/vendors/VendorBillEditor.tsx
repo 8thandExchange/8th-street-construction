@@ -41,7 +41,13 @@ export function BillEditForm({
       : [{ description: initial.title, amount: String(initial.amount) }]
   );
 
-  const lineTotal = lines.reduce((s, l) => s + (Number(l.amount) || 0), 0);
+  // Mirror the server's parseBillLines filter exactly, so the total shown
+  // here is the total that gets saved — and printed on the PDF.
+  const validLines = lines.filter(
+    (l) => l.description.trim() && Number.isFinite(Number(l.amount)) && Number(l.amount) > 0
+  );
+  const lineTotal = validLines.reduce((s, l) => s + Number(l.amount), 0);
+  const incompleteCount = lines.length - validLines.length;
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -54,7 +60,9 @@ export function BillEditForm({
       fd.set("vendor_id", vendorId);
       fd.set(
         "line_items",
-        JSON.stringify(lines.map((l) => ({ description: l.description, amount: Number(l.amount) })))
+        JSON.stringify(
+          validLines.map((l) => ({ description: l.description.trim(), amount: Number(l.amount) }))
+        )
       );
       const result = await updateVendorBill(fd);
       if (result && "error" in result && result.error) {
@@ -136,6 +144,13 @@ export function BillEditForm({
             Total: ${lineTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
         </div>
+        {incompleteCount > 0 && (
+          <p className="mt-1.5 text-[12.5px] app-muted">
+            {incompleteCount === 1 ? "1 line needs" : `${incompleteCount} lines need`} a
+            description and an amount above $0 — {incompleteCount === 1 ? "it won't" : "they won't"}{" "}
+            be saved or appear on the PDF.
+          </p>
+        )}
       </div>
 
       <div>
