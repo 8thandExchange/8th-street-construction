@@ -111,6 +111,9 @@ export async function recordVendorBill(formData: FormData) {
       bill_number: String(formData.get("bill_number") ?? "").trim() || null,
       title,
       amount: Math.round(amount * 100) / 100,
+      // Seed a single line so the stored lines always reconcile with the
+      // total — the printed invoice can never show lines that don't add up.
+      line_items: [{ description: title, amount: Math.round(amount * 100) / 100 }],
       issued_date: String(formData.get("issued_date") ?? "").trim() || null,
       due_date: String(formData.get("due_date") ?? "").trim() || null,
       file_path: filePath,

@@ -13,15 +13,23 @@ import {
  * (BILL TO / FOR, line items, total, remit block) with their crest.
  */
 
+/**
+ * Logo source: either a URL/filesystem path, or the raw bytes. Uploaded
+ * vendor logos live in a private bucket, so the caller downloads them and
+ * passes the buffer — no signed-URL expiry to race, no network fetch here.
+ */
+export type PdfImageSrc = string | { data: Buffer; format: "png" | "jpg" };
+
 export type VendorBillPdfData = {
   vendorName: string;
   vendorAddress: string | null;
   vendorEmail: string | null;
-  logoUrl: string | null;
+  logo: PdfImageSrc | null;
   billNumber: string | null;
   title: string;
   issuedDate: string | null;
   dueDate: string | null;
+  /** The job this invoice is against — shown under the title, not instead of it. */
   projectLabel: string | null;
   lines: { description: string; amount: number }[];
   total: number;
@@ -129,7 +137,7 @@ export function vendorBillPdf(data: VendorBillPdfData) {
       <Page size="LETTER" style={styles.page}>
         <View style={styles.headerRow}>
           <View style={{ flexDirection: "row", gap: 14 }}>
-            {data.logoUrl ? <Image src={data.logoUrl} style={styles.logo} /> : null}
+            {data.logo ? <Image src={data.logo} style={styles.logo} /> : null}
             <View style={{ justifyContent: "center" }}>
               <Text style={styles.vendorName}>{data.vendorName}</Text>
               {data.vendorAddress ? (
@@ -164,7 +172,10 @@ export function vendorBillPdf(data: VendorBillPdfData) {
           </View>
           <View style={{ maxWidth: 220 }}>
             <Text style={styles.label}>For</Text>
-            <Text>{data.projectLabel ?? data.title}</Text>
+            <Text>{data.title}</Text>
+            {data.projectLabel && !data.title.includes(data.projectLabel) ? (
+              <Text style={[styles.muted, { marginTop: 2 }]}>{data.projectLabel}</Text>
+            ) : null}
           </View>
         </View>
 
