@@ -5,6 +5,8 @@
  */
 const PUBLIC_VENDOR_LOGOS: Record<string, string> = {
   "monte-cristo-consulting": "/img/vendors/monte-cristo-consulting.png",
+  "montecristo-consultants-llc": "/img/vendors/monte-cristo-consulting.png",
+  "montecristo-consulting": "/img/vendors/monte-cristo-consulting.png",
 };
 
 export function publicVendorLogo(name: string): string | null {
