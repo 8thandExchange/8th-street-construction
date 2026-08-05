@@ -132,12 +132,15 @@ export default async function VendorDetailPage(props: {
         {(bills ?? []).map((bill) => (
           <div key={bill.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 p-5">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[14.5px] font-medium text-navy">
+              <Link
+                href={`/admin/vendors/${vendor.id}/bills/${bill.id}`}
+                className="block truncate text-[14.5px] font-medium text-navy hover:text-copper transition-colors"
+              >
                 {bill.title}
                 {bill.bill_number ? (
                   <span className="ml-2 text-[12px] font-normal app-muted">#{bill.bill_number}</span>
                 ) : null}
-              </p>
+              </Link>
               <p className="mt-0.5 text-[12.5px] app-muted">
                 {bill.project_id ? projectTitles.get(bill.project_id) ?? "Job" : "Company overhead"}
                 {bill.issued_date ? ` · ${fmt(bill.issued_date)}` : ""}
