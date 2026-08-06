@@ -60,7 +60,7 @@ export function ShareManager({
                 type="text"
                 name="share_password"
                 placeholder="Choose an access code"
-                className="field-input w-56"
+                className="field-input !w-56"
                 required
                 minLength={4}
               />
