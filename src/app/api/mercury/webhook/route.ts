@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { syncAllOpenMercuryInvoices } from "@/lib/mercury/sync";
+import { syncVendorBillsForTransaction } from "@/lib/mercury/vendor-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  let event: { id?: string; resourceType?: string; operationType?: string };
+  let event: {
+    id?: string;
+    resourceType?: string;
+    operationType?: string;
+    resourceId?: string;
+  };
   try {
     event = JSON.parse(body);
   } catch {
@@ -72,7 +78,17 @@ export async function POST(request: Request) {
   }
 
   if (event.resourceType === "transaction") {
-    await syncAllOpenMercuryInvoices();
+    // Receivables and payables are independent — one failing must not stop the
+    // other, and neither may fail the webhook (Mercury would retry forever).
+    const results = await Promise.allSettled([
+      syncAllOpenMercuryInvoices(),
+      syncVendorBillsForTransaction(event.resourceId),
+    ]);
+    for (const result of results) {
+      if (result.status === "rejected") {
+        console.error("Mercury webhook sync failed:", result.reason);
+      }
+    }
   }
 
   return NextResponse.json({ received: true });

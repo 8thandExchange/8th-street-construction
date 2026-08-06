@@ -221,7 +221,9 @@ export async function payVendorBillAch(formData: FormData) {
   const admin = createAdminClient();
   const { data: bill } = await admin
     .from("vendor_bills")
-    .select("id, title, bill_number, amount, status, mercury_transaction_id, vendor:vendors(*)")
+    .select(
+      "id, title, bill_number, amount, status, mercury_transaction_id, payment_initiated_at, vendor:vendors(*)"
+    )
     .eq("id", billId)
     .eq("vendor_id", vendorId)
     .single();
@@ -230,36 +232,100 @@ export async function payVendorBillAch(formData: FormData) {
   if (bill.mercury_transaction_id) {
     return { error: "A payment for this bill was already initiated." };
   }
+  if (bill.payment_initiated_at) {
+    return {
+      error:
+        "A payment for this bill was started but never confirmed. Check Mercury for a matching transaction before sending again.",
+    };
+  }
 
   const vendor = Array.isArray(bill.vendor) ? bill.vendor[0] : bill.vendor;
   if (!vendor) return { error: "Vendor not found" };
 
+  // Claim the bill BEFORE any money can move. If this write fails we must not
+  // send: an ACH with no local record is the one failure we cannot recover
+  // from automatically. The .is() filters make the claim atomic against a
+  // second click racing this one.
+  const { data: claimed, error: claimError } = await admin
+    .from("vendor_bills")
+    .update({ payment_initiated_at: new Date().toISOString() })
+    .eq("id", billId)
+    .is("payment_initiated_at", null)
+    .is("mercury_transaction_id", null)
+    .select("id");
+
+  if (claimError) {
+    return { error: `Could not record the payment before sending: ${claimError.message}` };
+  }
+  if (!claimed?.length) {
+    return { error: "Another payment for this bill is already in progress." };
+  }
+
+  async function releaseClaim() {
+    await admin
+      .from("vendor_bills")
+      .update({ payment_initiated_at: null })
+      .eq("id", billId)
+      .is("mercury_transaction_id", null);
+  }
+
+  const { ensureVendorRecipient, sendVendorAch } = await import("@/lib/mercury/payouts");
+  const { MercuryApiError } = await import("@/lib/mercury/client");
+
+  let recipientId: string;
   try {
-    const { ensureVendorRecipient, sendVendorAch } = await import("@/lib/mercury/payouts");
-    const recipientId = await ensureVendorRecipient(vendor);
-    const txn = await sendVendorAch({
+    recipientId = await ensureVendorRecipient(vendor);
+  } catch (err) {
+    // Nothing has been sent — the recipient step never moves money.
+    await releaseClaim();
+    return { error: err instanceof Error ? err.message : "Mercury payment failed" };
+  }
+
+  let txn: { id: string; status: string };
+  try {
+    txn = await sendVendorAch({
       recipientId,
       amount: Number(bill.amount),
       note: `${bill.bill_number ?? bill.title} — 8th Street Construction`,
       idempotencyKey: bill.id,
     });
-
-    await admin
-      .from("vendor_bills")
-      .update({
-        status: "paid",
-        paid_at: new Date().toISOString(),
-        mercury_transaction_id: txn.id,
-      })
-      .eq("id", billId);
-
-    revalidateVendors(vendorId);
-    revalidatePath(`/admin/vendors/${vendorId}/bills/${billId}`);
-    return { ok: true, transaction_id: txn.id, transaction_status: txn.status };
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Mercury payment failed";
-    return { error: message };
+    if (err instanceof MercuryApiError) {
+      // Mercury rejected the request outright, so no ACH was created.
+      await releaseClaim();
+      return { error: err.message };
+    }
+    // Timeout or transport failure: the ACH may well have gone out. Keep the
+    // claim so the button stays locked, and let reconciliation settle it.
+    console.error(`Vendor bill ${billId}: ACH outcome unknown:`, err);
+    return {
+      error:
+        "The payment request did not complete cleanly, so we can't confirm whether the ACH was sent. Check Mercury before retrying — this bill is locked until you do.",
+    };
   }
+
+  const { error: updateError } = await admin
+    .from("vendor_bills")
+    .update({
+      status: "paid",
+      paid_at: new Date().toISOString(),
+      mercury_transaction_id: txn.id,
+    })
+    .eq("id", billId);
+
+  if (updateError) {
+    console.error(
+      `Vendor bill ${billId}: ACH ${txn.id} sent but the bill could not be marked paid:`,
+      updateError.message
+    );
+    return {
+      error: `Payment sent (Mercury transaction ${txn.id}), but the bill could not be marked paid: ${updateError.message}. Do not send again — reconciliation will catch up.`,
+    };
+  }
+
+  revalidateVendors(vendorId);
+  revalidatePath(`/admin/vendors/${vendorId}/bills/${billId}`);
+  return { ok: true, transaction_id: txn.id, transaction_status: txn.status };
 }
 
 export async function setVendorBillStatus(formData: FormData) {

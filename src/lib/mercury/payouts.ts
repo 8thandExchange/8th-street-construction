@@ -47,10 +47,20 @@ export async function ensureVendorRecipient(vendor: VendorRemit): Promise<string
   });
 
   const admin = createAdminClient();
-  await admin
+  const { error } = await admin
     .from("vendors")
     .update({ mercury_recipient_id: recipient.id })
     .eq("id", vendor.id);
+
+  // Not fatal — the recipient exists at Mercury and the payment can proceed.
+  // But losing the id means the next payout creates a duplicate recipient, so
+  // this must never fail silently the way it used to.
+  if (error) {
+    console.error(
+      `Mercury: created recipient ${recipient.id} for vendor ${vendor.id} but could not persist the id:`,
+      error.message
+    );
+  }
 
   return recipient.id;
 }
