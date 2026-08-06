@@ -94,7 +94,7 @@ export function AiScheduleGenerator({
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="field-input !w-44"
+              className="field-input w-44"
             />
           </div>
           <div>
@@ -103,7 +103,7 @@ export function AiScheduleGenerator({
               type="date"
               value={targetEnd}
               onChange={(e) => setTargetEnd(e.target.value)}
-              className="field-input !w-44"
+              className="field-input w-44"
             />
           </div>
           <button
@@ -172,7 +172,7 @@ export function AiScheduleGenerator({
                 type="date"
                 value={slipFrom}
                 onChange={(e) => setSlipFrom(e.target.value)}
-                className="field-input !w-44"
+                className="field-input w-44"
               />
             </div>
             <div>
@@ -181,7 +181,7 @@ export function AiScheduleGenerator({
                 type="number"
                 value={slipDays}
                 onChange={(e) => setSlipDays(Number(e.target.value))}
-                className="field-input !w-28"
+                className="field-input w-28"
               />
             </div>
             <button
