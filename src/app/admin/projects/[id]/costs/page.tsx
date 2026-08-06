@@ -176,7 +176,7 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
                 </div>
                 <button
                   type="submit"
-                  className="h-10 px-4 app-btn app-btn-primary"
+                  className="app-btn app-btn-primary"
                 >
                   Save
                 </button>
@@ -200,7 +200,7 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
               step="1"
             />
           </div>
-          <button type="submit" className="h-10 px-4 app-btn app-btn-primary">
+          <button type="submit" className="app-btn app-btn-primary">
             Update total
           </button>
         </form>

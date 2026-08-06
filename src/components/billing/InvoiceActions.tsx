@@ -27,7 +27,7 @@ export function InvoiceActions({ mercuryPayUrl, pdfUrl, packetUrl, variant }: In
           <button
             type="button"
             onClick={copyPayLink}
-            className="h-9 px-4 app-btn app-btn-secondary"
+            className="app-btn app-btn-secondary"
           >
             {copied ? "Copied ✓" : "Copy pay link"}
           </button>
@@ -46,7 +46,7 @@ export function InvoiceActions({ mercuryPayUrl, pdfUrl, packetUrl, variant }: In
           href={packetUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="h-9 inline-flex items-center px-4 app-btn app-btn-secondary"
+          className="app-btn app-btn-secondary"
         >
           Invoice packet (PDF)
         </a>
@@ -56,7 +56,7 @@ export function InvoiceActions({ mercuryPayUrl, pdfUrl, packetUrl, variant }: In
           href={pdfUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="h-9 inline-flex items-center px-4 app-btn app-btn-secondary"
+          className="app-btn app-btn-secondary"
         >
           Download PDF
         </a>

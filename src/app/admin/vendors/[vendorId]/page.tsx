@@ -176,7 +176,7 @@ export default async function VendorDetailPage(props: {
                 <input type="hidden" name="bill_id" value={bill.id} />
                 <input type="hidden" name="vendor_id" value={vendor.id} />
                 <input type="hidden" name="status" value="paid" />
-                <button type="submit" className="app-btn app-btn-primary !h-8 !px-3 text-xs">
+                <button type="submit" className="app-btn app-btn-primary !h-8 !px-3">
                   Mark paid
                 </button>
               </form>

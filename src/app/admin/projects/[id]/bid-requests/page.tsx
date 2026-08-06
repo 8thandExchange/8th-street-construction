@@ -104,7 +104,7 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
             )}
           </div>
         </div>
-        <button type="submit" className="h-10 px-5 app-btn app-btn-primary">
+        <button type="submit" className="app-btn app-btn-primary">
           Send RFQ
         </button>
       </form>

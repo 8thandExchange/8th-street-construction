@@ -87,7 +87,7 @@ export function BillingSetupWizard({
                     </div>
                     <button
                       type="submit"
-                      className="h-11 px-5 app-btn app-btn-primary"
+                      className="app-btn app-btn-primary"
                     >
                       Save amount
                     </button>
@@ -146,7 +146,7 @@ export function BillingSetupWizard({
                         <input type="hidden" name="project_id" value={projectId} />
                         <button
                           type="submit"
-                          className="h-11 px-6 app-btn app-btn-secondary"
+                          className="app-btn app-btn-secondary"
                         >
                           Create {template.length}-payment schedule
                         </button>
@@ -168,7 +168,7 @@ export function BillingSetupWizard({
           </div>
           <Link
             href={`/admin/projects/${projectId}/overview`}
-            className="shrink-0 h-10 px-5 app-btn app-btn-secondary"
+            className="shrink-0 app-btn app-btn-secondary"
           >
             Job Details →
           </Link>

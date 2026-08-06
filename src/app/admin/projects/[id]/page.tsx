@@ -231,7 +231,7 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
               <p className="text-sm text-ink/55">{board.client.email}</p>
               <Link
                 href={`${base}/messages`}
-                className="inline-flex mt-4 h-9 items-center px-4 app-btn app-btn-secondary"
+                className="mt-4 app-btn app-btn-secondary"
               >
                 Messages →
               </Link>

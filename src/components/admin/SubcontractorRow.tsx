@@ -168,7 +168,7 @@ export function SubcontractorRow({
           <div className="md:col-span-2">
             <button
               type="submit"
-              className="h-10 px-5 app-btn app-btn-primary"
+              className="app-btn app-btn-primary"
             >
               Save Changes
             </button>

@@ -88,7 +88,7 @@ export default function NewProjectPage() {
           </button>
           <Link
             href="/admin/projects"
-            className="inline-flex h-12 items-center px-6 app-btn app-btn-secondary"
+            className="app-btn app-btn-secondary"
           >
             Cancel
           </Link>

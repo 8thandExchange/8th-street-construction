@@ -86,7 +86,7 @@ export default async function AdminTestimonials() {
         </div>
         <button
           type="submit"
-          className="self-start inline-flex h-11 items-center px-5 app-btn app-btn-primary"
+          className="self-start app-btn app-btn-primary"
         >
           + Add Testimonial
         </button>

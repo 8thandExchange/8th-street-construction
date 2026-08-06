@@ -69,7 +69,7 @@ export default async function ProjectPunchListPage(props: { params: Promise<{ id
             <textarea name="description" rows={2} className="field-input" placeholder="Notes" />
           </div>
         </div>
-        <button type="submit" className="h-10 px-5 app-btn app-btn-primary">
+        <button type="submit" className="app-btn app-btn-primary">
           Add Item
         </button>
       </form>

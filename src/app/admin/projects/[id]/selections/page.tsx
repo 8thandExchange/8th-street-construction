@@ -123,7 +123,7 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
           <input type="checkbox" name="client_visible" defaultChecked className="accent-copper" />
           Visible to client
         </label>
-        <button type="submit" className="h-10 px-5 app-btn app-btn-primary">
+        <button type="submit" className="app-btn app-btn-primary">
           Add Selection
         </button>
       </form>
@@ -206,7 +206,7 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
                 />
                 Client visible
               </label>
-              <button type="submit" className="h-9 px-4 app-btn app-btn-primary">
+              <button type="submit" className="app-btn app-btn-primary">
                 Save
               </button>
             </form>
@@ -271,7 +271,7 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
                   placeholder="Short description the client sees"
                 />
                 <div className="col-span-2">
-                  <button type="submit" className="h-9 px-4 app-btn app-btn-secondary">
+                  <button type="submit" className="app-btn app-btn-secondary">
                     Add Option
                   </button>
                   <span className="ml-3 text-xs text-ink/50">

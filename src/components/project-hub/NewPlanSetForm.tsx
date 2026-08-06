@@ -22,7 +22,7 @@ export function NewPlanSetForm({ projectId }: { projectId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-11 items-center px-5 app-btn app-btn-primary"
+        className="app-btn app-btn-primary"
       >
         + New Plan Set
       </button>
@@ -142,7 +142,7 @@ export function NewPlanSetForm({ projectId }: { projectId: string }) {
         <button
           type="submit"
           disabled={!files.length}
-          className="h-10 px-5 app-btn app-btn-primary"
+          className="app-btn app-btn-primary"
         >
           Create Plan Set
         </button>
@@ -152,7 +152,7 @@ export function NewPlanSetForm({ projectId }: { projectId: string }) {
             setOpen(false);
             setFiles([]);
           }}
-          className="h-10 px-5 app-btn app-btn-secondary"
+          className="app-btn app-btn-secondary"
         >
           Cancel
         </button>

@@ -241,7 +241,7 @@ export function MilestoneBoard({
           <div className="flex gap-3">
             <button
               type="submit"
-              className="h-10 px-5 app-btn app-btn-primary"
+              className="app-btn app-btn-primary"
             >
               {editing ? "Save" : "Create"}
             </button>
@@ -251,7 +251,7 @@ export function MilestoneBoard({
                 setShowNew(false);
                 setEditing(null);
               }}
-              className="h-10 px-5 app-btn app-btn-secondary"
+              className="app-btn app-btn-secondary"
             >
               Cancel
             </button>

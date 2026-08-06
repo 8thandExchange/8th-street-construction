@@ -120,7 +120,7 @@ export default async function AdminConsultations() {
                     </select>
                     <button
                       type="submit"
-                      className="w-full inline-flex h-10 items-center justify-center app-btn app-btn-primary"
+                      className="w-full app-btn app-btn-primary"
                     >
                       Update
                     </button>
