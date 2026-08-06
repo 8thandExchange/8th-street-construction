@@ -32,6 +32,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# db:types staging file; only survives a hard-killed run
+*.ts.tmp
 
 # supabase
 **/supabase/.branches
