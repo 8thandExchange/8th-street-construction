@@ -239,7 +239,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
                   <Link
                     href={`/print/draw-packet/${id}`}
                     target="_blank"
-                    className="app-btn app-btn-primary !h-9 shrink-0 !px-4"
+                    className="app-btn app-btn-primary !h-9 shrink-0 !px-4 !text-xs"
                   >
                     Generate packet
                   </Link>

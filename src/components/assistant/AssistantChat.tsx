@@ -477,7 +477,7 @@ export function AssistantChat({
                       href={item.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="app-btn app-btn-primary !h-8 shrink-0 !px-3"
+                      className="app-btn app-btn-primary !h-8 shrink-0 !px-3 !text-xs"
                     >
                       <Download size={13} strokeWidth={2} className="mr-1.5" />
                       Open PDF
@@ -518,14 +518,14 @@ export function AssistantChat({
                       <button
                         onClick={() => resolveConfirmation(true)}
                         disabled={busy}
-                        className="app-btn app-btn-primary !h-8 !px-4"
+                        className="app-btn app-btn-primary !h-8 !px-4 !text-xs"
                       >
                         Approve
                       </button>
                       <button
                         onClick={() => resolveConfirmation(false)}
                         disabled={busy}
-                        className="app-btn app-btn-ghost !h-8 !px-4"
+                        className="app-btn app-btn-ghost !h-8 !px-4 !text-xs"
                       >
                         Cancel
                       </button>
