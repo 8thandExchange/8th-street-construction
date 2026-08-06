@@ -81,12 +81,12 @@ function AddTaskForm({
         className="field-input text-sm"
       />
       <div className="flex flex-wrap gap-3">
-        <select name="priority" defaultValue="normal" className="field-input text-sm !w-auto">
+        <select name="priority" defaultValue="normal" className="field-input text-sm w-auto">
           <option value="normal">Normal</option>
           <option value="high">High</option>
           <option value="low">Low</option>
         </select>
-        <input type="date" name="due_date" className="field-input text-sm !w-auto" />
+        <input type="date" name="due_date" className="field-input text-sm w-auto" />
       </div>
       <div className="flex gap-2">
         <button
@@ -159,7 +159,7 @@ function TaskRowItem({
               <select
                 name="priority"
                 defaultValue={task.priority}
-                className="field-input text-sm !w-auto"
+                className="field-input text-sm w-auto"
               >
                 <option value="normal">Normal</option>
                 <option value="high">High</option>
@@ -169,13 +169,13 @@ function TaskRowItem({
                 type="date"
                 name="due_date"
                 defaultValue={task.due_date ?? ""}
-                className="field-input text-sm !w-auto"
+                className="field-input text-sm w-auto"
               />
               {phaseOptions.length > 1 && (
                 <select
                   name="phase_key"
                   defaultValue={task.phase_key ?? CUSTOM_PHASE_KEY}
-                  className="field-input text-sm !w-auto"
+                  className="field-input text-sm w-auto"
                 >
                   {phaseOptions.map((p) => (
                     <option key={p.key} value={p.key}>

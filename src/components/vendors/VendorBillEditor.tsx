@@ -118,10 +118,7 @@ export function BillEditForm({
                 step="0.01"
                 min="0"
                 placeholder="0.00"
-                /* !w-32 beats `.field-input { width: 100% }` in globals.css —
-                   without it this input claims the whole row and collapses the
-                   description field next to it. */
-                className="field-input !w-32 shrink-0 text-right"
+                className="field-input w-32 shrink-0 text-right"
               />
               <button
                 type="button"
