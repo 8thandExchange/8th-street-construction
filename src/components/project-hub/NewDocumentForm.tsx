@@ -18,7 +18,7 @@ export function NewDocumentForm({ projectId }: { projectId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-11 items-center px-5 app-btn app-btn-primary"
+        className="app-btn app-btn-primary"
       >
         + Upload Document
       </button>
@@ -77,14 +77,14 @@ export function NewDocumentForm({ projectId }: { projectId: string }) {
         <button
           type="submit"
           disabled={!file}
-          className="h-10 px-5 app-btn app-btn-primary"
+          className="app-btn app-btn-primary"
         >
           Save
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="h-10 px-5 app-btn app-btn-secondary"
+          className="app-btn app-btn-secondary"
         >
           Cancel
         </button>

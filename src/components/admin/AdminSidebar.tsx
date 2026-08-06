@@ -129,7 +129,7 @@ function SidebarFooter({ userEmail }: { userEmail: string }) {
         <button
           onClick={signOut}
           title="Sign out"
-          className="app-btn app-btn-ghost !h-8 !w-8 !p-0 rounded-md"
+          className="app-btn app-btn-ghost !h-8 !w-8 !p-0"
         >
           <LogOut size={15} strokeWidth={1.75} />
         </button>
@@ -170,7 +170,7 @@ export function AdminSidebar({ userEmail }: { userEmail: string }) {
         <button
           onClick={() => setOpen(true)}
           aria-label="Open menu"
-          className="app-btn app-btn-ghost !h-9 !w-9 !p-0 rounded-md"
+          className="app-btn app-btn-ghost !h-9 !w-9 !p-0"
         >
           <Menu size={19} strokeWidth={1.75} />
         </button>
@@ -186,7 +186,7 @@ export function AdminSidebar({ userEmail }: { userEmail: string }) {
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Close menu"
-                className="app-btn app-btn-ghost !h-9 !w-9 !p-0 rounded-md"
+                className="app-btn app-btn-ghost !h-9 !w-9 !p-0"
               >
                 <X size={19} strokeWidth={1.75} />
               </button>

@@ -104,7 +104,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
             </label>
           ))}
         </div>
-        <button type="submit" className="mt-5 h-9 px-4 app-btn app-btn-secondary">
+        <button type="submit" className="mt-5 app-btn app-btn-secondary">
           Save Portal Features
         </button>
       </form>
@@ -275,7 +275,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
         >
           <input type="hidden" name="project_id" value={project.id} />
           <input name="public_url" required className="field-input" placeholder="Image public URL" />
-          <button type="submit" className="self-start h-11 px-5 app-btn app-btn-primary">
+          <button type="submit" className="self-start app-btn app-btn-primary">
             + Add Image
           </button>
         </form>

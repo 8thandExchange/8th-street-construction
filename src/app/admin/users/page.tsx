@@ -93,7 +93,7 @@ export default async function AdminUsersPage() {
                         </select>
                         <button
                           type="submit"
-                          className="h-9 px-4 app-btn app-btn-primary"
+                          className="app-btn app-btn-primary"
                         >
                           Approve & Send Login
                         </button>
@@ -156,7 +156,7 @@ export default async function AdminUsersPage() {
         </div>
         <button
           type="submit"
-          className="inline-flex h-11 items-center px-5 app-btn app-btn-primary"
+          className="app-btn app-btn-primary"
         >
           Grant Access & Email Password
         </button>

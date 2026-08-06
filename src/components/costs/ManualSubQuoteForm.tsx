@@ -135,14 +135,14 @@ export function ManualSubQuoteForm({
         <button
           type="submit"
           disabled={pending}
-          className="h-10 px-5 app-btn app-btn-primary"
+          className="app-btn app-btn-primary"
         >
           {pending ? "Saving…" : "Save quote"}
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="h-10 px-5 app-btn app-btn-secondary"
+          className="app-btn app-btn-secondary"
         >
           Cancel
         </button>

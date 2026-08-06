@@ -55,7 +55,7 @@ export function InvoiceList({ projectId, invoices }: InvoiceListProps) {
                       <input type="hidden" name="invoice_id" value={inv.id} />
                       <button
                         type="submit"
-                        className="h-10 px-4 app-btn app-btn-secondary"
+                        className="app-btn app-btn-secondary"
                       >
                         Mark as paid
                       </button>

@@ -309,7 +309,7 @@ export function CustomInvoiceForm({
             type="button"
             disabled={pending}
             onClick={() => submit(false)}
-            className="h-11 px-6 app-btn app-btn-secondary"
+            className="app-btn app-btn-secondary"
           >
             Save draft
           </button>

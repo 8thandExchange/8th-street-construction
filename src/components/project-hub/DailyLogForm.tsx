@@ -129,7 +129,7 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
       </div>
       <button
         type="submit"
-        className="h-11 px-5 app-btn app-btn-primary"
+        className="app-btn app-btn-primary"
       >
         Save Log
       </button>

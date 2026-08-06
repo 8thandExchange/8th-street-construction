@@ -60,7 +60,7 @@ export function SharePasswordGate({
             <button
               type="submit"
               disabled={pending}
-              className="w-full h-12 app-btn app-btn-primary"
+              className="w-full app-btn app-btn-primary"
             >
               {pending ? "Checking…" : "View progress"}
             </button>

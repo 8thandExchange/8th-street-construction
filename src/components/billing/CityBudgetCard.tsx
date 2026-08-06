@@ -157,7 +157,7 @@ export function CityBudgetCard({
             <label className="field-label">Budget ($)</label>
             <input type="number" name="budget_amount" min="0" step="0.01" required className="field-input w-full" />
           </div>
-          <button type="submit" className="h-10 px-4 app-btn app-btn-primary">
+          <button type="submit" className="app-btn app-btn-primary">
             Add
           </button>
         </form>

@@ -140,7 +140,7 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
 
             <button
               type="submit"
-              className="inline-flex h-12 items-center justify-center px-6 app-btn app-btn-primary"
+              className="app-btn app-btn-primary"
             >
               Save Changes
             </button>
@@ -200,7 +200,7 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
               </div>
               <button
                 type="submit"
-                className="inline-flex h-12 items-center justify-center app-btn app-btn-primary"
+                className="app-btn app-btn-primary"
               >
                 Save Status
               </button>

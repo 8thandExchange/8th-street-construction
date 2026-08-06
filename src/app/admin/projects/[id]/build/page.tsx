@@ -116,19 +116,19 @@ export default async function ProjectBuildSystemPage(props: {
           <div className="flex flex-wrap gap-3 mb-8">
             <Link
               href={`/admin/projects/${id}/tasks`}
-              className="inline-flex h-11 items-center px-5 app-btn app-btn-primary"
+              className="app-btn app-btn-primary"
             >
               Open Checklists →
             </Link>
             <Link
               href={`/admin/projects/${id}/daily-logs`}
-              className="inline-flex h-11 items-center px-5 app-btn app-btn-secondary"
+              className="app-btn app-btn-secondary"
             >
               Daily Logs
             </Link>
             <Link
               href={`/admin/projects/${id}/milestones`}
-              className="inline-flex h-11 items-center px-5 app-btn app-btn-secondary"
+              className="app-btn app-btn-secondary"
             >
               Client Timeline
             </Link>

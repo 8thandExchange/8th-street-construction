@@ -46,7 +46,7 @@ export function NewBasePlanForm({ nextDisplayOrder }: { nextDisplayOrder: number
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mb-8 inline-flex h-11 items-center px-5 app-btn app-btn-primary"
+        className="mb-8 app-btn app-btn-primary"
       >
         + Add Standard Plan
       </button>
@@ -163,14 +163,14 @@ export function NewBasePlanForm({ nextDisplayOrder }: { nextDisplayOrder: number
         <button
           type="submit"
           disabled={!uploaded || saving}
-          className="h-10 px-5 app-btn app-btn-primary"
+          className="app-btn app-btn-primary"
         >
           {saving ? "Saving…" : "Add to Catalog"}
         </button>
         <button
           type="button"
           onClick={reset}
-          className="h-10 px-5 app-btn app-btn-secondary"
+          className="app-btn app-btn-secondary"
         >
           Cancel
         </button>

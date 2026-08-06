@@ -60,7 +60,7 @@ export function BasePlanCard({ plan }: { plan: HouseBasePlan }) {
         <div className="flex flex-wrap gap-2 shrink-0">
           <Link
             href={`/api/base-plans/${plan.id}/download`}
-            className="inline-flex h-10 items-center px-5 app-btn app-btn-secondary"
+            className="app-btn app-btn-secondary"
           >
             Download PDF
           </Link>
@@ -72,7 +72,7 @@ export function BasePlanCard({ plan }: { plan: HouseBasePlan }) {
               setUploaded(null);
               setError(null);
             }}
-            className="inline-flex h-10 items-center px-5 app-btn app-btn-secondary"
+            className="app-btn app-btn-secondary"
           >
             {editing ? "Close" : "Edit"}
           </button>
@@ -185,7 +185,7 @@ export function BasePlanCard({ plan }: { plan: HouseBasePlan }) {
             <button
               type="submit"
               disabled={saving}
-              className="h-10 px-5 app-btn app-btn-primary"
+              className="app-btn app-btn-primary"
             >
               {saving ? "Saving…" : "Save Details"}
             </button>
@@ -201,7 +201,7 @@ export function BasePlanCard({ plan }: { plan: HouseBasePlan }) {
                   setUploaded(null);
                   setError(null);
                 }}
-                className="h-10 px-5 app-btn app-btn-secondary"
+                className="app-btn app-btn-secondary"
               >
                 Upload New PDF
               </button>
@@ -238,7 +238,7 @@ export function BasePlanCard({ plan }: { plan: HouseBasePlan }) {
                   <button
                     type="submit"
                     disabled={!uploaded || saving}
-                    className="h-10 px-5 app-btn app-btn-primary"
+                    className="app-btn app-btn-primary"
                   >
                     {saving ? "Replacing…" : "Replace PDF"}
                   </button>
@@ -248,7 +248,7 @@ export function BasePlanCard({ plan }: { plan: HouseBasePlan }) {
                       setReplacingPdf(false);
                       setUploaded(null);
                     }}
-                    className="h-10 px-5 app-btn app-btn-secondary"
+                    className="app-btn app-btn-secondary"
                   >
                     Cancel
                   </button>

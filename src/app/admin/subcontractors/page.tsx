@@ -68,7 +68,7 @@ export default async function SubcontractorsPage() {
             Preferred vendor
           </label>
         </div>
-        <button type="submit" className="h-10 px-5 app-btn app-btn-primary">
+        <button type="submit" className="app-btn app-btn-primary">
           Add
         </button>
       </form>

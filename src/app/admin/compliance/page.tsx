@@ -89,7 +89,7 @@ export default async function CompanyCompliancePage() {
         >
           <button
             type="submit"
-            className="h-11 px-5 app-btn app-btn-secondary"
+            className="app-btn app-btn-secondary"
           >
             Send Reminders Now
           </button>
@@ -208,7 +208,7 @@ export default async function CompanyCompliancePage() {
                 <input type="hidden" name="renewal_cycle" value={item.renewal_cycle ?? ""} />
                 <button
                   type="submit"
-                  className="h-10 px-4 app-btn app-btn-primary"
+                  className="app-btn app-btn-primary"
                 >
                   Save & Recalculate Status
                 </button>
@@ -289,7 +289,7 @@ export default async function CompanyCompliancePage() {
           <input type="hidden" name="renewal_urgent_days" value={14} />
           <button
             type="submit"
-            className="h-11 px-5 app-btn app-btn-primary"
+            className="app-btn app-btn-primary"
           >
             Add Item
           </button>

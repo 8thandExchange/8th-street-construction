@@ -239,7 +239,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
                   <Link
                     href={`/print/draw-packet/${id}`}
                     target="_blank"
-                    className="app-btn app-btn-primary !h-9 shrink-0 !px-4 text-xs"
+                    className="app-btn app-btn-primary !h-9 shrink-0 !px-4"
                   >
                     Generate packet
                   </Link>
@@ -283,7 +283,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
             </div>
             <button
               type="submit"
-              className="h-10 px-4 app-btn app-btn-primary"
+              className="app-btn app-btn-primary"
             >
               Update
             </button>
@@ -323,7 +323,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
             <input type="date" name="scheduled_date" className="field-input" />
             <button
               type="submit"
-              className="sm:col-span-2 h-10 px-4 app-btn app-btn-primary"
+              className="sm:col-span-2 app-btn app-btn-primary"
             >
               Add payment
             </button>
