@@ -105,7 +105,7 @@ export function BillEditForm({
                   )
                 }
                 placeholder="Thompsons Clearing"
-                className="field-input flex-1"
+                className="field-input min-w-0 flex-1"
               />
               <input
                 value={line.amount}
@@ -118,7 +118,10 @@ export function BillEditForm({
                 step="0.01"
                 min="0"
                 placeholder="0.00"
-                className="field-input w-32 text-right"
+                /* !w-32 beats `.field-input { width: 100% }` in globals.css —
+                   without it this input claims the whole row and collapses the
+                   description field next to it. */
+                className="field-input !w-32 shrink-0 text-right"
               />
               <button
                 type="button"
