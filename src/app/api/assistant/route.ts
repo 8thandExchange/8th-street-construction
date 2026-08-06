@@ -1,6 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/actions/admin-auth";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { BRAND_VOICE } from "@/lib/ai/config";
 import { assistantStreamResponse, type ConfirmPayload } from "@/lib/assistant/stream";
 import { resolveAttachments } from "@/lib/assistant/attachments";
@@ -49,11 +50,21 @@ type RequestBody = {
 };
 
 export async function POST(request: Request) {
+  let userId: string;
   try {
-    await requireAdmin();
+    userId = (await requireAdmin()).user.id;
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Admin-only, so this isn't open abuse — it caps the blast radius of a stolen
+  // session, since every turn bills Anthropic tokens.
+  const limited = await enforceRateLimit(
+    "assistant",
+    userId,
+    "You're sending messages faster than the assistant can keep up. Give it a minute."
+  );
+  if (limited) return limited;
 
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) {

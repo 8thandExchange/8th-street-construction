@@ -1,11 +1,21 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { bookingSchema } from "@/lib/validations";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendBookingNotification, sendBookingConfirmation } from "@/lib/email/resend";
+import { clientIp, enforceRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  // Same exposure as /api/leads: unauthenticated, inserts a row and emails twice.
+  const limited = await enforceRateLimit(
+    "bookings",
+    clientIp(await headers()),
+    "You've requested several consultations already. Please wait a few minutes and try again, or call us directly."
+  );
+  if (limited) return limited;
+
   let body: unknown;
   try {
     body = await request.json();

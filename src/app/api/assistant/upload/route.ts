@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/actions/admin-auth";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   ALLOWED_ATTACHMENT_TYPES,
@@ -16,11 +17,20 @@ export const dynamic = "force-dynamic";
  * file_document moves it into the target project's folder.
  */
 export async function POST(request: Request) {
+  let userId: string;
   try {
-    await requireAdmin();
+    userId = (await requireAdmin()).user.id;
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Staged files are read by the model on the next turn, and land in storage.
+  const limited = await enforceRateLimit(
+    "assistantUpload",
+    userId,
+    "Too many uploads at once. Give it a minute and try again."
+  );
+  if (limited) return limited;
 
   let file: File | null = null;
   try {

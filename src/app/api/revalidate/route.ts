@@ -4,10 +4,14 @@ import { revalidatePath, revalidateTag } from "next/cache";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  // Prefer the header: query strings land in Vercel access logs and can leak
+  // via Referer. ?secret= still works so existing callers don't break.
   const url = new URL(request.url);
-  const secret = url.searchParams.get("secret");
+  const secret =
+    request.headers.get("x-revalidate-secret")?.trim() || url.searchParams.get("secret");
 
-  if (!process.env.REVALIDATE_SECRET || secret !== process.env.REVALIDATE_SECRET) {
+  const expected = process.env.REVALIDATE_SECRET?.trim();
+  if (!expected || secret !== expected) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
