@@ -91,6 +91,20 @@ const TONES = {
     approved: "green",
     denied: "neutral",
   },
+  meeting: {
+    scheduled: "blue",
+    in_progress: "accent",
+    draft_minutes: "amber",
+    approved: "green",
+    archived: "neutral",
+  },
+  action_item: {
+    open: "neutral",
+    in_progress: "accent",
+    blocked: "amber",
+    done: "green",
+    cancelled: "neutral",
+  },
   purchase_order: {
     draft: "neutral",
     issued: "accent",

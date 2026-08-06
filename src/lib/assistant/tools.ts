@@ -8,6 +8,13 @@ import {
 import { formatMoneyExact } from "@/lib/billing/constants";
 import { ATTACHMENT_BUCKET, STAGING_PREFIX } from "@/lib/assistant/attachments";
 import { INVOICE_BACKUP_PREFIX } from "@/lib/billing/backup-attachments";
+import {
+  MEETING_TOOLS,
+  MEETING_TOOL_NAMES,
+  describeMeetingConfirmation,
+  executeMeetingTool,
+  meetingToolRequiresConfirmation,
+} from "@/lib/assistant/meeting-tools";
 
 /**
  * Admin assistant tool surface. Read tools run directly against the admin
@@ -535,6 +542,8 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
       additionalProperties: false,
     },
   },
+  // Meetings, minutes, and action items live in their own module.
+  ...MEETING_TOOLS,
 ];
 
 /**
@@ -543,6 +552,7 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
  * it runs without a gate.
  */
 export function requiresConfirmation(name: string, input: unknown): boolean {
+  if (MEETING_TOOL_NAMES.has(name)) return meetingToolRequiresConfirmation(name);
   if (name === "send_invoice" || name === "mark_invoice_paid") return true;
   if (name === "send_client_message") return true;
   if (name === "create_portal_user") return true;
@@ -614,6 +624,10 @@ async function invoiceCardDetail(invoiceId: string): Promise<string | null> {
 /** Human-readable summary of a gated action for the confirmation card. */
 export async function describeConfirmation(name: string, input: unknown): Promise<string> {
   const i = input as Record<string, unknown>;
+  if (MEETING_TOOL_NAMES.has(name)) {
+    const described = await describeMeetingConfirmation(name, input);
+    if (described) return described;
+  }
   if (name === "create_invoice") {
     const items = (i.line_items as LineItemInput[]) ?? [];
     const total = items.reduce(
@@ -701,6 +715,8 @@ export async function executeAssistantTool(
 ): Promise<unknown> {
   const admin = createAdminClient();
   const i = input as Record<string, unknown>;
+
+  if (MEETING_TOOL_NAMES.has(name)) return executeMeetingTool(name, input);
 
   switch (name as AssistantToolName) {
     case "list_projects": {

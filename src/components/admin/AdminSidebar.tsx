@@ -16,6 +16,7 @@ import {
   LogOut,
   Menu,
   MessageSquareQuote,
+  NotebookPen,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -65,6 +66,7 @@ const NAV_GROUPS: {
   {
     label: "Company",
     items: [
+      { href: "/admin/meetings", label: "Meetings & Minutes", icon: NotebookPen },
       { href: "/admin/compliance", label: "Compliance", icon: ShieldCheck },
       { href: "/admin/volunteer", label: "Volunteer Days", icon: HeartHandshake },
       { href: "/admin/users", label: "Portal Users", icon: UserRound },
