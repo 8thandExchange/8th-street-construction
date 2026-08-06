@@ -35,9 +35,17 @@ export async function POST(request: Request) {
   const body = await request.text();
   const secret = process.env.MERCURY_WEBHOOK_SECRET?.trim();
 
-  // Bootstrap: Mercury won't show the secret until verify succeeds.
+  // Mercury won't reveal the signing secret until the endpoint verifies, so
+  // this path has to exist — but it accepts unsigned POSTs, so fail closed
+  // with a 503 rather than a silent 200. A missing MERCURY_WEBHOOK_SECRET in
+  // prod is a misconfiguration that should be loud. The GET handler above is
+  // what Mercury's reachability check actually hits during bootstrap.
   if (!secret) {
-    return NextResponse.json({ received: true, pending_secret: true });
+    console.error("[mercury-webhook] MERCURY_WEBHOOK_SECRET is not set — rejecting unsigned delivery");
+    return NextResponse.json(
+      { error: "Webhook secret not configured" },
+      { status: 503 }
+    );
   }
 
   const sig = (await headers()).get("mercury-signature") ?? (await headers()).get("Mercury-Signature");

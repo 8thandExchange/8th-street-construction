@@ -3,10 +3,23 @@ import { headers } from "next/headers";
 import { leadSchema } from "@/lib/validations";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendLeadNotification, sendLeadConfirmation } from "@/lib/email/resend";
+import { clientIp, enforceRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const h = await headers();
+  const ip = clientIp(h);
+
+  // Open to the internet, and each accepted lead sends two emails — cap per IP
+  // before doing any parsing or I/O.
+  const limited = await enforceRateLimit(
+    "leads",
+    ip,
+    "You've sent several inquiries already. Please wait a few minutes and try again, or call us directly."
+  );
+  if (limited) return limited;
+
   let body: unknown;
   try {
     body = await request.json();
@@ -29,11 +42,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const h = await headers();
-  const ip =
-    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    h.get("x-real-ip") ||
-    null;
   const userAgent = h.get("user-agent") || null;
 
   const supabase = createAdminClient();
@@ -50,7 +58,8 @@ export async function POST(request: Request) {
       utm_source: data.utm_source || null,
       utm_medium: data.utm_medium || null,
       utm_campaign: data.utm_campaign || null,
-      ip_address: ip,
+      // clientIp() buckets unidentifiable callers as "unknown"; keep storing null.
+      ip_address: ip === "unknown" ? null : ip,
       user_agent: userAgent,
       status: "new",
     })

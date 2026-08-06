@@ -2,6 +2,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getClientVisibleProjects } from "@/lib/portal/access";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { BRAND_VOICE } from "@/lib/ai/config";
 import { assistantStreamResponse, type ConfirmPayload } from "@/lib/assistant/stream";
 import {
@@ -73,6 +74,15 @@ export async function POST(request: Request) {
       { status: 403 }
     );
   }
+
+  // Any active client account can reach this, and every turn bills tokens —
+  // cap per account so one portal login can't run up the bill.
+  const limited = await enforceRateLimit(
+    "clientAssistant",
+    user.id,
+    "You're sending messages faster than I can keep up. Give it a minute and try again."
+  );
+  if (limited) return limited;
 
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) {
