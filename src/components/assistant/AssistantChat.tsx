@@ -61,6 +61,17 @@ const TOOL_LABELS: Record<string, string> = {
   create_portal_user: "Setting up portal login",
   file_document: "Filing document",
   get_schedule_pdf: "Preparing schedule PDF",
+  // Meetings, minutes, action items
+  list_meetings: "Looking up meetings",
+  get_meeting: "Reading the minutes",
+  file_meeting_minutes: "Writing up the minutes",
+  list_action_items: "Checking what's outstanding",
+  update_action_item: "Recording the update",
+  create_action_item: "Adding an action item",
+  push_action_item_to_project: "Adding it to the job board",
+  schedule_next_meeting: "Drafting the next agenda",
+  request_action_updates: "Asking everyone for an update",
+  email_minutes: "Sending the minutes",
   // Client concierge tools
   get_schedule: "Reading your schedule",
   get_recent_updates: "Checking recent updates",
@@ -75,6 +86,8 @@ const SUGGESTIONS = [
   "Message Habitat that the slab pours Friday and framing starts the week after",
   "Send an invoice to Habitat for $12,500 for the framing draw",
   "Flag exterior paint as a volunteer stage — note that Habitat crews are welcome",
+  "Here are the notes from this morning's meeting — write them up",
+  "What's still outstanding from the Habitat meetings?",
 ];
 
 export type AssistantChatConfig = {

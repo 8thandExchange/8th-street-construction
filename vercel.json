@@ -9,6 +9,10 @@
       "schedule": "0 14 * * *"
     },
     {
+      "path": "/api/cron/action-item-nudges",
+      "schedule": "30 11 * * 1-5"
+    },
+    {
       "path": "/api/cron/mercury-invoice-sync",
       "schedule": "0 */4 * * *"
     }
