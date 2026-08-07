@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ATTACHMENT_BUCKET, STAGING_PREFIX } from "@/lib/assistant/attachments";
+import { encryptField, lastFour, vendorFieldContext } from "@/lib/crypto/field-encryption";
 
 function revalidateVendors(vendorId?: string) {
   revalidatePath("/admin/vendors");
@@ -192,20 +193,34 @@ export async function updateVendorRemit(formData: FormData) {
     return { error: "Routing numbers are 9 digits" };
   }
 
+  const patch: Record<string, unknown> = {
+    address: String(formData.get("address") ?? "").trim() || null,
+    remit_account_name: String(formData.get("remit_account_name") ?? "").trim() || null,
+    remit_routing_number: routingNumber || null,
+    remit_account_type:
+      String(formData.get("remit_account_type") ?? "").trim() || "businessChecking",
+    // New banking details invalidate any previously created Mercury recipient
+    mercury_recipient_id: null,
+  };
+
+  // The form no longer pre-fills the account number, so blank means "leave
+  // it alone" rather than "clear it" — otherwise saving an address change
+  // would silently wipe the banking details and break ACH for that vendor.
+  if (accountNumber) {
+    try {
+      patch.remit_account_number = encryptField(
+        accountNumber,
+        vendorFieldContext("remit_account_number", vendorId)
+      );
+      patch.remit_account_last4 = lastFour(accountNumber);
+    } catch (err) {
+      console.error("updateVendorRemit: encryption unavailable —", err);
+      return { error: "Payment details can't be saved securely right now. Nothing was changed." };
+    }
+  }
+
   const admin = createAdminClient();
-  const { error } = await admin
-    .from("vendors")
-    .update({
-      address: String(formData.get("address") ?? "").trim() || null,
-      remit_account_name: String(formData.get("remit_account_name") ?? "").trim() || null,
-      remit_account_number: accountNumber || null,
-      remit_routing_number: routingNumber || null,
-      remit_account_type:
-        String(formData.get("remit_account_type") ?? "").trim() || "businessChecking",
-      // New banking details invalidate any previously created Mercury recipient
-      mercury_recipient_id: null,
-    })
-    .eq("id", vendorId);
+  const { error } = await admin.from("vendors").update(patch).eq("id", vendorId);
   if (error) return { error: error.message };
 
   revalidateVendors(vendorId);

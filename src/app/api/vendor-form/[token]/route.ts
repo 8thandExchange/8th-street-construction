@@ -5,6 +5,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ATTACHMENT_BUCKET } from "@/lib/assistant/attachments";
 import { clientIp, enforceRateLimit } from "@/lib/rate-limit";
 import {
+  encryptField,
+  lastFour,
+  vendorFieldContext,
+} from "@/lib/crypto/field-encryption";
+import {
   markInviteCompleted,
   onlyDigits as digits,
   resolveInvite,
@@ -143,6 +148,25 @@ export async function POST(
     w9Path = path;
   }
 
+  // Encrypt before burning the invite: if the key is missing this throws,
+  // and the vendor must be left able to retry rather than holding a dead
+  // link and an unsaved form.
+  let encryptedTaxId: string;
+  let encryptedAccount: string;
+  try {
+    encryptedTaxId = encryptField(
+      values.tax_id,
+      vendorFieldContext("tax_id", invite.vendor.id)
+    );
+    encryptedAccount = encryptField(
+      values.remit_account_number,
+      vendorFieldContext("remit_account_number", invite.vendor.id)
+    );
+  } catch (err) {
+    console.error("Vendor onboarding: encryption unavailable —", err);
+    return fail("We couldn't save your details securely. Please try again shortly.", 500);
+  }
+
   // Burn the invite BEFORE writing. If two submissions race, only one gets
   // through, and the loser has changed nothing.
   const claimed = await markInviteCompleted(invite.inviteId);
@@ -156,11 +180,13 @@ export async function POST(
       phone: values.phone?.trim() || null,
       address: values.address,
       tax_classification: values.tax_classification,
-      tax_id: values.tax_id,
+      tax_id: encryptedTaxId,
+      tax_id_last4: lastFour(values.tax_id),
       remit_account_name: values.remit_account_name,
       remit_account_type: values.remit_account_type,
       remit_routing_number: values.remit_routing_number,
-      remit_account_number: values.remit_account_number,
+      remit_account_number: encryptedAccount,
+      remit_account_last4: lastFour(values.remit_account_number),
       // New banking details invalidate any Mercury recipient built from the
       // old ones — same rule as updateVendorRemit().
       mercury_recipient_id: null,
