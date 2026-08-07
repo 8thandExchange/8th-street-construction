@@ -41,15 +41,19 @@ const TAX_CLASSIFICATIONS = [
 const SubmissionSchema = z.object({
   legal_name: z.string().trim().min(2, "Enter the legal business name").max(200),
   contact_email: z.string().trim().email("Enter a valid email address").max(200),
-  phone: z.string().trim().max(40).optional().or(z.literal("")),
+  phone: z.string().trim().max(40),
   address: z.string().trim().min(8, "Enter the full mailing address").max(400),
-  tax_classification: z.enum(TAX_CLASSIFICATIONS),
+  tax_classification: z.enum(TAX_CLASSIFICATIONS, {
+    errorMap: () => ({ message: "Choose a business type" }),
+  }),
   tax_id: z
     .string()
     .transform(digits)
     .refine((v) => v.length === 9, "A tax ID (EIN or SSN) is 9 digits"),
   remit_account_name: z.string().trim().min(2, "Enter the name on the account").max(200),
-  remit_account_type: z.enum(ACCOUNT_TYPES),
+  remit_account_type: z.enum(ACCOUNT_TYPES, {
+    errorMap: () => ({ message: "Choose an account type" }),
+  }),
   remit_routing_number: z
     .string()
     .transform(digits)
@@ -98,17 +102,26 @@ export async function POST(
     return fail("We couldn't read that submission. Please try again.");
   }
 
+  // FormData.get returns null for a field the request simply didn't include,
+  // and a bare null fails every string schema with zod's own "Invalid input"
+  // — no use to the person filling the form in. Normalising to "" lets each
+  // field answer with its own message instead.
+  const field = (name: string) => {
+    const value = form.get(name);
+    return typeof value === "string" ? value : "";
+  };
+
   const parsed = SubmissionSchema.safeParse({
-    legal_name: form.get("legal_name"),
-    contact_email: form.get("contact_email"),
-    phone: form.get("phone"),
-    address: form.get("address"),
-    tax_classification: form.get("tax_classification"),
-    tax_id: form.get("tax_id"),
-    remit_account_name: form.get("remit_account_name"),
-    remit_account_type: form.get("remit_account_type"),
-    remit_routing_number: form.get("remit_routing_number"),
-    remit_account_number: form.get("remit_account_number"),
+    legal_name: field("legal_name"),
+    contact_email: field("contact_email"),
+    phone: field("phone"),
+    address: field("address"),
+    tax_classification: field("tax_classification"),
+    tax_id: field("tax_id"),
+    remit_account_name: field("remit_account_name"),
+    remit_account_type: field("remit_account_type"),
+    remit_routing_number: field("remit_routing_number"),
+    remit_account_number: field("remit_account_number"),
   });
 
   if (!parsed.success) {
