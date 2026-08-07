@@ -128,7 +128,7 @@ export default async function VendorBillPage(props: {
           initial={{
             address: vendor.address,
             remit_account_name: vendor.remit_account_name,
-            remit_account_number: vendor.remit_account_number,
+            remit_account_last4: vendor.remit_account_last4,
             remit_routing_number: vendor.remit_routing_number,
             remit_account_type: vendor.remit_account_type,
           }}

@@ -1,5 +1,6 @@
 import { mercuryFetch } from "./client";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { decryptField, vendorFieldContext } from "@/lib/crypto/field-encryption";
 
 /**
  * Outbound ACH to a vendor (accounts payable) — the mirror of the
@@ -21,6 +22,11 @@ export type VendorRemit = {
 type MercuryRecipient = { id: string };
 type MercuryTransaction = { id: string; status: string };
 
+/**
+ * Presence check only. remit_account_number is ciphertext, so this
+ * deliberately does not decrypt — "is something on file" needs no key, and
+ * a key problem should surface when we actually try to pay, not here.
+ */
 export function vendorRemitComplete(v: VendorRemit): boolean {
   return Boolean(v.remit_account_number?.trim() && v.remit_routing_number?.trim());
 }
@@ -32,6 +38,17 @@ export async function ensureVendorRecipient(vendor: VendorRemit): Promise<string
     throw new Error("Add the vendor's account and routing numbers before paying by ACH.");
   }
 
+  // The one place the real account number is genuinely needed: Mercury has
+  // to be told where to send the money. A decryption failure throws, which
+  // aborts before any payment is attempted.
+  const accountNumber = decryptField(
+    vendor.remit_account_number,
+    vendorFieldContext("remit_account_number", vendor.id)
+  );
+  if (!accountNumber?.trim()) {
+    throw new Error("Add the vendor's account and routing numbers before paying by ACH.");
+  }
+
   const recipient = await mercuryFetch<MercuryRecipient>("/recipients", {
     method: "POST",
     json: {
@@ -39,7 +56,7 @@ export async function ensureVendorRecipient(vendor: VendorRemit): Promise<string
       emails: vendor.contact_email ? [vendor.contact_email] : [],
       defaultPaymentMethod: "electronic",
       electronicRoutingInfo: {
-        accountNumber: vendor.remit_account_number!.trim(),
+        accountNumber: accountNumber.trim(),
         routingNumber: vendor.remit_routing_number!.trim(),
         electronicAccountType: vendor.remit_account_type?.trim() || "businessChecking",
       },

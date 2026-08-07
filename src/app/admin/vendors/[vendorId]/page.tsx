@@ -21,8 +21,12 @@ async function deleteBillAction(formData: FormData) {
   await deleteVendorBill(formData);
 }
 
-/** Enough to confirm the right account is on file, not enough to use it. */
-const last4 = (s: string | null) => (s && s.length >= 4 ? `•••• ${s.slice(-4)}` : null);
+/**
+ * Enough to confirm the right account is on file, not enough to use it.
+ * Reads the plain *_last4 columns — the values themselves are encrypted and
+ * this page never holds the key.
+ */
+const mask = (last4: string | null) => (last4 ? `•••• ${last4}` : null);
 
 const fmt = (s: string | null) =>
   s
@@ -43,7 +47,7 @@ export default async function VendorDetailPage(props: {
     admin
       .from("vendors")
       .select(
-        "id, name, logo_path, contact_email, phone, notes, legal_name, tax_id, tax_classification, w9_path, onboarded_at, address, remit_account_number, remit_routing_number, remit_account_type"
+        "id, name, logo_path, contact_email, phone, notes, legal_name, tax_id_last4, tax_classification, w9_path, onboarded_at, address, remit_account_number, remit_account_last4, remit_routing_number, remit_account_type"
       )
       .eq("id", vendorId)
       .single(),
@@ -165,15 +169,15 @@ export default async function VendorDetailPage(props: {
           )}
         </div>
 
-        {vendor.remit_account_number || vendor.tax_id ? (
+        {vendor.remit_account_number || vendor.tax_id_last4 ? (
           <dl className="mt-5 grid gap-x-8 gap-y-3 sm:grid-cols-2">
             {[
               ["Legal name", vendor.legal_name],
               ["Business type", vendor.tax_classification],
-              ["Tax ID", last4(vendor.tax_id)],
+              ["Tax ID", mask(vendor.tax_id_last4)],
               ["Address", vendor.address],
               ["Routing number", vendor.remit_routing_number],
-              ["Account number", last4(vendor.remit_account_number)],
+              ["Account number", mask(vendor.remit_account_last4)],
             ]
               .filter(([, value]) => Boolean(value))
               .map(([label, value]) => (

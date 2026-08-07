@@ -213,7 +213,13 @@ export function RemitForm({
   initial: {
     address: string | null;
     remit_account_name: string | null;
-    remit_account_number: string | null;
+    /**
+     * Last four digits only. The account number is encrypted at rest and
+     * never sent to the browser — pre-filling it would have put the full
+     * number in the page source on every load, which is exactly what
+     * encrypting it was meant to stop.
+     */
+    remit_account_last4: string | null;
     remit_routing_number: string | null;
     remit_account_type: string | null;
   };
@@ -279,8 +285,13 @@ export function RemitForm({
         <label className="field-label">Account number</label>
         <input
           name="remit_account_number"
-          defaultValue={initial.remit_account_number ?? ""}
+          placeholder={
+            initial.remit_account_last4
+              ? `•••• ${initial.remit_account_last4} — leave blank to keep`
+              : "Not on file yet"
+          }
           inputMode="numeric"
+          autoComplete="off"
           className="field-input w-full"
         />
       </div>

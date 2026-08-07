@@ -5,8 +5,19 @@ import { renderVendorBillPdf, type PdfImageSrc } from "@/lib/billing/vendor-bill
 import { publicVendorLogo } from "@/lib/vendors/logos";
 import { getSiteUrl } from "@/lib/brand/assets";
 import { ATTACHMENT_BUCKET } from "@/lib/assistant/attachments";
+import { decryptField, vendorFieldContext } from "@/lib/crypto/field-encryption";
 
 export const dynamic = "force-dynamic";
+
+/** An unreadable account number costs the remit block, not the invoice. */
+function safeDecrypt(stored: string | null, context: string): string | null {
+  try {
+    return decryptField(stored, context);
+  } catch (err) {
+    console.error("Vendor bill PDF: could not decrypt remit details —", err);
+    return null;
+  }
+}
 
 export async function GET(
   _req: Request,
@@ -80,7 +91,14 @@ export async function GET(
     total: Number(bill.amount),
     remit: {
       accountName: vendor.remit_account_name ?? null,
-      accountNumber: vendor.remit_account_number ?? null,
+      // The remit block on the invoice is the reason plaintext is ever
+      // needed outside the payment call. If the key is unavailable the
+      // block is simply omitted (the renderer requires both numbers) rather
+      // than the whole PDF failing.
+      accountNumber: safeDecrypt(
+        vendor.remit_account_number,
+        vendorFieldContext("remit_account_number", vendor.id)
+      ),
       routingNumber: vendor.remit_routing_number ?? null,
       accountType: vendor.remit_account_type ?? null,
     },
