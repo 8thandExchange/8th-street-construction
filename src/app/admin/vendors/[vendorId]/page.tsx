@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { FileText, Landmark } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { RecordBillForm, VendorLogoUpload } from "@/components/vendors/VendorForms";
+import { SendVendorInvite } from "@/components/vendors/SendVendorInvite";
 import { setVendorBillStatus, deleteVendorBill } from "@/lib/actions/vendors";
 import { formatMoney } from "@/lib/billing/constants";
 import { ATTACHMENT_BUCKET } from "@/lib/assistant/attachments";
@@ -19,6 +20,9 @@ async function deleteBillAction(formData: FormData) {
   "use server";
   await deleteVendorBill(formData);
 }
+
+/** Enough to confirm the right account is on file, not enough to use it. */
+const last4 = (s: string | null) => (s && s.length >= 4 ? `•••• ${s.slice(-4)}` : null);
 
 const fmt = (s: string | null) =>
   s
@@ -38,7 +42,9 @@ export default async function VendorDetailPage(props: {
   const [{ data: vendor }, { data: bills }, { data: projects }] = await Promise.all([
     admin
       .from("vendors")
-      .select("id, name, logo_path, contact_email, phone, notes")
+      .select(
+        "id, name, logo_path, contact_email, phone, notes, legal_name, tax_id, tax_classification, w9_path, onboarded_at, address, remit_account_number, remit_routing_number, remit_account_type"
+      )
       .eq("id", vendorId)
       .single(),
     admin
@@ -70,6 +76,24 @@ export default async function VendorDetailPage(props: {
       .from(ATTACHMENT_BUCKET)
       .createSignedUrl(b.file_path, 3600);
     if (signed?.signedUrl) fileUrls.set(b.id, signed.signedUrl);
+  }
+
+  const { data: openInvite } = await admin
+    .from("vendor_invites")
+    .select("email, expires_at, created_at")
+    .eq("vendor_id", vendorId)
+    .is("completed_at", null)
+    .is("revoked_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .maybeSingle();
+
+  let w9Url: string | null = null;
+  if (vendor.w9_path) {
+    const { data: signed } = await admin.storage
+      .from(ATTACHMENT_BUCKET)
+      .createSignedUrl(vendor.w9_path, 3600);
+    w9Url = signed?.signedUrl ?? null;
   }
 
   const projectTitles = new Map((projects ?? []).map((p) => [p.id, p.title]));
@@ -121,6 +145,96 @@ export default async function VendorDetailPage(props: {
             </p>
           </div>
         </div>
+      </div>
+
+      <div className="app-card p-6 md:p-8">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h3 className="app-h2 !text-[16px]">Payment &amp; tax details</h3>
+          {vendor.remit_account_number ? (
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-emerald-700">
+              Ready to pay by ACH
+            </span>
+          ) : openInvite ? (
+            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-amber-700">
+              Waiting on {openInvite.email}
+            </span>
+          ) : (
+            <span className="rounded-full bg-navy/[0.06] px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-navy/50">
+              Nothing on file
+            </span>
+          )}
+        </div>
+
+        {vendor.remit_account_number || vendor.tax_id ? (
+          <dl className="mt-5 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+            {[
+              ["Legal name", vendor.legal_name],
+              ["Business type", vendor.tax_classification],
+              ["Tax ID", last4(vendor.tax_id)],
+              ["Address", vendor.address],
+              ["Routing number", vendor.remit_routing_number],
+              ["Account number", last4(vendor.remit_account_number)],
+            ]
+              .filter(([, value]) => Boolean(value))
+              .map(([label, value]) => (
+                <div key={String(label)}>
+                  <dt className="text-[11px] uppercase tracking-wide app-muted">{label}</dt>
+                  <dd className="mt-0.5 text-[14px] text-navy">{value}</dd>
+                </div>
+              ))}
+          </dl>
+        ) : (
+          <p className="mt-4 text-[13px] leading-relaxed text-ink/55">
+            Send them the setup form and they&apos;ll fill in their own address, tax ID, W-9 and
+            bank details — no account numbers over email.
+          </p>
+        )}
+
+        <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-navy/[0.06] pt-5">
+          {w9Url && (
+            <a
+              href={w9Url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-copper hover:underline"
+            >
+              <FileText size={14} strokeWidth={1.75} />
+              View W-9
+            </a>
+          )}
+          {vendor.onboarded_at && (
+            <span className="text-[12.5px] app-muted">
+              Completed{" "}
+              {new Date(vendor.onboarded_at).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
+          )}
+        </div>
+
+        <details className="mt-4">
+          <summary className="cursor-pointer text-[13px] font-medium text-copper marker:text-copper/60">
+            {openInvite
+              ? "Re-send the setup form"
+              : vendor.remit_account_number
+                ? "Ask them to update their details"
+                : "Send the setup form"}
+          </summary>
+          <div className="mt-4">
+            <p className="mb-4 text-[12.5px] leading-relaxed text-ink/55">
+              Sending a new link cancels any link they already have.
+            </p>
+            <SendVendorInvite
+              vendor={{
+                id: vendor.id,
+                name: vendor.name,
+                contactEmail: vendor.contact_email,
+              }}
+            />
+          </div>
+        </details>
       </div>
 
       <div className="app-card divide-y divide-navy/[0.06]">

@@ -22,6 +22,12 @@ export const RATE_LIMITS = {
   assistantUpload: { limit: 20, windowSeconds: 600 },
   /** Client portal AI chat — billed tokens, one cap per client account. */
   clientAssistant: { limit: 30, windowSeconds: 600 },
+  /**
+   * Public vendor onboarding form. Unauthenticated, writes banking details,
+   * and accepts a file upload — the most consequential open endpoint in the
+   * app. A real vendor submits once, maybe twice after a typo.
+   */
+  vendorOnboarding: { limit: 8, windowSeconds: 600 },
 } as const;
 
 export type RateLimitResult = {
