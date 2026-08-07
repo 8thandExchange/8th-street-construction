@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Landmark } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AddVendorForm } from "@/components/vendors/VendorForms";
+import { SendVendorInvite } from "@/components/vendors/SendVendorInvite";
 import { formatMoney } from "@/lib/billing/constants";
 import { ATTACHMENT_BUCKET } from "@/lib/assistant/attachments";
 import { publicVendorLogo } from "@/lib/vendors/logos";
@@ -10,10 +11,25 @@ export const dynamic = "force-dynamic";
 
 export default async function VendorsPage() {
   const admin = createAdminClient();
-  const [{ data: vendors }, { data: bills }] = await Promise.all([
-    admin.from("vendors").select("id, name, logo_path, contact_email, notes").order("name"),
+  const [{ data: vendors }, { data: bills }, { data: invites }] = await Promise.all([
+    admin
+      .from("vendors")
+      .select("id, name, logo_path, contact_email, notes, onboarded_at, remit_account_number")
+      .order("name"),
     admin.from("vendor_bills").select("vendor_id, amount, status"),
+    admin
+      .from("vendor_invites")
+      .select("vendor_id, expires_at")
+      .is("completed_at", null)
+      .is("revoked_at", null),
   ]);
+
+  const now = Date.now();
+  const awaitingVendors = new Set(
+    (invites ?? [])
+      .filter((i) => new Date(i.expires_at).getTime() > now)
+      .map((i) => i.vendor_id)
+  );
 
   const logoUrls = new Map<string, string>();
   for (const v of vendors ?? []) {
@@ -78,8 +94,23 @@ export default async function VendorsPage() {
               )}
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[15px] font-semibold text-navy">{v.name}</span>
-                <span className="block truncate text-[12.5px] app-muted">
-                  {v.notes || v.contact_email || "—"}
+                <span className="mt-0.5 flex items-center gap-2">
+                  <span className="min-w-0 truncate text-[12.5px] app-muted">
+                    {v.notes || v.contact_email || "—"}
+                  </span>
+                  {v.remit_account_number ? (
+                    <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-700">
+                      ACH ready
+                    </span>
+                  ) : awaitingVendors.has(v.id) ? (
+                    <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-700">
+                      Form sent
+                    </span>
+                  ) : (
+                    <span className="shrink-0 rounded-full bg-navy/[0.06] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-navy/50">
+                      No bank info
+                    </span>
+                  )}
                 </span>
               </span>
               <span className="shrink-0 text-right">
@@ -100,9 +131,24 @@ export default async function VendorsPage() {
       </div>
 
       <div className="app-card p-6 md:p-8">
-        <h3 className="app-h2 !text-[16px] mb-5">Add a vendor</h3>
-        <AddVendorForm />
+        <h3 className="app-h2 !text-[16px]">Add a vendor &amp; send them the form</h3>
+        <p className="mt-1.5 mb-5 max-w-xl text-[13px] leading-relaxed text-ink/55">
+          They get a private link and fill in their own address, tax ID, W-9 and bank details.
+          Nothing sensitive travels by email, and they&apos;re ready to pay by ACH the moment
+          they&apos;re done.
+        </p>
+        <SendVendorInvite />
       </div>
+
+      <details className="app-card p-6 md:p-8">
+        <summary className="cursor-pointer app-h2 !text-[16px] marker:text-copper">
+          Or add a vendor by hand
+        </summary>
+        <p className="mt-1.5 mb-5 text-[13px] leading-relaxed text-ink/55">
+          For vendors you won&apos;t pay by ACH, or when you already have their paperwork.
+        </p>
+        <AddVendorForm />
+      </details>
     </div>
   );
 }
