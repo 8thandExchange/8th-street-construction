@@ -8,24 +8,22 @@ Migration files live in `supabase/migrations/`, named `<version>_<name>.sql`
 where `<version>` is a `YYYYMMDDHHMMSS` timestamp. The live project ref is
 `rqmrqndjbkpkewfpyegv`.
 
-### Prefer `db:push` over the Supabase MCP for schema changes
+**The filename's version must match the version recorded in the remote
+`supabase_migrations.schema_migrations` table.** When the two disagree, the CLI
+treats an already-applied migration as pending, and the next `db:push` tries to
+re-run it and fails on already-existing objects.
 
-```bash
-npm run db:push
-```
+Either way of applying a migration is fine. They differ in how the version gets
+recorded:
 
-`db:push` records each migration in the remote `supabase_migrations.schema_migrations`
-table under the **version from the filename**, so local and remote stay in step.
+- `npm run db:push` records the version from the filename, so it always matches.
+- The Supabase MCP's `apply_migration` records its **own generated timestamp**,
+  which will not match the filename unless you make it match.
 
-The Supabase MCP's `apply_migration` does not. It records its **own generated
-timestamp** instead, so the remote history ends up disagreeing with the filename.
-The DDL applies fine, but the file then looks unapplied to the CLI, and the next
-`db:push` tries to re-run it and fails on already-existing objects.
+### After applying a migration via the MCP, reconcile it
 
-This happened four times on 2026-08-06 alone (`vendor_bill_payment_intent`,
-`rate_limits`, `vendor_onboarding`, `encrypt_vendor_secrets`).
-
-### If you do apply a migration via the MCP, check for drift immediately
+Name the file to the version the MCP recorded — either when you create it, or by
+renaming it right after applying. Then confirm:
 
 ```bash
 supabase migration list --linked
@@ -64,6 +62,12 @@ supabase db push --dry-run
 It should report `Remote database is up to date.` The CLI needs to be linked
 first (`supabase link --project-ref rqmrqndjbkpkewfpyegv`), which writes a
 gitignored `supabase/.temp/`.
+
+Reconcile before you commit, so the drift never reaches `main`. Four migrations
+drifted on 2026-08-06 (`vendor_bill_payment_intent`, `rate_limits`,
+`vendor_onboarding`, `encrypt_vendor_secrets`); the first three needed a
+follow-up rename, the fourth was named correctly at commit time and needed
+nothing.
 
 ## Committing
 
