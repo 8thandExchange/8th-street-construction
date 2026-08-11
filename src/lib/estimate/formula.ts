@@ -281,6 +281,8 @@ export type CostPlanTotals = {
   total: number;
   perSqft: number | null;
   perHeatedSqft: number | null;
+  /** Resolved takeoff values, including ones derived from other takeoff cells */
+  takeoffScope: Scope;
   takeoffErrors: Record<string, string>;
 };
 
@@ -352,6 +354,7 @@ export function computeCostPlan(
     total,
     perSqft: sqft ? total / sqft : null,
     perHeatedSqft: heated ? total / heated : null,
+    takeoffScope: scope,
     takeoffErrors,
   };
 }
