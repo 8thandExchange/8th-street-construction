@@ -5,8 +5,45 @@ his numbering, his row order, and his working style — but adds the two things 
 spreadsheet structurally cannot do: a **committed** column fed by real POs, and an
 **actual** column fed by real vendor bills.
 
-Source document: `Augusta Habitat for Humanity Cost Sheet - AUGUSTA.pdf`
-(~60 cost lines, subtotal $199,004.80, total build $238,805.75, $155.27/sqft).
+Source: `Augusta Habitat for Humanity Cost Sheet.xlsx` — a five-tab workbook
+(Augusta, Riverwalk, Broad Street, Savannah, 608 Macon). Augusta: 69 cost lines,
+subtotal $199,004.80, total build $238,805.75, $155.27/sqft.
+
+---
+
+## 0. What the workbook actually showed
+
+An earlier read of this sheet was based on the PDF export, which flattens every
+formula to a value. Two conclusions from that read were wrong, and the
+correction shaped the design below.
+
+**The takeoff is not decorative — it drives the budget.** About 30 of the 69
+lines are live formulas off the takeoff block: `roofing_sq * 150`,
+`heated_sqft * 3`, `cabinet_lnft * cabinet_unit_cost`,
+`(concrete_sqft * 1.5 + 500) + (footer_lnft * 15)`. Change the plan and the
+sheet already recalculates. So formula evaluation is **parity, not a new
+feature** — a grid without it would be a downgrade.
+
+**Supervision is a formula:** `subtotal * 0.2 - 15000`. A flat 20% total markup
+with the fixed $15,000 P/O carved out of it, which is why it reads as an odd
+12.46%. Total Build Cost is exactly `subtotal * 1.20`.
+
+**Robby already templates by duplicating a tab.** All five jobs carry an
+identical 69-line code list, and 56 of the 69 carry identical formulas. The
+template table below formalizes a practice that already exists.
+
+Defects confirmed in the file itself:
+
+| | |
+|---|---|
+| Draw column sums the wrong column | Checkboxes are in `D`; `E91=SUM(E22:E89)` and `E94=SUM(E91:E92)` sum empty column `E`. Draw tracking has always totalled zero. |
+| Over/Under exists on 18 of 69 rows | The formula was never filled down. |
+| `H90 = G90` | Contingency's Over/Under is missing its `- C90`. |
+| `J30 = SUM(G23:G30)` | Orphan sum of eight actuals, parked in the middle of the takeoff block. |
+| 8.3 Interior Doors | Augusta and 608 Macon hardcode `20 * 200 * 1.08` while the takeoff says 14 doors. The other three tabs use `interior_doors * 200 * 1.08`. Augusta is overstated $1,296. |
+| 608 Macon 21.0 Cabinets | Typed `8000`, overwriting `cabinet_lnft * cabinet_unit_cost`. |
+| `C3 "Total SQFT" = C4 + C8` | Heated plus front porch only — excludes back patio (122) and front deck (80). Framing 7.1/7.2 bill off this number. |
+| 15.0 HVAC | `13660 + 10150 - 10000` — quote arithmetic with no takeoff link, and it diverges on every tab. |
 
 ---
 
@@ -15,12 +52,14 @@ Source document: `Augusta Habitat for Humanity Cost Sheet - AUGUSTA.pdf`
 1. **Robby's codes win.** His `Code` column (1.1, 4.2, 23.7, 36) is the chart of
    accounts and is what gets billed against numbered city budget lines. CSI
    divisions stay as a reporting rollup, not something he types.
-2. **Derive, never store, the rollups.** Committed and Actual come from POs and
+2. **Keep the formulas.** The grid evaluates the same expressions the sheet
+   does, over the same named takeoff values. Anything less loses capability.
+3. **Derive, never store, the rollups.** Committed and Actual come from POs and
    bills through a view. Storing them invites the exact drift that makes the
    spreadsheet's Over/Under column unusable.
-3. **Never show a fake underrun.** An unstarted line shows its full budget as
+4. **Never show a fake underrun.** An unstarted line shows its full budget as
    Remaining — not `-$19,225.00`.
-4. **It should still feel like a spreadsheet.** Tab across, type, Enter drops a
+5. **It should still feel like a spreadsheet.** Tab across, type, Enter drops a
    row. No modal per cell. Excel export on demand.
 
 ---
@@ -34,33 +73,23 @@ carries FKs from `bid_requests.estimate_line_id` and feeds
 
 ### 1.1 Company-wide template
 
-```sql
-create table cost_code_templates (
-  id uuid primary key default uuid_generate_v4(),
-  name text not null,                       -- "8th Street Standard — Single Family"
-  description text,
-  is_default boolean not null default false,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+Four tables — see
+[`20260811120000_cost_code_templates.sql`](supabase/migrations/20260811120000_cost_code_templates.sql)
+for the authoritative DDL:
 
-create table cost_code_template_lines (
-  id uuid primary key default uuid_generate_v4(),
-  template_id uuid not null references cost_code_templates(id) on delete cascade,
-  code text not null,                       -- "4.2", "23.7"
-  description text not null,                -- "Pump truck"
-  section text not null,                    -- "Foundation & Concrete"
-  division_code text,                       -- CSI rollup: "DIV-03"
-  line_type text not null default 'cost'
-    check (line_type in ('cost','markup','contingency')),
-  unit text,                                -- "sqft", "SQ", "lnft", "ea", "yd"
-  default_unit_cost numeric(12,4),          -- learned from completed jobs
-  markup_rate numeric(6,4),                 -- markup/contingency lines only
-  is_allowance boolean not null default false,
-  display_order int not null default 0,
-  unique (template_id, code)
-);
-```
+- **`cost_code_templates`** — named template, one default at a time.
+- **`cost_code_template_takeoff`** — the named takeoff variables a job starts
+  with (`heated_sqft`, `roofing_sq`, `plumbing_drops`, …), each with a unit, a
+  default value, and an optional `formula` so derived quantities stay derived
+  (`heated_sqft = first_floor + second_floor`).
+- **`cost_code_template_lines`** — `code`, `label`, `section`, `division_code`,
+  `line_type`, `unit`, `formula`, `default_amount`, `is_allowance`.
+- **`project_takeoff_values`** — the per-job copy of the takeoff.
+
+A quantity × unit-cost model was the original plan and it is too weak: it can't
+express `(concrete_sqft * 1.5 + 500) + (footer_lnft * 15)` or the electrician
+line's fixture-count sum. A single `formula` column carries all 30 of the
+workbook's live cells without losing any of them.
 
 ### 1.2 Per-job lines
 
@@ -68,28 +97,35 @@ create table cost_code_template_lines (
 alter table project_estimate_lines
   add column if not exists code text,
   add column if not exists section text,
-  add column if not exists line_type text not null default 'cost'
-    check (line_type in ('cost','markup','contingency')),
-  add column if not exists quantity numeric(12,3),
+  add column if not exists line_type text not null default 'cost',
   add column if not exists unit text,
-  add column if not exists unit_cost numeric(12,4),
-  add column if not exists markup_rate numeric(6,4),
+  add column if not exists formula text,
   add column if not exists is_allowance boolean not null default false,
   add column if not exists template_line_id uuid
     references cost_code_template_lines(id) on delete set null;
-
-create unique index project_estimate_lines_code_idx
-  on project_estimate_lines(project_id, code) where code is not null;
 ```
 
-`estimated_amount` stays the Budget. When `quantity` and `unit_cost` are both
-set, Budget is computed (`quantity * unit_cost`) and the cell is read-only with a
-"from takeoff" marker; otherwise it's typed directly. That's how the inert takeoff
-block at the top of the sheet starts driving dollars.
+`estimated_amount` stays the Budget. When `formula` is set, Budget is its
+evaluated result and the cell renders read-only with a "from takeoff" marker;
+otherwise it's typed directly.
 
-`markup_rate` fixes the Supervision mystery — $24,800.96 is 12.46% of subtotal,
-which nobody picks on purpose. Markup lines compute from the cost subtotal, with
-an optional typed override.
+### 1.2b Formula evaluation
+
+[`src/lib/estimate/formula.ts`](src/lib/estimate/formula.ts) — a hand-written
+recursive-descent parser over `+ - * / ( )`, numbers and names. No `eval`, no
+`new Function`; these strings are admin-editable and live in the database.
+Name lookup uses `hasOwnProperty`, so bare words like `constructor` fail as
+unknown names rather than resolving up the prototype chain.
+
+Evaluation order mirrors the sheet: takeoff values resolve first (depth-first,
+with cycle detection), then cost lines sum to `subtotal`, then markup and
+contingency lines evaluate with `subtotal` in scope. Markup never feeds the
+subtotal. A line or takeoff cell that fails records an error and falls back to
+its stored amount, so one bad expression can't blank the grid.
+
+[`__tests__/formula.test.ts`](src/lib/estimate/__tests__/formula.test.ts) pins
+this to the workbook: 27 individual lines plus subtotal, supervision, total and
+both $/sqft figures, all asserted against Augusta's own values.
 
 ### 1.3 Attribution — the missing links
 
@@ -274,14 +310,26 @@ Phase A is usable on its own. Phase B is the reason to do this at all.
 
 ## 6. Open questions
 
-1. **Original spreadsheet file** — needed to seed the template accurately (see §3).
-2. **Supervision** — live percentage or a negotiated number per job?
-3. **P/O $15,000** — what is this line? Profit/Overhead? It's flat, not a rate.
-4. **Renumber or preserve gaps?** Preserving Robby's exact codes is less
-   disruptive; renumbering is cleaner for city-line mapping. His call.
+Resolved by the workbook: the source file (§0), and Supervision
+(`subtotal * 0.2 - 15000`, seeded literally).
+
+1. **P/O $15,000** — flat on all five jobs, and Supervision is defined as
+   20% *minus* it. Is it a fixed fee, or should it scale? Seeded as a fixed
+   markup line, which reproduces every tab exactly.
+2. **`total_sqft` excludes back patio and deck**, yet framing bills off it. Is
+   that intentional (framing follows the porch roof, not the deck), or a
+   long-standing error worth ~$2,500 on Augusta? Seeded as-is — this is a
+   pricing question, not a code question.
+3. **8.3 Interior Doors** — the seed uses `interior_doors * 200 * 1.08`, the
+   version on three of five tabs. Confirm before the first job starts from it.
+4. **Renumber or preserve gaps?** Preserved as-is for now, including 5.15
+   sorting between 5.1 and 5.2.
 5. **Template scope** — one template for all jobs, or separate Habitat vs.
    custom-home templates? Habitat jobs bill against numbered city lines and may
    want a tighter code set.
+6. **Migrating the four other live jobs** — Riverwalk, Broad Street, Savannah
+   and 608 Macon are all in this workbook. An importer that reads the xlsx
+   directly would beat re-keying them.
 
 ---
 
