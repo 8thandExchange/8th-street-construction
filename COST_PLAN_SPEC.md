@@ -327,9 +327,46 @@ Resolved by the workbook: the source file (§0), and Supervision
 5. **Template scope** — one template for all jobs, or separate Habitat vs.
    custom-home templates? Habitat jobs bill against numbered city lines and may
    want a tighter code set.
-6. **Migrating the four other live jobs** — Riverwalk, Broad Street, Savannah
-   and 608 Macon are all in this workbook. An importer that reads the xlsx
-   directly would beat re-keying them.
+6. **608 Macon's existing cost plan.** The importer reproduces its sheet to the
+   penny but will not overwrite the 15 legacy CSI division lines without
+   `--replace-project`. Those lines have no bids and no awarded amounts, so
+   replacing them loses nothing — it just needs saying out loud.
+
+---
+
+## 7. The workbook importer
+
+[`scripts/import-cost-sheet.ts`](scripts/import-cost-sheet.ts) —
+`npm run costs:import -- <workbook.xlsx> [--run] [--replace-project]`.
+Dry run by default.
+
+Augusta, Riverwalk, Broad Street and Savannah are **house models in the
+collection**, not job sites, so they import as named cost code templates —
+pick "The Augusta" when starting a job and its takeoff and pricing come with
+it. Only 608 Macon is a real project, and it imports as that project's cost
+plan.
+
+Canonical structure (labels, sections, units, divisions, line types) comes
+from the default template already in the database; a tab supplies only numbers
+and formulas. Excel cell references are rewritten to takeoff keys, with `C91`
+mapped to the reserved name `subtotal` so Supervision imports as a live
+formula rather than a frozen number.
+
+Precedence, learned from the tabs disagreeing with each other:
+
+1. A cell with a formula referencing other cells wins — it encodes that
+   model's geometry. The Riverwalk roofs off the second floor; the models with
+   garages fold the garage into the slab.
+2. A **typed number** where the standard derives one is a deliberate override
+   and also wins. Broad Street and Savannah pin roofing SQ by hand instead of
+   taking 1.3 × footprint.
+3. Constant arithmetic with no cell references (`=1123+821`) is a tally, not a
+   reusable expression — the result is stored as the value.
+4. Only an empty cell falls back to the standard formula.
+
+Every tab is re-evaluated after translation and checked against its own
+`C91`/`C94`, with a per-line diff for anything that disagrees by more than a
+cent. All five reconcile exactly.
 
 ---
 
