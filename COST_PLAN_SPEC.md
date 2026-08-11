@@ -297,14 +297,39 @@ he's just no longer the one keeping the math alive.
 
 ## 5. Phasing
 
-| Phase | Scope | Unblocks |
+| Phase | Scope | Status |
 |---|---|---|
-| **A** | Schema (1.1, 1.2), template CRUD, grid read/write, footer math | Replaces the sheet for budgeting |
-| **B** | Attribution (1.3) + rollup view (1.4), Committed/Actual columns, PO and bill line pickers | The real win — overruns visible at quote time |
-| **C** | Billed column via `invoice_line_items.estimate_line_id`, Excel export | Draw reporting, Habitat cover sheets tie to codes |
-| **D** | Unit cost library — roll completed-job actuals back into `default_unit_cost` | Faster, closer bids each house |
+| **A** | Schema (1.1, 1.2), template CRUD, grid read/write, footer math | ✅ shipped |
+| **B** | Attribution (1.3) + rollup view (1.4), Committed/Actual/Billed, coding queue | ✅ shipped |
+| **C** | Excel export of a job's plan in Robby's layout | open |
+| **D** | Unit cost library — roll completed-job actuals back into template pricing | open |
 
-Phase A is usable on its own. Phase B is the reason to do this at all.
+Phase C's draw reporting came free with Phase B: `payment_draws` already links to
+`invoices`, so once an invoice line carries `estimate_line_id`, "what was in
+draw 3" is a join rather than a feature.
+
+### Phase B notes
+
+`project_cost_line_rollup` derives Committed (issued/billed/closed PO lines),
+Actual (non-void vendor bill allocations) and Billed (invoice lines on sent-or-
+later invoices). Remaining is `budget − greatest(committed, actual)`: a PO that
+has been billed must not count twice, and a bill with no PO still consumes
+budget.
+
+`vendor_bill_allocations` splits one bill across codes — a lumber invoice covers
+framing and trim. Deliberately **not** constrained to sum to the bill total; a
+trigger enforcing that rejects every partially-coded bill mid-entry. The
+remainder surfaces in the UI instead.
+
+[`CostAttributionQueue`](src/components/costs/CostAttributionQueue.tsx) is the
+piece that makes the gap visible: any bill or invoice line on the job with no
+cost code sits in a queue above the grid, one dropdown from being coded. Money
+recorded but uncoded shows in no line's Actual, so without the queue the plan
+under-reports silently.
+
+Invoice attribution is orthogonal to city budget lines. A Habitat invoice line
+carries both — `city_budget_line_id` says which numbered city line pays,
+`estimate_line_id` says which cost code it was spent on.
 
 ---
 

@@ -126,6 +126,90 @@ export async function startCostPlanFromTemplate(formData: FormData): Promise<voi
 }
 
 /* ------------------------------------------------------------------ */
+/* Attribution — coding real money to cost lines (Phase B).             */
+/* Plain form posts: these change server-rendered rollups, so letting   */
+/* revalidatePath re-render beats syncing client state.                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Code some or all of a vendor bill to a cost line. Re-coding the same bill to
+ * the same line replaces the amount rather than stacking a second row.
+ */
+export async function allocateVendorBill(formData: FormData): Promise<void> {
+  const { supabase } = await requireAdmin();
+  const projectId = String(formData.get("project_id"));
+  const billId = String(formData.get("bill_id"));
+  const lineId = String(formData.get("line_id"));
+  const amount = Number(formData.get("amount"));
+
+  if (!lineId) throw new Error("Pick a cost code.");
+  if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter an amount above zero.");
+
+  const { data: bill } = await supabase
+    .from("vendor_bills")
+    .select("amount, project_id")
+    .eq("id", billId)
+    .single();
+
+  if (!bill) throw new Error("That bill no longer exists.");
+  if (bill.project_id !== projectId) throw new Error("That bill belongs to a different job.");
+
+  const { data: existing } = await supabase
+    .from("vendor_bill_allocations")
+    .select("id, amount, estimate_line_id")
+    .eq("vendor_bill_id", billId);
+
+  const otherLines = (existing ?? []).filter((a) => a.estimate_line_id !== lineId);
+  const otherTotal = otherLines.reduce((s, a) => s + Number(a.amount ?? 0), 0);
+
+  if (otherTotal + amount > Number(bill.amount) + 0.005) {
+    const left = Number(bill.amount) - otherTotal;
+    throw new Error(`Only ${left.toFixed(2)} of this bill is left to code.`);
+  }
+
+  const { error } = await supabase
+    .from("vendor_bill_allocations")
+    .upsert(
+      { vendor_bill_id: billId, estimate_line_id: lineId, amount: round2(amount) },
+      { onConflict: "vendor_bill_id,estimate_line_id" }
+    );
+  if (error) throw new Error(error.message);
+
+  revalidate(projectId);
+}
+
+export async function removeVendorBillAllocation(formData: FormData): Promise<void> {
+  const { supabase } = await requireAdmin();
+  const projectId = String(formData.get("project_id"));
+
+  const { error } = await supabase
+    .from("vendor_bill_allocations")
+    .delete()
+    .eq("id", String(formData.get("allocation_id")));
+  if (error) throw new Error(error.message);
+
+  revalidate(projectId);
+}
+
+/**
+ * Point a billing line at a cost code. Independent of its city budget line —
+ * one records what the money was spent on, the other which city line pays.
+ */
+export async function setInvoiceLineCostCode(formData: FormData): Promise<void> {
+  const { supabase } = await requireAdmin();
+  const projectId = String(formData.get("project_id"));
+  const lineId = String(formData.get("line_id")) || null;
+
+  const { error } = await supabase
+    .from("invoice_line_items")
+    .update({ estimate_line_id: lineId })
+    .eq("id", String(formData.get("invoice_line_id")));
+  if (error) throw new Error(error.message);
+
+  revalidate(projectId);
+}
+
+/* ------------------------------------------------------------------ */
 /* Template maintenance — rare, so plain form posts rather than a grid. */
 /* ------------------------------------------------------------------ */
 

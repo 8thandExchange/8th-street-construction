@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { HubPageHeader } from "@/components/hub/HubUI";
 import { BudgetGrid } from "@/components/costs/BudgetGrid";
+import { CostAttributionQueue } from "@/components/costs/CostAttributionQueue";
 import { CostComparisonPanel } from "@/components/costs/CostComparisonPanel";
 import { CostEstimateGenerator } from "@/components/costs/CostEstimateGenerator";
 import { computeProjectCostSummary } from "@/lib/estimate/summary";
@@ -25,7 +26,11 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
 
   if (!project) notFound();
 
-  const { lines, takeoff, totals } = await loadCostPlan(supabase, id, project);
+  const { lines, takeoff, totals, rollup, attribution, uncoded } = await loadCostPlan(
+    supabase,
+    id,
+    project
+  );
 
   const costSummary = computeProjectCostSummary(
     Number(project.estimated_cost ?? 0),
@@ -83,7 +88,16 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
         </>
       ) : (
         <section className="mb-12">
-          <BudgetGrid projectId={id} lines={lines} takeoff={takeoff} totals={totals} />
+          <CostAttributionQueue projectId={id} lines={lines} uncoded={uncoded} />
+
+          <BudgetGrid
+            projectId={id}
+            lines={lines}
+            takeoff={takeoff}
+            totals={totals}
+            rollup={rollup}
+            attribution={attribution}
+          />
 
           <p className="text-xs text-ink/45 mt-4 leading-relaxed">
             Click a code to open a line — formula, notes and allowance live there. Calculated cells

@@ -10,8 +10,8 @@ import {
   deleteCostLine,
   type SerializedTotals,
 } from "@/lib/actions/cost-plan";
-import type { CostPlanLine, TakeoffValue } from "@/lib/estimate/cost-plan";
-import { groupLinesBySection } from "@/lib/estimate/cost-plan";
+import type { CostPlanLine, TakeoffValue, LineRollup, LineAttribution } from "@/lib/estimate/cost-plan";
+import { EMPTY_ROLLUP, groupLinesBySection } from "@/lib/estimate/cost-plan";
 
 /* ------------------------------------------------------------------ */
 /* Editable cell — autosave on blur. No save button; Robby would        */
@@ -24,7 +24,6 @@ function EditableCell({
   align = "left",
   mono = false,
   placeholder,
-  disabled,
   ariaLabel,
 }: {
   value: string;
@@ -32,7 +31,6 @@ function EditableCell({
   align?: "left" | "right";
   mono?: boolean;
   placeholder?: string;
-  disabled?: boolean;
   ariaLabel: string;
 }) {
   const [draft, setDraft] = useState(value);
@@ -50,10 +48,9 @@ function EditableCell({
   return (
     <input
       aria-label={ariaLabel}
-      disabled={disabled}
       value={draft}
-      onFocus={() => setFocused(true)}
       placeholder={placeholder}
+      onFocus={() => setFocused(true)}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => {
         setFocused(false);
@@ -77,7 +74,6 @@ function EditableCell({
         "focus:outline-none transition-colors",
         align === "right" ? "text-right" : "",
         mono ? "font-mono tabular-nums" : "",
-        disabled ? "cursor-not-allowed text-ink/40 hover:border-transparent" : "",
       ].join(" ")}
     />
   );
@@ -90,6 +86,17 @@ function parseMoney(raw: string): number | null {
   return Number.isFinite(n) ? n : NaN;
 }
 
+/** Where a line stands, at a glance. */
+function statusOf(budget: number, r: LineRollup): { tone: string; title: string } {
+  const spent = Math.max(r.committed, r.actual);
+  if (budget > 0 && spent > budget + 0.005) {
+    return { tone: "bg-red-600", title: `Over by ${formatMoney(spent - budget)}` };
+  }
+  if (r.actual > 0) return { tone: "bg-emerald-600", title: "Billed by a vendor" };
+  if (r.committed > 0) return { tone: "bg-sky-500", title: "Committed on a PO" };
+  return { tone: "bg-ink/15", title: "Not started" };
+}
+
 /* ------------------------------------------------------------------ */
 
 type Props = {
@@ -97,9 +104,11 @@ type Props = {
   lines: CostPlanLine[];
   takeoff: TakeoffValue[];
   totals: SerializedTotals;
+  rollup: Record<string, LineRollup>;
+  attribution: Record<string, LineAttribution[]>;
 };
 
-export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals }: Props) {
+export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, rollup, attribution }: Props) {
   const [totals, setTotals] = useState(initialTotals);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
@@ -107,6 +116,10 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals }:
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  // The grid recomputes budgets locally as you type; rollups come from the
+  // server, so they stay as loaded until the page revalidates.
+  useEffect(() => setTotals(initialTotals), [initialTotals]);
 
   const costLines = useMemo(() => lines.filter((l) => l.line_type === "cost"), [lines]);
   const markupLines = useMemo(() => lines.filter((l) => l.line_type !== "cost"), [lines]);
@@ -116,6 +129,18 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals }:
     (line: CostPlanLine) => totals.byId[line.id]?.amount ?? Number(line.estimated_amount ?? 0),
     [totals]
   );
+  const rollupOf = useCallback((line: CostPlanLine) => rollup[line.id] ?? EMPTY_ROLLUP, [rollup]);
+
+  const spend = useMemo(() => {
+    let committed = 0;
+    let actual = 0;
+    for (const line of costLines) {
+      const r = rollupOf(line);
+      committed += r.committed;
+      actual += r.actual;
+    }
+    return { committed, actual };
+  }, [costLines, rollupOf]);
 
   const run = useCallback(
     (fn: () => Promise<{ ok: true; totals: SerializedTotals } | { ok: false; error: string }>) => {
@@ -142,7 +167,6 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals }:
 
   return (
     <div>
-      {/* toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-3">
           <button
@@ -178,22 +202,26 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals }:
         />
       )}
 
-      {/* grid */}
       <div className="border border-ink/10 overflow-x-auto">
-        <table className="app-table w-full min-w-[720px]">
+        <table className="app-table w-full min-w-[860px]">
           <thead>
             <tr className="bg-bone/60 text-left app-label">
               <th className="px-3 py-3 w-20">Code</th>
               <th className="px-3 py-3">Description</th>
-              <th className="px-3 py-3 text-right w-32">Budget</th>
-              <th className="px-3 py-3 text-right w-32">Sub quote</th>
-              <th className="px-3 py-3 text-right w-32">Difference</th>
+              <th className="px-3 py-3 text-right w-28">Budget</th>
+              <th className="px-3 py-3 text-right w-28">Committed</th>
+              <th className="px-3 py-3 text-right w-28">Actual</th>
+              <th className="px-3 py-3 text-right w-28">Remaining</th>
+              <th className="px-2 py-3 w-8" aria-label="Status" />
             </tr>
           </thead>
 
           {sections.map((group) => {
             const collapsed = collapsedSections.has(group.section);
-            const sectionTotal = group.lines.reduce((s, l) => s + amountOf(l), 0);
+            const sectionBudget = group.lines.reduce((s, l) => s + amountOf(l), 0);
+            const sectionCommitted = group.lines.reduce((s, l) => s + rollupOf(l).committed, 0);
+            const sectionActual = group.lines.reduce((s, l) => s + rollupOf(l).actual, 0);
+            const sectionRemaining = sectionBudget - Math.max(sectionCommitted, sectionActual);
             const lastOrder = group.lines[group.lines.length - 1]?.display_order ?? 0;
 
             return (
@@ -211,9 +239,18 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals }:
                     </button>
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-sm text-ink/70">
-                    {formatMoney(sectionTotal)}
+                    {formatMoney(sectionBudget)}
                   </td>
-                  <td colSpan={2} className="px-3 py-2 text-right">
+                  <td className="px-3 py-2 text-right font-mono tabular-nums text-sm text-ink/45">
+                    {sectionCommitted ? formatMoney(sectionCommitted) : ""}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono tabular-nums text-sm text-ink/45">
+                    {sectionActual ? formatMoney(sectionActual) : ""}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono tabular-nums text-sm text-ink/45">
+                    {formatMoney(sectionRemaining)}
+                  </td>
+                  <td className="px-2 py-2 text-right">
                     <button
                       type="button"
                       title={`Add a line to ${group.section}`}
@@ -232,10 +269,13 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals }:
                   group.lines.map((line) => {
                     const computed = totals.byId[line.id];
                     const amount = amountOf(line);
+                    const r = rollupOf(line);
                     const derived = Boolean(line.formula);
-                    const quote = line.awarded_amount == null ? null : Number(line.awarded_amount);
-                    const diff = quote == null ? null : amount - quote;
                     const isOpen = expanded.has(line.id);
+                    const remaining = amount - Math.max(r.committed, r.actual);
+                    const status = statusOf(amount, r);
+                    const records = attribution[line.id] ?? [];
+                    const quote = line.awarded_amount == null ? null : Number(line.awarded_amount);
 
                     return (
                       <Fragment key={line.id}>
@@ -301,28 +341,42 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals }:
                             )}
                           </td>
 
-                          {/* Read-only: a sub quote is set by awarding a bid, not typed here. */}
                           <td
-                            className="px-3 py-1 text-right font-mono tabular-nums text-sm text-ink/60"
-                            title={quote == null ? "Set when a bid is awarded" : undefined}
+                            className="px-3 py-1 text-right font-mono tabular-nums text-sm text-ink/70"
+                            title={r.po_count ? `${r.po_count} purchase order(s)` : undefined}
                           >
-                            {quote == null ? "—" : formatMoney(quote)}
+                            {r.committed ? formatMoney(r.committed) : <span className="text-ink/25">—</span>}
+                          </td>
+
+                          <td
+                            className="px-3 py-1 text-right font-mono tabular-nums text-sm text-ink/70"
+                            title={r.bill_count ? `${r.bill_count} vendor bill(s)` : undefined}
+                          >
+                            {r.actual ? formatMoney(r.actual) : <span className="text-ink/25">—</span>}
                           </td>
 
                           <td
                             className={[
                               "px-3 py-1 text-right font-mono tabular-nums text-sm",
-                              diff == null ? "text-ink/25" : diff >= 0 ? "text-emerald-700" : "text-red-700",
+                              remaining < -0.005 ? "text-red-700 font-medium" : "text-ink/70",
                             ].join(" ")}
                           >
-                            {diff == null ? "—" : formatMoney(diff)}
+                            {formatMoney(remaining)}
+                          </td>
+
+                          <td className="px-2 py-1">
+                            <span
+                              className={`block w-2 h-2 rounded-full ${status.tone}`}
+                              title={status.title}
+                              aria-label={status.title}
+                            />
                           </td>
                         </tr>
 
                         {isOpen && (
                           <tr className="bg-bone/20">
                             <td />
-                            <td colSpan={4} className="px-3 py-4">
+                            <td colSpan={6} className="px-3 py-4">
                               <div className="grid gap-4 md:grid-cols-2 max-w-3xl">
                                 <div>
                                   <label className="field-label">Formula</label>
@@ -337,12 +391,8 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals }:
                                       )
                                     }
                                   />
-                                  {computed?.error && (
-                                    <p className="text-xs text-red-700 mt-1">{computed.error}</p>
-                                  )}
-                                  {line.unit && (
-                                    <p className="text-xs text-ink/45 mt-1">Priced per {line.unit}</p>
-                                  )}
+                                  {computed?.error && <p className="text-xs text-red-700 mt-1">{computed.error}</p>}
+                                  {line.unit && <p className="text-xs text-ink/45 mt-1">Priced per {line.unit}</p>}
                                 </div>
 
                                 <div>
@@ -356,6 +406,37 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals }:
                                     }
                                   />
                                 </div>
+
+                                {(records.length > 0 || quote != null) && (
+                                  <div className="md:col-span-2">
+                                    <div className="app-label mb-2">Money on this line</div>
+                                    <ul className="text-sm divide-y divide-ink/8 border-t border-ink/8">
+                                      {quote != null && (
+                                        <li className="flex items-center gap-3 py-1.5">
+                                          <span className="text-[10px] uppercase tracking-wide text-ink/40 w-16">
+                                            Quote
+                                          </span>
+                                          <span className="flex-1 text-ink/70">Awarded sub bid</span>
+                                          <span className="font-mono tabular-nums">{formatMoney(quote)}</span>
+                                        </li>
+                                      )}
+                                      {records.map((rec) => (
+                                        <li key={`${rec.kind}-${rec.id}`} className="flex items-center gap-3 py-1.5">
+                                          <span className="text-[10px] uppercase tracking-wide text-ink/40 w-16">
+                                            {rec.kind === "po" ? "PO" : rec.kind === "bill" ? "Bill" : "Billed"}
+                                          </span>
+                                          <span className="flex-1 text-ink/70 truncate" title={rec.label}>
+                                            {rec.label}
+                                          </span>
+                                          {rec.reference && (
+                                            <span className="font-mono text-[11px] text-ink/40">{rec.reference}</span>
+                                          )}
+                                          <span className="font-mono tabular-nums">{formatMoney(rec.amount)}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
 
                                 <div className="flex items-center gap-4 md:col-span-2">
                                   <label className="flex items-center gap-2 text-sm text-ink/70">
@@ -401,7 +482,16 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals }:
                 Subtotal
               </td>
               <td className="px-3 py-3 text-right font-mono tabular-nums">{formatMoney(totals.subtotal)}</td>
-              <td colSpan={2} />
+              <td className="px-3 py-3 text-right font-mono tabular-nums">
+                {spend.committed ? formatMoney(spend.committed) : "—"}
+              </td>
+              <td className="px-3 py-3 text-right font-mono tabular-nums">
+                {spend.actual ? formatMoney(spend.actual) : "—"}
+              </td>
+              <td className="px-3 py-3 text-right font-mono tabular-nums">
+                {formatMoney(totals.subtotal - Math.max(spend.committed, spend.actual))}
+              </td>
+              <td />
             </tr>
 
             {markupLines.map((line) => {
@@ -414,13 +504,11 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals }:
                     <span>{line.trade_label}</span>
                     {line.formula && <span className="ml-2 text-xs text-ink/40 font-mono">{line.formula}</span>}
                     {isZeroContingency && (
-                      <span className="ml-2 text-xs text-amber-700">
-                        no contingency held on this job
-                      </span>
+                      <span className="ml-2 text-xs text-amber-700">no contingency held on this job</span>
                     )}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-sm">{formatMoney(amount)}</td>
-                  <td colSpan={2} />
+                  <td colSpan={4} />
                 </tr>
               );
             })}
@@ -430,7 +518,7 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals }:
                 Total Build Cost
               </td>
               <td className="px-3 py-3 text-right font-mono tabular-nums">{formatMoney(totals.total)}</td>
-              <td colSpan={2} className="px-3 py-3 text-right text-xs font-normal text-ink/55">
+              <td colSpan={4} className="px-3 py-3 text-right text-xs font-normal text-ink/55">
                 {totals.perSqft != null && <span>{formatMoney(totals.perSqft)}/sqft</span>}
                 {totals.perHeatedSqft != null && (
                   <span className="ml-3">{formatMoney(totals.perHeatedSqft)}/heated sqft</span>
@@ -496,9 +584,7 @@ function TakeoffPanel({
                         className="w-24 text-right text-sm font-mono tabular-nums text-ink/50 px-2 py-1.5"
                         title={`= ${t.formula}`}
                       >
-                        {scope[t.key] == null
-                          ? "—"
-                          : Number(scope[t.key].toFixed(2)).toLocaleString()}
+                        {scope[t.key] == null ? "—" : Number(scope[t.key].toFixed(2)).toLocaleString()}
                       </span>
                     ) : (
                       <div className="w-24">
@@ -511,9 +597,7 @@ function TakeoffPanel({
                           onCommit={(next) => {
                             const parsed = parseMoney(next);
                             if (Number.isNaN(parsed)) return;
-                            run(() =>
-                              updateTakeoffValue({ projectId, takeoffId: t.id, patch: { value: parsed } })
-                            );
+                            run(() => updateTakeoffValue({ projectId, takeoffId: t.id, patch: { value: parsed } }));
                           }}
                         />
                       </div>
