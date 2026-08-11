@@ -96,7 +96,6 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
         <h3 className="eyebrow mb-4">Notes on this estimate</h3>
         <form action={updateProjectEstimatedCost} className="flex flex-wrap gap-4 items-end">
           <input type="hidden" name="project_id" value={id} />
-          <input type="hidden" name="estimated_cost" value={project.estimated_cost ?? 0} />
           <div className="flex-1 min-w-[16rem]">
             <label className="field-label">Estimate notes</label>
             <input

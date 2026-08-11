@@ -2,7 +2,18 @@ import Link from "next/link";
 import { formatMoney, HABITAT_608_MACON } from "@/lib/billing/constants";
 import { MACON_608_ESTIMATE_META } from "@/lib/estimate/divisions";
 
-export function HabitatProjectBanner({ projectId }: { projectId: string }) {
+export function HabitatProjectBanner({
+  projectId,
+  estimatedCost,
+}: {
+  projectId: string;
+  /** The job's live cost plan total. Falls back to the permit-set figure
+   *  only while a job has no cost plan of its own. */
+  estimatedCost?: number | null;
+}) {
+  const hasLivePlan = estimatedCost != null && estimatedCost > 0;
+  const amount = hasLivePlan ? estimatedCost : MACON_608_ESTIMATE_META.directCostTotal;
+
   return (
     <div className="hub-panel border-copper/25 bg-copper/[0.04] p-5 md:p-6 mb-8">
       <div className="flex flex-wrap justify-between gap-4">
@@ -17,10 +28,10 @@ export function HabitatProjectBanner({ projectId }: { projectId: string }) {
           </p>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-[10px] font-mono uppercase text-stone-300">Permit-set cost plan starts at</p>
-          <p className="font-display text-2xl text-ink mt-1">
-            {formatMoney(MACON_608_ESTIMATE_META.directCostTotal)}
+          <p className="text-[10px] font-mono uppercase text-stone-300">
+            {hasLivePlan ? "Cost plan total" : "Permit-set cost plan starts at"}
           </p>
+          <p className="font-display text-2xl text-ink mt-1">{formatMoney(amount)}</p>
           <Link
             href={`/admin/projects/${projectId}/costs`}
             className="inline-block mt-2 font-mono text-[10px] uppercase text-copper hover:underline"
