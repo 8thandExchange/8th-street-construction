@@ -9,6 +9,9 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { serviceJsonLd, breadcrumbJsonLd } from "@/lib/seo/structured-data";
+import { getSiteContact } from "@/lib/site-contact";
 
 export const revalidate = 3600;
 
@@ -27,6 +30,8 @@ export default async function ServicesPage() {
     .eq("published", true)
     .order("display_order", { ascending: true });
 
+  const contact = await getSiteContact();
+
   const SERVICE_IMAGES = [
     SITE_IMAGES.heroConstruction,
     SITE_IMAGES.craft,
@@ -36,6 +41,14 @@ export default async function ServicesPage() {
 
   return (
     <>
+      <JsonLd data={serviceJsonLd(services ?? [], contact.serviceArea)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Services", path: "/services" },
+        ])}
+      />
+
       <SiteHeader dark />
       <main className="bg-bone text-ink">
         <PageHero

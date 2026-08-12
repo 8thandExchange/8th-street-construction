@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://8thstreetconstruction.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.8thstreetconstruction.com";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -8,7 +8,19 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/client", "/subs", "/api/", "/login", "/auth/"],
+        // /print carries draw packets and schedules containing client
+        // financial detail, reachable by id and never linked publicly.
+        disallow: [
+          "/admin",
+          "/client",
+          "/subs",
+          "/api/",
+          "/login",
+          "/auth/",
+          "/print",
+          "/share/",
+          "/vendor-form/",
+        ],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
