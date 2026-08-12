@@ -13,6 +13,11 @@ import { MILESTONE_STATUS_LABELS } from "@/lib/project/labels";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  robots: { index: false, follow: false },
+};
+
+
 const usd = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
