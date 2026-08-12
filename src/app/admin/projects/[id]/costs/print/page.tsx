@@ -42,12 +42,7 @@ export default async function CostPlanPrintPage(props: { params: Promise<{ id: s
 
   if (!project) notFound();
 
-  const { lines, totals, rollup, uncoded } = await loadCostPlan(supabase, id, project);
-
-  // Money invoiced to the client that isn't tied to a cost line yet. Without
-  // saying so, an empty Billed column reads as "nothing has been billed".
-  const uncodedBilled = uncoded.invoiceLines.reduce((sum, l) => sum + l.amount, 0);
-  const uncodedBills = uncoded.bills.reduce((sum, b) => sum + (b.amount - b.allocated), 0);
+  const { lines, totals, rollup } = await loadCostPlan(supabase, id, project);
 
   const costLines = lines.filter((l) => l.line_type === "cost");
   const markupLines = lines.filter((l) => l.line_type !== "cost");
@@ -91,15 +86,10 @@ export default async function CostPlanPrintPage(props: { params: Promise<{ id: s
         </div>
       </header>
 
-      {(uncodedBilled > 0 || uncodedBills > 0) && (
-        <p className="uncoded-note">
-          <strong>Not on any line yet:</strong>{" "}
-          {uncodedBilled > 0 && <>{formatMoney(uncodedBilled)} invoiced to the client</>}
-          {uncodedBilled > 0 && uncodedBills > 0 && <>, </>}
-          {uncodedBills > 0 && <>{formatMoney(uncodedBills)} paid to vendors</>}. Nobody has said
-          which line this money belongs to, so it is missing from the columns below.
-        </p>
-      )}
+      {/* The unassigned-money note was removed at Troy's request: the sheet
+          goes to Robby as a clean form, and the gap is Troy's to work
+          rather than Robby's to read. The figures remain visible in the
+          attribution queue on the cost plan page itself. */}
 
       <table className="sheet-table">
         <thead>
