@@ -1695,6 +1695,15 @@ a:has(.hub-metric):hover .hub-metric {
     padding: 0;
   }
 
+  /* The app's bone background would print as a full-page tint on every
+     sheet. Paper is already the background. */
+  html,
+  body,
+  .app-shell,
+  .cost-sheet {
+    background: #fff !important;
+  }
+
   @page {
     margin: 0.5in;
   }
@@ -1703,6 +1712,14 @@ a:has(.hub-metric):hover .hub-metric {
      page break — a half-row would break the photo-to-line matching. */
   .cost-sheet .sheet-table thead {
     display: table-header-group;
+  }
+
+  /* But the totals must NOT repeat. A tfoot defaults to table-footer-group,
+     which reprints Subtotal and Total Build Cost at the bottom of every
+     page — four different "totals" in one packet is exactly the confusion
+     this sheet exists to remove. Print them once, at the end. */
+  .cost-sheet .sheet-table tfoot {
+    display: table-row-group;
   }
 
   .cost-sheet .sheet-table tr,
