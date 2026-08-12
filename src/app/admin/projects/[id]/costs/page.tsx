@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Printer } from "lucide-react";
 import { HubPageHeader } from "@/components/hub/HubUI";
 import { BudgetGrid } from "@/components/costs/BudgetGrid";
 import { CostAttributionQueue } from "@/components/costs/CostAttributionQueue";
@@ -99,10 +100,16 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
             attribution={attribution}
           />
 
-          <p className="text-xs text-ink/45 mt-4 leading-relaxed">
-            Click a code to open a line — formula, notes and allowance live there. Calculated cells
-            show a <span className="text-copper">ƒ</span> and are priced from the takeoff.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-4 mt-4">
+            <p className="text-xs text-ink/45 leading-relaxed">
+              Click a code to open a line — formula, notes and allowance live there. Calculated cells
+              show a <span className="text-copper">ƒ</span> and are priced from the takeoff.
+            </p>
+            <Link href={`/admin/projects/${id}/costs/print`} className="app-btn shrink-0">
+              <Printer className="w-4 h-4" />
+              Print sheet
+            </Link>
+          </div>
         </section>
       )}
 

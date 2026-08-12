@@ -1524,3 +1524,197 @@ a:has(.hub-metric):hover .hub-metric {
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------------- */
+/* Printable cost sheet                                                   */
+/*                                                                        */
+/* Robby works on paper: he prints the plan, writes actuals and notes on   */
+/* it by hand, and it comes back as a photo. So the sheet is plain black   */
+/* on white, every row keeps its code for matching the photo back to the   */
+/* digital plan, and the handwriting columns are ruled and roomy.          */
+/* ---------------------------------------------------------------------- */
+
+.cost-sheet {
+  padding: 1.5rem;
+  color: #000;
+}
+
+.cost-sheet .sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  border-bottom: 2px solid #000;
+  padding-bottom: 0.75rem;
+}
+
+.cost-sheet .sheet-header h1 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.cost-sheet .sheet-header .addr {
+  font-size: 0.85rem;
+  margin-top: 0.15rem;
+}
+
+.cost-sheet .sheet-header .meta {
+  font-size: 0.8rem;
+  text-align: right;
+  line-height: 1.9;
+  white-space: nowrap;
+}
+
+.cost-sheet .meta-label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.65rem;
+  color: #444;
+}
+
+/* Space to sign the sheet by hand. */
+.cost-sheet .write-line {
+  display: inline-block;
+  width: 9rem;
+  border-bottom: 1px solid #000;
+}
+
+.cost-sheet .how-to {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin: 0.75rem 0 1rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #bbb;
+  background: #f6f6f6;
+}
+
+.cost-sheet .sheet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.cost-sheet .sheet-table th,
+.cost-sheet .sheet-table td {
+  border: 1px solid #999;
+  padding: 0.3rem 0.4rem;
+  vertical-align: middle;
+}
+
+.cost-sheet .sheet-table thead th {
+  background: #e8e8e8;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.65rem;
+}
+
+.cost-sheet .section-row td {
+  background: #ddd;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.7rem;
+}
+
+.cost-sheet .total-row td {
+  background: #e8e8e8;
+  font-weight: 600;
+}
+
+.cost-sheet .total-row.grand td {
+  border-top: 2px solid #000;
+  font-size: 0.85rem;
+}
+
+.cost-sheet .c-code {
+  width: 3.2rem;
+  font-family: var(--font-mono, ui-monospace), monospace;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.cost-sheet .c-money {
+  width: 5.5rem;
+  text-align: right;
+  font-family: var(--font-mono, ui-monospace), monospace;
+  white-space: nowrap;
+}
+
+.cost-sheet .c-done {
+  width: 2.4rem;
+  text-align: center;
+}
+
+.cost-sheet .c-notes {
+  width: 32%;
+}
+
+/* Columns he writes in — taller rows, faint rule to write along. */
+.cost-sheet .c-money.written,
+.cost-sheet .c-notes {
+  height: 1.6rem;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent calc(100% - 1px),
+    #ddd calc(100% - 1px)
+  );
+}
+
+.cost-sheet .box {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 1px solid #000;
+}
+
+.cost-sheet .tag {
+  margin-left: 0.4rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.05em;
+  border: 1px solid #666;
+  padding: 0 0.2rem;
+}
+
+.cost-sheet .footer-note {
+  margin-top: 0.75rem;
+  font-size: 0.65rem;
+  color: #555;
+}
+
+@media print {
+  /* The app's chrome has no business on paper. */
+  .app-sidebar,
+  .no-print {
+    display: none !important;
+  }
+
+  .cost-sheet {
+    padding: 0;
+  }
+
+  @page {
+    margin: 0.5in;
+  }
+
+  /* Column headers repeat on every sheet, and no row is split across a
+     page break — a half-row would break the photo-to-line matching. */
+  .cost-sheet .sheet-table thead {
+    display: table-header-group;
+  }
+
+  .cost-sheet .sheet-table tr,
+  .cost-sheet .sheet-table tbody {
+    break-inside: avoid;
+  }
+
+  .cost-sheet .how-to,
+  .cost-sheet .sheet-table thead th,
+  .cost-sheet .section-row td,
+  .cost-sheet .total-row td {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
