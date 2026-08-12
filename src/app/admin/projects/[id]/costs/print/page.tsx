@@ -42,7 +42,12 @@ export default async function CostPlanPrintPage(props: { params: Promise<{ id: s
 
   if (!project) notFound();
 
-  const { lines, totals, rollup } = await loadCostPlan(supabase, id, project);
+  const { lines, totals, rollup, uncoded } = await loadCostPlan(supabase, id, project);
+
+  // Money invoiced to the client that isn't tied to a cost line yet. Without
+  // saying so, an empty Billed column reads as "nothing has been billed".
+  const uncodedBilled = uncoded.invoiceLines.reduce((sum, l) => sum + l.amount, 0);
+  const uncodedBills = uncoded.bills.reduce((sum, b) => sum + (b.amount - b.allocated), 0);
 
   const costLines = lines.filter((l) => l.line_type === "cost");
   const markupLines = lines.filter((l) => l.line_type !== "cost");
@@ -92,12 +97,23 @@ export default async function CostPlanPrintPage(props: { params: Promise<{ id: s
         number and write the new one beside it. Anything else goes in <strong>Notes</strong>.
       </p>
 
+      {(uncodedBilled > 0 || uncodedBills > 0) && (
+        <p className="uncoded-note">
+          <strong>Not yet on any line below.</strong>{" "}
+          {uncodedBilled > 0 && <>Billed to the client: {formatMoney(uncodedBilled)}. </>}
+          {uncodedBills > 0 && <>Paid to vendors: {formatMoney(uncodedBills)}. </>}
+          This money is recorded against the job but hasn&apos;t been assigned a cost code, so it is
+          missing from the columns below.
+        </p>
+      )}
+
       <table className="sheet-table">
         <thead>
           <tr>
             <th className="c-code">Code</th>
             <th className="c-desc">Description</th>
             <th className="c-money">Budget</th>
+            <th className="c-money">Billed</th>
             <th className="c-money">Actual</th>
             <th className="c-done">Done</th>
             <th className="c-notes">Notes</th>
@@ -115,12 +131,13 @@ export default async function CostPlanPrintPage(props: { params: Promise<{ id: s
               <tr className="section-row">
                 <td colSpan={2}>{group.section}</td>
                 <td className="c-money">{formatMoney(sectionBudget)}</td>
-                <td colSpan={3} />
+                <td colSpan={4} />
               </tr>
 
               {group.lines.map((line) => {
                 const budget = amountOf(line.id, line.estimated_amount);
                 const spent = rollup[line.id]?.actual ?? 0;
+                const invoiced = rollup[line.id]?.billed ?? 0;
 
                 return (
                   <tr key={line.id}>
@@ -130,6 +147,9 @@ export default async function CostPlanPrintPage(props: { params: Promise<{ id: s
                       {line.is_allowance && <span className="tag">ALLOW</span>}
                     </td>
                     <td className="c-money">{formatMoney(budget)}</td>
+                    {/* What the client has been invoiced for this line —
+                        printed for reference, not written on. */}
+                    <td className="c-money">{invoiced ? formatMoney(invoiced) : ""}</td>
                     {/* Pre-fill what the system already knows so he isn't
                         re-copying numbers that are already recorded. */}
                     <td className="c-money written">{spent ? formatMoney(spent) : ""}</td>
@@ -148,20 +168,20 @@ export default async function CostPlanPrintPage(props: { params: Promise<{ id: s
           <tr className="total-row">
             <td colSpan={2}>Subtotal</td>
             <td className="c-money">{formatMoney(totals.subtotal)}</td>
-            <td colSpan={3} />
+            <td colSpan={4} />
           </tr>
           {markupLines.map((line) => (
             <tr key={line.id}>
               <td className="c-code">{line.code ?? "—"}</td>
               <td className="c-desc">{line.trade_label}</td>
               <td className="c-money">{formatMoney(amountOf(line.id, line.estimated_amount))}</td>
-              <td colSpan={3} />
+              <td colSpan={4} />
             </tr>
           ))}
           <tr className="total-row grand">
             <td colSpan={2}>Total Build Cost</td>
             <td className="c-money">{formatMoney(totals.total)}</td>
-            <td colSpan={3} />
+            <td colSpan={4} />
           </tr>
         </tfoot>
       </table>
