@@ -134,12 +134,14 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
   const spend = useMemo(() => {
     let committed = 0;
     let actual = 0;
+    let billed = 0;
     for (const line of costLines) {
       const r = rollupOf(line);
       committed += r.committed;
       actual += r.actual;
+      billed += r.billed;
     }
-    return { committed, actual };
+    return { committed, actual, billed };
   }, [costLines, rollupOf]);
 
   const run = useCallback(
@@ -203,7 +205,7 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
       )}
 
       <div className="border border-ink/10 overflow-x-auto">
-        <table className="app-table w-full min-w-[860px]">
+        <table className="app-table w-full min-w-[980px]">
           <thead>
             <tr className="bg-bone/60 text-left app-label">
               <th className="px-3 py-3 w-20">Code</th>
@@ -211,6 +213,7 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
               <th className="px-3 py-3 text-right w-28">Budget</th>
               <th className="px-3 py-3 text-right w-28">Committed</th>
               <th className="px-3 py-3 text-right w-28">Actual</th>
+              <th className="px-3 py-3 text-right w-28">Billed</th>
               <th className="px-3 py-3 text-right w-28">Remaining</th>
               <th className="px-2 py-3 w-8" aria-label="Status" />
             </tr>
@@ -221,6 +224,7 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
             const sectionBudget = group.lines.reduce((s, l) => s + amountOf(l), 0);
             const sectionCommitted = group.lines.reduce((s, l) => s + rollupOf(l).committed, 0);
             const sectionActual = group.lines.reduce((s, l) => s + rollupOf(l).actual, 0);
+            const sectionBilled = group.lines.reduce((s, l) => s + rollupOf(l).billed, 0);
             const sectionRemaining = sectionBudget - Math.max(sectionCommitted, sectionActual);
             const lastOrder = group.lines[group.lines.length - 1]?.display_order ?? 0;
 
@@ -246,6 +250,9 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-sm text-ink/45">
                     {sectionActual ? formatMoney(sectionActual) : ""}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono tabular-nums text-sm text-ink/45">
+                    {sectionBilled ? formatMoney(sectionBilled) : ""}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-sm text-ink/45">
                     {formatMoney(sectionRemaining)}
@@ -356,6 +363,13 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                           </td>
 
                           <td
+                            className="px-3 py-1 text-right font-mono tabular-nums text-sm text-ink/70"
+                            title={r.invoice_count ? `${r.invoice_count} invoice line(s)` : undefined}
+                          >
+                            {r.billed ? formatMoney(r.billed) : <span className="text-ink/25">—</span>}
+                          </td>
+
+                          <td
                             className={[
                               "px-3 py-1 text-right font-mono tabular-nums text-sm",
                               remaining < -0.005 ? "text-red-700 font-medium" : "text-ink/70",
@@ -376,7 +390,7 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                         {isOpen && (
                           <tr className="bg-bone/20">
                             <td />
-                            <td colSpan={6} className="px-3 py-4">
+                            <td colSpan={7} className="px-3 py-4">
                               <div className="grid gap-4 md:grid-cols-2 max-w-3xl">
                                 <div>
                                   <label className="field-label">Formula</label>
@@ -489,6 +503,9 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                 {spend.actual ? formatMoney(spend.actual) : "—"}
               </td>
               <td className="px-3 py-3 text-right font-mono tabular-nums">
+                {spend.billed ? formatMoney(spend.billed) : "—"}
+              </td>
+              <td className="px-3 py-3 text-right font-mono tabular-nums">
                 {formatMoney(totals.subtotal - Math.max(spend.committed, spend.actual))}
               </td>
               <td />
@@ -508,7 +525,7 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                     )}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-sm">{formatMoney(amount)}</td>
-                  <td colSpan={4} />
+                  <td colSpan={5} />
                 </tr>
               );
             })}
@@ -518,7 +535,7 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                 Total Build Cost
               </td>
               <td className="px-3 py-3 text-right font-mono tabular-nums">{formatMoney(totals.total)}</td>
-              <td colSpan={4} className="px-3 py-3 text-right text-xs font-normal text-ink/55">
+              <td colSpan={5} className="px-3 py-3 text-right text-xs font-normal text-ink/55">
                 {totals.perSqft != null && <span>{formatMoney(totals.perSqft)}/sqft</span>}
                 {totals.perHeatedSqft != null && (
                   <span className="ml-3">{formatMoney(totals.perHeatedSqft)}/heated sqft</span>
