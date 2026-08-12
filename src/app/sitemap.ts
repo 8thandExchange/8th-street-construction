@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getAllCollectionSlugs } from "@/lib/collection-pages";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://8thstreetconstruction.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.8thstreetconstruction.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await createClient();
@@ -21,6 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/volunteer`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${SITE_URL}/about`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/contact`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE_URL}/faq`, changeFrequency: "monthly", priority: 0.75 },
     { url: `${SITE_URL}/book`, changeFrequency: "monthly", priority: 0.8 },
   ];
 

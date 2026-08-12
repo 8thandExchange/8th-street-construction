@@ -14,7 +14,8 @@
     "db:reset": "supabase db reset",
     "seed:portfolio": "tsx scripts/seed-portfolio-examples.ts",
     "mercury:accounts": "tsx scripts/mercury-find-account.ts",
-    "vendors:encrypt": "tsx scripts/encrypt-vendor-secrets.ts",
+    "vendors:encrypt": "npx tsx --env-file=.env.local scripts/encrypt-vendor-secrets.ts",
+    "costs:import": "tsx scripts/import-cost-sheet.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

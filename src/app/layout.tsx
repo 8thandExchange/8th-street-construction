@@ -12,8 +12,9 @@ import "./globals.css";
 import { LeadConnectorChat } from "@/components/site/LeadConnectorChat";
 import { PwaProvider } from "@/components/pwa/PwaProvider";
 import { getSiteContact, contactTelHref } from "@/lib/site-contact";
+import { OPENING_HOURS, SOCIAL_PROFILES } from "@/lib/seo/structured-data";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://8thstreetconstruction.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.8thstreetconstruction.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.8thstreetconstruction.com"),
@@ -94,6 +95,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       "@type": "Organization",
       name: "8th and Exchange Capital",
     },
+    openingHoursSpecification: OPENING_HOURS,
+    // Omitted entirely while empty — an empty sameAs is a hollow claim.
+    ...(SOCIAL_PROFILES.length ? { sameAs: SOCIAL_PROFILES } : {}),
     knowsAbout: [
       "Custom Home Construction",
       "Commercial Construction",
