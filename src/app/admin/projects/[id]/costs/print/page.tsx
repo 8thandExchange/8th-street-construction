@@ -91,19 +91,13 @@ export default async function CostPlanPrintPage(props: { params: Promise<{ id: s
         </div>
       </header>
 
-      <p className="how-to">
-        Write the <strong>actual cost</strong> in the blank money column as bills come in. Tick{" "}
-        <strong>Done</strong> when a trade is closed out. To change a budget, cross out the printed
-        number and write the new one beside it. Anything else goes in <strong>Notes</strong>.
-      </p>
-
       {(uncodedBilled > 0 || uncodedBills > 0) && (
         <p className="uncoded-note">
-          <strong>Not yet on any line below.</strong>{" "}
-          {uncodedBilled > 0 && <>Billed to the client: {formatMoney(uncodedBilled)}. </>}
-          {uncodedBills > 0 && <>Paid to vendors: {formatMoney(uncodedBills)}. </>}
-          This money is recorded against the job but hasn&apos;t been assigned a cost code, so it is
-          missing from the columns below.
+          <strong>Not on any line yet:</strong>{" "}
+          {uncodedBilled > 0 && <>{formatMoney(uncodedBilled)} invoiced to the client</>}
+          {uncodedBilled > 0 && uncodedBills > 0 && <>, </>}
+          {uncodedBills > 0 && <>{formatMoney(uncodedBills)} paid to vendors</>}. Nobody has said
+          which line this money belongs to, so it is missing from the columns below.
         </p>
       )}
 
@@ -142,10 +136,10 @@ export default async function CostPlanPrintPage(props: { params: Promise<{ id: s
                 return (
                   <tr key={line.id}>
                     <td className="c-code">{line.code ?? "—"}</td>
-                    <td className="c-desc">
-                      {line.trade_label}
-                      {line.is_allowance && <span className="tag">ALLOW</span>}
-                    </td>
+                    {/* No allowance tag here on purpose — it is jargon on a
+                        sheet meant to be read without explanation. It stays
+                        on the line detail in the app. */}
+                    <td className="c-desc">{line.trade_label}</td>
                     <td className="c-money">{formatMoney(budget)}</td>
                     {/* What the client has been invoiced for this line —
                         printed for reference, not written on. */}

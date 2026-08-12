@@ -1733,8 +1733,11 @@ a:has(.hub-metric):hover .hub-metric {
     display: table-row-group;
   }
 
-  .cost-sheet .sheet-table tr,
-  .cost-sheet .sheet-table tbody {
+  /* Individual rows must never split — half a row can't be read back from a
+     photo. Sections may split, though: keeping a whole section together
+     left a third of every landscape page empty, and the section heading
+     repeats nothing that a code doesn't already say. */
+  .cost-sheet .sheet-table tr {
     break-inside: avoid;
   }
 
