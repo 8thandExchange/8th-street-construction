@@ -10,8 +10,8 @@ import {
   deleteCostLine,
   type SerializedTotals,
 } from "@/lib/actions/cost-plan";
-import type { CostPlanLine, TakeoffValue, LineRollup, LineAttribution } from "@/lib/estimate/cost-plan";
-import { EMPTY_ROLLUP, groupLinesBySection } from "@/lib/estimate/cost-plan";
+import type { CostPlanLine, TakeoffValue, LineRollup, LineAttribution, LineQuotes } from "@/lib/estimate/cost-plan";
+import { EMPTY_ROLLUP, EMPTY_QUOTES, groupLinesBySection } from "@/lib/estimate/cost-plan";
 
 /* ------------------------------------------------------------------ */
 /* Editable cell — autosave on blur. No save button; Robby would        */
@@ -105,10 +105,11 @@ type Props = {
   takeoff: TakeoffValue[];
   totals: SerializedTotals;
   rollup: Record<string, LineRollup>;
+  quotes: Record<string, LineQuotes>;
   attribution: Record<string, LineAttribution[]>;
 };
 
-export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, rollup, attribution }: Props) {
+export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, rollup, quotes, attribution }: Props) {
   const [totals, setTotals] = useState(initialTotals);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
@@ -130,19 +131,23 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
     [totals]
   );
   const rollupOf = useCallback((line: CostPlanLine) => rollup[line.id] ?? EMPTY_ROLLUP, [rollup]);
+  const quotesOf = useCallback((line: CostPlanLine) => quotes[line.id] ?? EMPTY_QUOTES, [quotes]);
 
   const spend = useMemo(() => {
     let committed = 0;
     let actual = 0;
     let billed = 0;
+    let quoted = 0;
     for (const line of costLines) {
       const r = rollupOf(line);
       committed += r.committed;
       actual += r.actual;
       billed += r.billed;
+      const q = quotesOf(line);
+      quoted += q.awarded ?? q.low ?? 0;
     }
-    return { committed, actual, billed };
-  }, [costLines, rollupOf]);
+    return { committed, actual, billed, quoted };
+  }, [costLines, rollupOf, quotesOf]);
 
   const run = useCallback(
     (fn: () => Promise<{ ok: true; totals: SerializedTotals } | { ok: false; error: string }>) => {
@@ -205,12 +210,13 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
       )}
 
       <div className="border border-ink/10 overflow-x-auto">
-        <table className="app-table w-full min-w-[980px]">
+        <table className="app-table w-full min-w-[1080px]">
           <thead>
             <tr className="bg-bone/60 text-left app-label">
               <th className="px-3 py-3 w-20">Code</th>
               <th className="px-3 py-3">Description</th>
               <th className="px-3 py-3 text-right w-28">Budget</th>
+              <th className="px-3 py-3 text-right w-28">Quote</th>
               <th className="px-3 py-3 text-right w-28">Committed</th>
               <th className="px-3 py-3 text-right w-28">Actual</th>
               <th className="px-3 py-3 text-right w-28">Billed</th>
@@ -225,6 +231,10 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
             const sectionCommitted = group.lines.reduce((s, l) => s + rollupOf(l).committed, 0);
             const sectionActual = group.lines.reduce((s, l) => s + rollupOf(l).actual, 0);
             const sectionBilled = group.lines.reduce((s, l) => s + rollupOf(l).billed, 0);
+            const sectionQuoted = group.lines.reduce((s, l) => {
+              const q = quotesOf(l);
+              return s + (q.awarded ?? q.low ?? 0);
+            }, 0);
             const sectionRemaining = sectionBudget - Math.max(sectionCommitted, sectionActual);
             const lastOrder = group.lines[group.lines.length - 1]?.display_order ?? 0;
 
@@ -244,6 +254,9 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-sm text-ink/70">
                     {formatMoney(sectionBudget)}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono tabular-nums text-sm text-ink/45">
+                    {sectionQuoted ? formatMoney(sectionQuoted) : ""}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-sm text-ink/45">
                     {sectionCommitted ? formatMoney(sectionCommitted) : ""}
@@ -283,6 +296,19 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                     const status = statusOf(amount, r);
                     const records = attribution[line.id] ?? [];
                     const quote = line.awarded_amount == null ? null : Number(line.awarded_amount);
+                    const q = quotesOf(line);
+                    const quoteFigure = q.awarded ?? q.low;
+                    // Only meaningful against a budget that has been set.
+                    const quoteOver = amount > 0 && quoteFigure != null && quoteFigure > amount + 0.005;
+                    const quoteTitle = [
+                      q.awardedTo ? `Awarded to ${q.awardedTo}` : null,
+                      q.awarded == null && q.count > 0
+                        ? `${q.count} quote${q.count === 1 ? "" : "s"} in, none awarded`
+                        : null,
+                      quoteOver ? `${formatMoney(quoteFigure! - amount)} over budget` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || undefined;
 
                     return (
                       <Fragment key={line.id}>
@@ -348,6 +374,33 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                             )}
                           </td>
 
+                          {/* Quote. An awarded number is what we are held to,
+                              so it reads solid; a low bid with nothing awarded
+                              is still moving, so it reads muted with the count
+                              of quotes behind it. Over budget is flagged here
+                              rather than after the money is spent. */}
+                          <td
+                            className={[
+                              "px-3 py-1 text-right font-mono tabular-nums text-sm",
+                              q.awarded != null ? "text-ink/70" : "text-ink/45",
+                              quoteOver ? "text-red-700" : "",
+                            ].join(" ")}
+                            title={quoteTitle}
+                          >
+                            {q.awarded != null ? (
+                              formatMoney(q.awarded)
+                            ) : q.low != null ? (
+                              <span className="inline-flex items-center gap-1 justify-end">
+                                {formatMoney(q.low)}
+                                {q.count > 1 && (
+                                  <span className="text-[10px] text-ink/35">×{q.count}</span>
+                                )}
+                              </span>
+                            ) : (
+                              <span className="text-ink/25">—</span>
+                            )}
+                          </td>
+
                           <td
                             className="px-3 py-1 text-right font-mono tabular-nums text-sm text-ink/70"
                             title={r.po_count ? `${r.po_count} purchase order(s)` : undefined}
@@ -390,7 +443,7 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                         {isOpen && (
                           <tr className="bg-bone/20">
                             <td />
-                            <td colSpan={7} className="px-3 py-4">
+                            <td colSpan={8} className="px-3 py-4">
                               <div className="grid gap-4 md:grid-cols-2 max-w-3xl">
                                 <div>
                                   <label className="field-label">Formula</label>
@@ -497,6 +550,9 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
               </td>
               <td className="px-3 py-3 text-right font-mono tabular-nums">{formatMoney(totals.subtotal)}</td>
               <td className="px-3 py-3 text-right font-mono tabular-nums">
+                {spend.quoted ? formatMoney(spend.quoted) : "—"}
+              </td>
+              <td className="px-3 py-3 text-right font-mono tabular-nums">
                 {spend.committed ? formatMoney(spend.committed) : "—"}
               </td>
               <td className="px-3 py-3 text-right font-mono tabular-nums">
@@ -525,7 +581,7 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                     )}
                   </td>
                   <td className="px-3 py-2 text-right font-mono tabular-nums text-sm">{formatMoney(amount)}</td>
-                  <td colSpan={5} />
+                  <td colSpan={6} />
                 </tr>
               );
             })}
@@ -535,7 +591,7 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                 Total Build Cost
               </td>
               <td className="px-3 py-3 text-right font-mono tabular-nums">{formatMoney(totals.total)}</td>
-              <td colSpan={5} className="px-3 py-3 text-right text-xs font-normal text-ink/55">
+              <td colSpan={6} className="px-3 py-3 text-right text-xs font-normal text-ink/55">
                 {totals.perSqft != null && <span>{formatMoney(totals.perSqft)}/sqft</span>}
                 {totals.perHeatedSqft != null && (
                   <span className="ml-3">{formatMoney(totals.perHeatedSqft)}/heated sqft</span>

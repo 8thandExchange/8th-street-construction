@@ -47,6 +47,24 @@ export type LineRollup = {
   invoice_count: number;
 };
 
+/**
+ * Sub quotes standing against a cost line.
+ *
+ * `awarded` is the number we have committed to and mirrors
+ * `project_estimate_lines.awarded_amount`. `low` is the cheapest quote
+ * received while nothing is awarded yet, which is the figure worth
+ * comparing to budget when deciding whether a line still holds.
+ */
+export type LineQuotes = {
+  awarded: number | null;
+  low: number | null;
+  count: number;
+  /** Who the awarded quote is with, when we know. */
+  awardedTo: string | null;
+};
+
+export const EMPTY_QUOTES: LineQuotes = { awarded: null, low: null, count: 0, awardedTo: null };
+
 /** The individual records behind a line's committed / actual / billed. */
 export type LineAttribution = {
   kind: "po" | "bill" | "invoice";
@@ -62,6 +80,7 @@ export type CostPlan = {
   takeoff: TakeoffValue[];
   totals: CostPlanTotals;
   rollup: Record<string, LineRollup>;
+  quotes: Record<string, LineQuotes>;
   attribution: Record<string, LineAttribution[]>;
   /** Money on this job not yet coded to any line — the work queue. */
   uncoded: {
@@ -105,6 +124,62 @@ function toTakeoffInputs(takeoff: TakeoffValue[]): TakeoffInput[] {
   }));
 }
 
+/** A bid row joined to its request, as loadCostPlan selects it. */
+export type BidRow = {
+  amount: number | string | null;
+  status: string | null;
+  subcontractors?: { company_name?: string | null } | { company_name?: string | null }[] | null;
+  bid_requests?:
+    | { estimate_line_id: string | null }
+    | { estimate_line_id: string | null }[]
+    | null;
+};
+
+/**
+ * Collapse raw bids into one quote summary per cost line.
+ *
+ * Awarded is seeded from the line rather than from any bid, because a job
+ * can be awarded at a negotiated number that no submitted bid matches —
+ * `awarded_amount` is what we are actually held to.
+ */
+export function aggregateQuotes(
+  lines: Pick<CostPlanLine, "id" | "awarded_amount">[],
+  bidRows: BidRow[]
+): Record<string, LineQuotes> {
+  const first = <T,>(v: T | T[] | null | undefined): T | null =>
+    Array.isArray(v) ? (v[0] ?? null) : (v ?? null);
+
+  const quotes: Record<string, LineQuotes> = {};
+
+  for (const line of lines) {
+    const awarded = line.awarded_amount == null ? null : Number(line.awarded_amount);
+    if (awarded != null) quotes[line.id] = { awarded, low: null, count: 0, awardedTo: null };
+  }
+
+  for (const row of bidRows) {
+    const lineId = first(row.bid_requests)?.estimate_line_id;
+    if (!lineId) continue;
+
+    // A withdrawn or rejected bid is not a quote we still hold.
+    if (row.status && ["withdrawn", "rejected", "declined"].includes(row.status)) continue;
+
+    const amount = Number(row.amount ?? 0);
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+
+    const entry = (quotes[lineId] ??= { awarded: null, low: null, count: 0, awardedTo: null });
+
+    entry.count += 1;
+    if (entry.low == null || amount < entry.low) entry.low = amount;
+
+    if (row.status === "accepted" || row.status === "awarded") {
+      entry.awardedTo = first(row.subcontractors)?.company_name ?? entry.awardedTo;
+      if (entry.awarded == null) entry.awarded = amount;
+    }
+  }
+
+  return quotes;
+}
+
 export async function loadCostPlan(
   supabase: Db,
   projectId: string,
@@ -117,6 +192,7 @@ export async function loadCostPlan(
     { data: poRows },
     { data: billRows },
     { data: invoiceRows },
+    { data: bidRows },
   ] = await Promise.all([
     supabase.from("project_estimate_lines").select(LINE_COLUMNS).eq("project_id", projectId).order("display_order"),
     supabase.from("project_takeoff_values").select(TAKEOFF_COLUMNS).eq("project_id", projectId).order("display_order"),
@@ -137,6 +213,14 @@ export async function loadCostPlan(
       .from("invoice_line_items")
       .select("id, description, amount, estimate_line_id, invoices!inner(id, invoice_number, status, project_id)")
       .eq("invoices.project_id", projectId),
+    // Quotes reach a cost line through their bid request, which is the only
+    // thing that knows which line was put out to bid.
+    supabase
+      .from("bids")
+      .select(
+        "id, amount, status, subcontractors(company_name), bid_requests!inner(id, estimate_line_id, project_id)"
+      )
+      .eq("bid_requests.project_id", projectId),
   ]);
 
   const lines = (lineRows ?? []) as CostPlanLine[];
@@ -159,6 +243,8 @@ export async function loadCostPlan(
       invoice_count: Number(r.invoice_count ?? 0),
     };
   }
+
+  const quotes = aggregateQuotes(lines, (bidRows ?? []) as any[]);
 
   const attribution: Record<string, LineAttribution[]> = {};
   const push = (lineId: string | null, entry: LineAttribution) => {
@@ -238,6 +324,7 @@ export async function loadCostPlan(
     takeoff,
     totals,
     rollup,
+    quotes,
     attribution,
     uncoded: { bills: uncodedBills, invoiceLines: uncodedInvoiceLines },
   };
