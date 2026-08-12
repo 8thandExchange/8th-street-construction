@@ -60,7 +60,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title, slug, contract_value, client_id, funding_type")
+    .select("id, title, slug, contract_value, client_id, funding_type, estimated_cost")
     .eq("id", id)
     .single();
 
@@ -181,7 +181,9 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
 
       <BillingStatusBanner stripeReady={stripeReady} mercuryReady={mercuryReady} variant="admin" />
 
-      {isHabitat && <HabitatProjectBanner projectId={id} />}
+      {isHabitat && (
+        <HabitatProjectBanner projectId={id} estimatedCost={Number(project.estimated_cost ?? 0)} />
+      )}
 
       <InvoiceBuilderDropzone projectId={id} />
 

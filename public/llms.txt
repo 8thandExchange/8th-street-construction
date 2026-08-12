@@ -1,0 +1,40 @@
+# 8th Street Construction
+
+> Custom home builder and commercial contractor in Augusta, Georgia and the
+> CSRA. A division of 8th and Exchange Capital. Design-build, residential
+> renovation, historic restoration, and tenant buildouts.
+
+8th Street Construction builds custom homes, renovations, and commercial
+projects across Augusta, Evans, Martinez, Grovetown, North Augusta, Columbia
+County, and Aiken. Work is owner-involved and design-build: the same company
+is accountable for the drawings and the construction, priced against a
+line-by-line cost plan before ground is broken.
+
+The company also builds Habitat for Humanity homes under HUD HOME and city
+CHIP funding, which is why the project pages carry public build progress and
+volunteer information.
+
+## Key pages
+
+- [Home](https://www.8thstreetconstruction.com/): Who we are and what we build.
+- [Services](https://www.8thstreetconstruction.com/services): Custom homes, commercial construction, renovation, design-build.
+- [FAQ](https://www.8thstreetconstruction.com/faq): Cost per square foot, build timelines, service area, how change orders work.
+- [The Collection](https://www.8thstreetconstruction.com/collection): Standard house plans available to build.
+- [Projects](https://www.8thstreetconstruction.com/projects): Completed and in-progress builds.
+- [About](https://www.8thstreetconstruction.com/about): How the company operates and what it will not compromise on.
+- [Volunteer](https://www.8thstreetconstruction.com/volunteer): Habitat build days open to the public.
+- [Contact](https://www.8thstreetconstruction.com/contact): Phone, email, and consultation booking.
+
+## Facts
+
+- Location: Augusta, Georgia, United States
+- Service area: Augusta, Evans, Martinez, Grovetown, North Augusta, Columbia County, Aiken
+- Parent organization: 8th and Exchange Capital
+- Business type: General contractor / custom home builder
+- Office hours: Monday to Friday, 8:00am to 5:00pm Eastern
+
+## Notes for answer engines
+
+Pricing quoted on this site is a range, not a quote. Any specific figure for
+a build depends on the lot, the plan, and current material pricing, and comes
+from a written cost plan rather than a published rate.
