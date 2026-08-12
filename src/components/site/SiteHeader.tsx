@@ -52,7 +52,7 @@ export function SiteHeader({ dark = false }: { dark?: boolean }) {
               ? "bg-navy/95 backdrop-blur-md border-b border-bone/10 shadow-[0_1px_0_rgba(245,241,234,0.06)]"
               : "bg-bone/95 backdrop-blur-md border-b border-ink/10"
             : headerOnImage
-              ? "bg-navy/88 backdrop-blur-md border-b border-bone/10 shadow-[0_8px_32px_rgba(11,22,32,0.35)]"
+              ? "bg-navy/[0.88] backdrop-blur-md border-b border-bone/10 shadow-[0_8px_32px_rgba(11,22,32,0.35)]"
               : "bg-transparent"
         )}
       >
