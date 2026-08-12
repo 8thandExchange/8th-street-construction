@@ -1580,6 +1580,14 @@ a:has(.hub-metric):hover .hub-metric {
   border-bottom: 1px solid #000;
 }
 
+.cost-sheet .uncoded-note {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  margin: 0 0 0.75rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #000;
+}
+
 .cost-sheet .how-to {
   font-size: 0.78rem;
   line-height: 1.5;
@@ -1648,7 +1656,7 @@ a:has(.hub-metric):hover .hub-metric {
 }
 
 .cost-sheet .c-notes {
-  width: 32%;
+  width: 30%;
 }
 
 /* Columns he writes in — taller rows, faint rule to write along. */
@@ -1704,8 +1712,11 @@ a:has(.hub-metric):hover .hub-metric {
     background: #fff !important;
   }
 
+  /* Landscape: seven columns need the width, and it leaves the Notes
+     column wide enough to actually write a sentence in. */
   @page {
-    margin: 0.5in;
+    size: letter landscape;
+    margin: 0.45in;
   }
 
   /* Column headers repeat on every sheet, and no row is split across a
