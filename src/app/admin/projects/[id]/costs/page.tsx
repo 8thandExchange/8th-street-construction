@@ -27,7 +27,7 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
 
   if (!project) notFound();
 
-  const { lines, takeoff, totals, rollup, attribution, uncoded } = await loadCostPlan(
+  const { lines, takeoff, totals, rollup, quotes, attribution, uncoded } = await loadCostPlan(
     supabase,
     id,
     project
@@ -97,6 +97,7 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
             takeoff={takeoff}
             totals={totals}
             rollup={rollup}
+            quotes={quotes}
             attribution={attribution}
           />
 
