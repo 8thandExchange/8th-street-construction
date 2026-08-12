@@ -14,8 +14,11 @@ export function HeroSection() {
         alt={GENERATED_IMAGERY.photoHeroPorch.alt}
       />
 
-      {/* Scrim — readable copy over video; lighter on the right so motion shows through */}
-      <div className="absolute inset-0 bg-gradient-to-r from-navy/92 via-navy/65 to-navy/25 md:from-navy/88 md:via-navy/55 md:to-navy/20" />
+      {/* Scrim — readable copy over video; lighter on the right so motion shows
+          through. Opacities off Tailwind's 5-step scale must use bracket
+          notation: a bare from-navy/92 generates nothing, which leaves
+          --tw-gradient-stops undefined and kills the whole gradient. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-navy/[0.92] via-navy/65 to-navy/25 md:from-navy/[0.88] md:via-navy/55 md:to-navy/20" />
       <div className="absolute inset-0 bg-gradient-to-t from-navy/70 via-transparent to-navy/30" />
       <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-navy via-navy/85 to-transparent pointer-events-none" />
 

@@ -50,7 +50,7 @@ export function PageHero({
             className={cn(
               "absolute inset-0",
               dark
-                ? "bg-gradient-to-b from-navy/95 via-navy/80 to-navy/94"
+                ? "bg-gradient-to-b from-navy/95 via-navy/80 to-navy/[0.94]"
                 : "bg-gradient-to-b from-bone/90 via-bone/75 to-bone/95"
             )}
           />
