@@ -15,6 +15,7 @@
     "seed:portfolio": "tsx scripts/seed-portfolio-examples.ts",
     "mercury:accounts": "tsx scripts/mercury-find-account.ts",
     "vendors:encrypt": "tsx scripts/encrypt-vendor-secrets.ts",
+    "costs:import": "tsx scripts/import-cost-sheet.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
