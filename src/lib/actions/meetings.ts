@@ -11,10 +11,12 @@ import { minutesDocxFilename, renderMinutesDocx } from "@/lib/meetings/minutes-d
 import { getMeetingDetail } from "@/lib/meetings/queries";
 import { runActionItemNudges } from "@/lib/meetings/nudges";
 import {
+  ATTENDEE_ROLES,
   OPEN_ACTION_STATUSES,
   type ActionItemRow,
   type ActionItemStatus,
   type AgendaItemRow,
+  type AttendeeRole,
   type MeetingKind,
   type MeetingSeriesRow,
 } from "@/lib/meetings/types";
@@ -584,6 +586,60 @@ export async function reopenMinutes(formData: FormData) {
   revalidateMeetings(meetingId);
 }
 
+// =====================================================================
+// ATTENDEES
+// =====================================================================
+
+export async function saveAttendee(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const meetingId = str(formData, "meeting_id");
+  const id = optional(formData, "id");
+
+  const name = str(formData, "name");
+  if (!name) throw new Error("Give the attendee a name");
+
+  const email = optional(formData, "email");
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    throw new Error(`"${email}" doesn't look like an email address`);
+
+  const role = (str(formData, "role") || "attendee") as AttendeeRole;
+  if (!ATTENDEE_ROLES.includes(role)) throw new Error("Unknown attendee role");
+
+  const row = {
+    name,
+    email,
+    organization: optional(formData, "organization"),
+    role,
+    present: formData.get("present") === "on",
+  };
+
+  const { error } = id
+    ? await supabase
+        .from("meeting_attendees")
+        .update(row)
+        .eq("id", id)
+        .eq("meeting_id", meetingId)
+    : await supabase.from("meeting_attendees").insert({ ...row, meeting_id: meetingId });
+
+  if (error) throw new Error(error.message);
+  revalidateMeetings(meetingId);
+}
+
+export async function deleteAttendee(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const meetingId = str(formData, "meeting_id");
+  const id = str(formData, "id");
+
+  const { error } = await supabase
+    .from("meeting_attendees")
+    .delete()
+    .eq("id", id)
+    .eq("meeting_id", meetingId);
+
+  if (error) throw new Error(error.message);
+  revalidateMeetings(meetingId);
+}
+
 export async function emailMinutes(formData: FormData) {
   const { supabase } = await requireAdmin();
   const meetingId = str(formData, "id");
@@ -592,7 +648,7 @@ export async function emailMinutes(formData: FormData) {
   const detail = await getMeetingDetail(supabase, meetingId);
   if (!detail) throw new Error("Meeting not found");
 
-  const recipients = [
+  const attendeeEmails = [
     ...new Set(
       detail.attendees
         .map((a) => a.email?.trim())
@@ -600,10 +656,20 @@ export async function emailMinutes(formData: FormData) {
     ),
   ];
 
-  if (!recipients.length)
+  if (!attendeeEmails.length)
     throw new Error(
       "None of the attendees have an email address on file. Add addresses to the attendee list first."
     );
+
+  // The form may narrow the send to specific attendees. Only addresses that
+  // are actually on the attendee list are honored — never arbitrary input.
+  const selected = formData.getAll("to").map((v) => String(v).trim());
+  const recipients = selected.length
+    ? attendeeEmails.filter((e) => selected.includes(e))
+    : attendeeEmails;
+
+  if (!recipients.length)
+    throw new Error("Pick at least one attendee to send the minutes to.");
 
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error("Email isn't configured (RESEND_API_KEY missing)");

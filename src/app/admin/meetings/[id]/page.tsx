@@ -7,14 +7,16 @@ import {
   addActionItemForm,
   addDecision,
   approveMinutes,
+  deleteAttendee,
   deleteDecision,
   reopenMinutes,
   saveAgendaItem,
+  saveAttendee,
   updateMeetingBasics,
 } from "@/lib/actions/meetings";
 import { getMeetingDetail } from "@/lib/meetings/queries";
 import { formatMeetingDate, renderMinutesMarkdown } from "@/lib/meetings/minutes-format";
-import { MEETING_STATUS_LABELS } from "@/lib/meetings/types";
+import { ATTENDEE_ROLES, MEETING_STATUS_LABELS } from "@/lib/meetings/types";
 import { appStatusBadge } from "@/lib/project/status-badges";
 import type { ActionItemWithContext } from "@/lib/meetings/queries";
 
@@ -37,11 +39,13 @@ export default async function MeetingDetailPage({
   const projects = (projectRows ?? []) as { id: string; title: string }[];
 
   const minutes = meeting.approved_snapshot || renderMinutesMarkdown(detail);
-  const recipientEmails = [
-    ...new Set(
-      attendees.map((a) => a.email?.trim()).filter((e): e is string => Boolean(e))
-    ),
-  ];
+  const seen = new Set<string>();
+  const recipients = attendees.flatMap((a) => {
+    const email = a.email?.trim();
+    if (!email || seen.has(email)) return [];
+    seen.add(email);
+    return [{ name: a.name, email }];
+  });
 
   return (
     <div className="max-w-4xl space-y-8 p-4 md:p-8 lg:p-10">
@@ -121,26 +125,139 @@ export default async function MeetingDetailPage({
             <p className="p-5 text-sm italic app-muted">No attendees recorded.</p>
           )}
           {attendees.map((a) => (
-            <div key={a.id} className="flex items-center justify-between gap-3 p-4">
-              <div className="min-w-0">
-                <div className="truncate text-[14px] text-navy">{a.name}</div>
-                {(a.organization || a.email) && (
-                  <div className="truncate text-xs app-muted">
-                    {[a.organization, a.email].filter(Boolean).join(" · ")}
-                  </div>
-                )}
-                {!a.email && (
-                  <div className="text-[11px] italic text-rust/80">
-                    No email on file — won&apos;t receive circulated minutes
-                  </div>
-                )}
-              </div>
-              <span className="app-badge app-badge-neutral shrink-0">
-                {a.present ? a.role : "apology"}
-              </span>
-            </div>
+            <details key={a.id} className="p-0">
+              <summary
+                className={`flex items-center justify-between gap-3 p-4 ${
+                  locked ? "pointer-events-none" : "cursor-pointer list-none"
+                }`}
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-[14px] text-navy">{a.name}</span>
+                  {(a.organization || a.email) && (
+                    <span className="block truncate text-xs app-muted">
+                      {[a.organization, a.email].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
+                  {!a.email && (
+                    <span className="block text-[11px] italic text-rust/80">
+                      No email on file — won&apos;t receive circulated minutes
+                    </span>
+                  )}
+                </span>
+                <span className="app-badge app-badge-neutral shrink-0">
+                  {a.present ? a.role : "apology"}
+                </span>
+              </summary>
+              {!locked && (
+                <div className="border-t border-navy/[0.06] p-4">
+                  <form
+                    action={async (fd: FormData) => {
+                      "use server";
+                      await saveAttendee(fd);
+                    }}
+                    className="grid gap-4 md:grid-cols-2"
+                  >
+                    <input type="hidden" name="meeting_id" value={meeting.id} />
+                    <input type="hidden" name="id" value={a.id} />
+                    <div>
+                      <label className="app-label">Name</label>
+                      <input name="name" defaultValue={a.name} required className="mt-1 w-full" />
+                    </div>
+                    <div>
+                      <label className="app-label">Email</label>
+                      <input
+                        type="email"
+                        name="email"
+                        defaultValue={a.email ?? ""}
+                        className="mt-1 w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="app-label">Organization</label>
+                      <input
+                        name="organization"
+                        defaultValue={a.organization ?? ""}
+                        className="mt-1 w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="app-label">Role</label>
+                      <select name="role" defaultValue={a.role} className="mt-1 w-full">
+                        {ATTENDEE_ROLES.map((r) => (
+                          <option key={r} value={r}>
+                            {r}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <label className="flex items-center gap-2 text-sm text-navy md:col-span-2">
+                      <input type="checkbox" name="present" defaultChecked={a.present} />
+                      Was present
+                    </label>
+                    <div className="md:col-span-2">
+                      <button type="submit" className="app-btn app-btn-primary">
+                        Save
+                      </button>
+                    </div>
+                  </form>
+                  <form
+                    action={async (fd: FormData) => {
+                      "use server";
+                      await deleteAttendee(fd);
+                    }}
+                    className="mt-2"
+                  >
+                    <input type="hidden" name="meeting_id" value={meeting.id} />
+                    <input type="hidden" name="id" value={a.id} />
+                    <button type="submit" className="app-btn app-btn-ghost">
+                      Remove from meeting
+                    </button>
+                  </form>
+                </div>
+              )}
+            </details>
           ))}
         </div>
+
+        {!locked && (
+          <form
+            action={async (fd: FormData) => {
+              "use server";
+              await saveAttendee(fd);
+            }}
+            className="app-card grid gap-4 p-5 md:grid-cols-4"
+          >
+            <input type="hidden" name="meeting_id" value={meeting.id} />
+            <div>
+              <label className="app-label">Add an attendee</label>
+              <input name="name" required placeholder="Name" className="mt-1 w-full" />
+            </div>
+            <div>
+              <label className="app-label">Email</label>
+              <input type="email" name="email" className="mt-1 w-full" />
+            </div>
+            <div>
+              <label className="app-label">Organization</label>
+              <input name="organization" className="mt-1 w-full" />
+            </div>
+            <div>
+              <label className="app-label">Role</label>
+              <select name="role" defaultValue="attendee" className="mt-1 w-full">
+                {ATTENDEE_ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <input type="hidden" name="present" value="on" />
+            <div className="md:col-span-4">
+              <button type="submit" className="app-btn app-btn-secondary">
+                Add
+              </button>
+            </div>
+          </form>
+        )}
       </section>
 
       {/* ---------------------------------------------------------------- */}
@@ -383,7 +500,7 @@ export default async function MeetingDetailPage({
               </button>
             </form>
           )}
-          <EmailMinutesButton meetingId={meeting.id} recipients={recipientEmails} />
+          <EmailMinutesButton meetingId={meeting.id} recipients={recipients} />
           <a
             href={`/api/meetings/${meeting.id}/docx`}
             className="app-btn app-btn-secondary"
