@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toggleTaskDone, deleteTask, createTask, updateTask } from "@/lib/actions/tasks";
 import { CUSTOM_PHASE_KEY } from "@/lib/build/task-phases";
+import { ChecklistItems, type ChecklistItem } from "./ChecklistItems";
 
 export type TaskRow = {
   id: string;
@@ -111,10 +112,12 @@ function TaskRowItem({
   task,
   projectId,
   phaseOptions,
+  checklist,
 }: {
   task: TaskRow;
   projectId: string;
   phaseOptions: { key: string; label: string; milestoneId: string | null }[];
+  checklist: ChecklistItem[];
 }) {
   const [editing, setEditing] = useState(false);
 
@@ -224,6 +227,7 @@ function TaskRowItem({
             {task.description && (
               <p className="text-xs text-ink/55 mt-1 leading-relaxed">{task.description}</p>
             )}
+            <ChecklistItems taskId={task.id} projectId={projectId} items={checklist} />
             <button
               type="button"
               onClick={() => setEditing(true)}
@@ -253,9 +257,11 @@ function TaskRowItem({
 export function TaskChecklist({
   projectId,
   phases,
+  checklistByTask = {},
 }: {
   projectId: string;
   phases: PhaseGroup[];
+  checklistByTask?: Record<string, ChecklistItem[]>;
 }) {
   const [openPhase, setOpenPhase] = useState<string | null>(phases[0]?.phaseKey ?? null);
 
@@ -304,6 +310,7 @@ export function TaskChecklist({
                       task={task}
                       projectId={projectId}
                       phaseOptions={phaseOptions}
+                      checklist={checklistByTask[task.id] ?? []}
                     />
                   ))}
                   {!phase.tasks.length && (
