@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { TaskChecklist, type PhaseGroup, type TaskRow } from "@/components/project-hub/TaskChecklist";
+import type { ChecklistItem } from "@/components/project-hub/ChecklistItems";
 import { getPlaybookById, DEFAULT_PLAYBOOK_ID } from "@/lib/build/playbook-registry";
 import { CUSTOM_PHASE_KEY, CUSTOM_PHASE_TITLE } from "@/lib/build/task-phases";
 
@@ -90,6 +91,33 @@ export default async function ProjectTasksPage(props: { params: Promise<{ id: st
       .order("display_order", { ascending: true }),
   ]);
 
+  // Checklist steps under each task, with short-lived signed URLs for
+  // the proof photos (the documents bucket is private).
+  const { data: checklistRows } = await supabase
+    .from("task_checklist_items")
+    .select("id, task_id, label, done, done_at, photo_path, display_order")
+    .in("task_id", (tasks ?? []).map((t: { id: string }) => t.id))
+    .order("display_order", { ascending: true });
+
+  const checklistByTask: Record<string, ChecklistItem[]> = {};
+  for (const row of checklistRows ?? []) {
+    let photoUrl: string | null = null;
+    if (row.photo_path) {
+      const { data: signed } = await supabase.storage
+        .from("project-documents")
+        .createSignedUrl(row.photo_path, 3600);
+      photoUrl = signed?.signedUrl ?? null;
+    }
+    (checklistByTask[row.task_id] ??= []).push({
+      id: row.id,
+      label: row.label,
+      done: row.done,
+      done_at: row.done_at,
+      photo_path: row.photo_path,
+      photo_url: photoUrl,
+    });
+  }
+
   const taskRows = (tasks ?? []) as TaskRow[];
   const phases = buildPhases(
     Boolean(project.playbook_applied_at),
@@ -134,7 +162,7 @@ export default async function ProjectTasksPage(props: { params: Promise<{ id: st
         </div>
       )}
 
-      <TaskChecklist projectId={id} phases={phases} />
+      <TaskChecklist projectId={id} phases={phases} checklistByTask={checklistByTask} />
     </div>
   );
 }
