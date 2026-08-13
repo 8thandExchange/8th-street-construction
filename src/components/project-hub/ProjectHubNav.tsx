@@ -19,6 +19,7 @@ const GROUPS = [
       { href: "/tasks", label: "Checklists" },
       { href: "/schedule", label: "Schedule" },
       { href: "/daily-logs", label: "Field Notes" },
+      { href: "/inspections", label: "Inspections" },
     ],
   },
   {
