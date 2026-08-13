@@ -26,6 +26,7 @@ const GROUPS = [
     label: "Money",
     items: [
       { href: "/costs", label: "Our Cost Plan" },
+      { href: "/proposals", label: "Proposals" },
       { href: "/bid-requests", label: "Sub Quotes" },
       { href: "/purchase-orders", label: "Purchase Orders" },
       { href: "/billing", label: "Client Invoices" },

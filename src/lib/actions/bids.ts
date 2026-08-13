@@ -36,12 +36,30 @@ export async function createBidRequest(formData: FormData) {
 
   if (!subIds.length) throw new Error("Select at least one subcontractor");
 
+  // A library scope, when chosen, is appended in full — the standard is
+  // what subs price, not a summary of it.
+  let scope = String(formData.get("scope_of_work") ?? "").trim();
+  const templateId = String(formData.get("scope_template_id") ?? "").trim();
+  if (templateId) {
+    const { data: template } = await supabase
+      .from("scope_templates")
+      .select("title, body_md")
+      .eq("id", templateId)
+      .single();
+    if (template) {
+      scope = [scope, `— ${template.title} —`, template.body_md]
+        .filter(Boolean)
+        .join("\n\n");
+    }
+  }
+  if (!scope) throw new Error("Write a scope of work or pick one from the library");
+
   const { data: rfq, error } = await supabase
     .from("bid_requests")
     .insert({
       project_id: projectId,
       title: String(formData.get("title")).trim(),
-      scope_of_work: String(formData.get("scope_of_work")).trim(),
+      scope_of_work: scope,
       trade: String(formData.get("trade")).trim(),
       bid_deadline: String(formData.get("bid_deadline") || "").trim() || null,
       created_by: user.id,
