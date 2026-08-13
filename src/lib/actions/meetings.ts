@@ -7,13 +7,16 @@ import { Resend } from "resend";
 import { meetingMinutesEmail } from "@/lib/email/templates/meeting-minutes";
 import { buildNextAgenda } from "@/lib/meetings/agenda";
 import { renderMinutesMarkdown } from "@/lib/meetings/minutes-format";
+import { minutesDocxFilename, renderMinutesDocx } from "@/lib/meetings/minutes-docx";
 import { getMeetingDetail } from "@/lib/meetings/queries";
 import { runActionItemNudges } from "@/lib/meetings/nudges";
 import {
+  ATTENDEE_ROLES,
   OPEN_ACTION_STATUSES,
   type ActionItemRow,
   type ActionItemStatus,
   type AgendaItemRow,
+  type AttendeeRole,
   type MeetingKind,
   type MeetingSeriesRow,
 } from "@/lib/meetings/types";
@@ -583,6 +586,60 @@ export async function reopenMinutes(formData: FormData) {
   revalidateMeetings(meetingId);
 }
 
+// =====================================================================
+// ATTENDEES
+// =====================================================================
+
+export async function saveAttendee(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const meetingId = str(formData, "meeting_id");
+  const id = optional(formData, "id");
+
+  const name = str(formData, "name");
+  if (!name) throw new Error("Give the attendee a name");
+
+  const email = optional(formData, "email");
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    throw new Error(`"${email}" doesn't look like an email address`);
+
+  const role = (str(formData, "role") || "attendee") as AttendeeRole;
+  if (!ATTENDEE_ROLES.includes(role)) throw new Error("Unknown attendee role");
+
+  const row = {
+    name,
+    email,
+    organization: optional(formData, "organization"),
+    role,
+    present: formData.get("present") === "on",
+  };
+
+  const { error } = id
+    ? await supabase
+        .from("meeting_attendees")
+        .update(row)
+        .eq("id", id)
+        .eq("meeting_id", meetingId)
+    : await supabase.from("meeting_attendees").insert({ ...row, meeting_id: meetingId });
+
+  if (error) throw new Error(error.message);
+  revalidateMeetings(meetingId);
+}
+
+export async function deleteAttendee(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const meetingId = str(formData, "meeting_id");
+  const id = str(formData, "id");
+
+  const { error } = await supabase
+    .from("meeting_attendees")
+    .delete()
+    .eq("id", id)
+    .eq("meeting_id", meetingId);
+
+  if (error) throw new Error(error.message);
+  revalidateMeetings(meetingId);
+}
+
 export async function emailMinutes(formData: FormData) {
   const { supabase } = await requireAdmin();
   const meetingId = str(formData, "id");
@@ -591,7 +648,7 @@ export async function emailMinutes(formData: FormData) {
   const detail = await getMeetingDetail(supabase, meetingId);
   if (!detail) throw new Error("Meeting not found");
 
-  const recipients = [
+  const attendeeEmails = [
     ...new Set(
       detail.attendees
         .map((a) => a.email?.trim())
@@ -599,7 +656,20 @@ export async function emailMinutes(formData: FormData) {
     ),
   ];
 
-  if (!recipients.length) throw new Error("No attendee email addresses on this meeting");
+  if (!attendeeEmails.length)
+    throw new Error(
+      "None of the attendees have an email address on file. Add addresses to the attendee list first."
+    );
+
+  // The form may narrow the send to specific attendees. Only addresses that
+  // are actually on the attendee list are honored — never arbitrary input.
+  const selected = formData.getAll("to").map((v) => String(v).trim());
+  const recipients = selected.length
+    ? attendeeEmails.filter((e) => selected.includes(e))
+    : attendeeEmails;
+
+  if (!recipients.length)
+    throw new Error("Pick at least one attendee to send the minutes to.");
 
   const key = process.env.RESEND_API_KEY;
   if (!key) throw new Error("Email isn't configured (RESEND_API_KEY missing)");
@@ -608,8 +678,43 @@ export async function emailMinutes(formData: FormData) {
   const from =
     process.env.EMAIL_FROM || "8th Street Construction <hello@8thstreetconstruction.com>";
 
-  await new Resend(key).emails.send({ from, to: recipients, subject, html, text });
+  // Attach the Word copy so recipients get a file they can save or print.
+  const docx = await renderMinutesDocx(detail);
+
+  // Resend reports API failures in the response, not by throwing — an
+  // unchecked send can fail silently.
+  const { error } = await new Resend(key).emails.send({
+    from,
+    to: recipients,
+    subject,
+    html,
+    text,
+    attachments: [{ filename: minutesDocxFilename(detail.meeting), content: docx }],
+  });
+  if (error) throw new Error(`The email didn't send: ${error.message}`);
+
   return { sent_to: recipients };
+}
+
+export type EmailMinutesState =
+  | { status: "idle" }
+  | { status: "sent"; recipients: string[] }
+  | { status: "error"; message: string };
+
+/** useActionState wrapper so the page can show what happened to the send. */
+export async function emailMinutesAction(
+  _prev: EmailMinutesState,
+  formData: FormData
+): Promise<EmailMinutesState> {
+  try {
+    const { sent_to } = await emailMinutes(formData);
+    return { status: "sent", recipients: sent_to };
+  } catch (err) {
+    return {
+      status: "error",
+      message: err instanceof Error ? err.message : "Something went wrong sending the email.",
+    };
+  }
 }
 
 // =====================================================================
