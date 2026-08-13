@@ -31,7 +31,9 @@ export async function recordCostSnapshot(formData: FormData): Promise<{
       .single(),
     supabase
       .from("project_cost_line_rollup")
-      .select("id, code, section, trade_label, line_type, budget, committed, actual, billed")
+      .select(
+        "id, code, section, trade_label, line_type, budget, revised_budget, committed, actual, billed"
+      )
       .eq("project_id", projectId),
     supabase
       .from("project_estimate_lines")
@@ -59,7 +61,15 @@ export async function recordCostSnapshot(formData: FormData): Promise<{
       line_type: (r.line_type as string) ?? "cost",
       unit: lineMeta.get(r.id as string)?.unit ?? null,
       is_allowance: lineMeta.get(r.id as string)?.is_allowance ?? false,
-      budget: r.budget == null ? null : round2(Number(r.budget)),
+      // History remembers the budget we were actually held to — with
+      // approved change orders folded in — so variance means "how good
+      // was our final number", not "how much scope changed".
+      budget:
+        r.revised_budget == null
+          ? r.budget == null
+            ? null
+            : round2(Number(r.budget))
+          : round2(Number(r.revised_budget)),
       committed: round2(Number(r.committed ?? 0)),
       actual: round2(Number(r.actual ?? 0)),
       billed: round2(Number(r.billed ?? 0)),

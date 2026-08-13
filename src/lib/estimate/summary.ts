@@ -18,13 +18,18 @@ export type ProjectCostSummary = {
   clientVsEstimate: number;
   linesWithBids: number;
   lineCount: number;
+  /** Sum of approved change orders' client cost impact. clientContract
+   *  already includes it (approval bumps contract_value), so the original
+   *  contract is clientContract minus this. */
+  approvedCoImpact: number;
 };
 
 export function computeProjectCostSummary(
   estimatedCost: number,
   clientContract: number,
   lines: EstimateLineRow[],
-  fallbackAwardedFromBids?: number
+  fallbackAwardedFromBids?: number,
+  approvedCoImpact = 0
 ): ProjectCostSummary {
   const awardedFromLines = lines.reduce((s, l) => s + Number(l.awarded_amount ?? 0), 0);
   const awardedBids = awardedFromLines > 0 ? awardedFromLines : (fallbackAwardedFromBids ?? 0);
@@ -37,6 +42,7 @@ export function computeProjectCostSummary(
     clientVsEstimate: clientContract - estimatedCost,
     linesWithBids: lines.filter((l) => l.awarded_amount != null && l.awarded_amount > 0).length,
     lineCount: lines.length,
+    approvedCoImpact,
   };
 }
 

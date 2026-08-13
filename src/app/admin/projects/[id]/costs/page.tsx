@@ -36,6 +36,16 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
       loadLastSnapshotAt(supabase, id),
     ]);
 
+  const { data: approvedCos } = await supabase
+    .from("change_orders")
+    .select("cost_impact")
+    .eq("project_id", id)
+    .eq("status", "approved");
+  const approvedCoImpact = (approvedCos ?? []).reduce(
+    (s, c) => s + Number(c.cost_impact ?? 0),
+    0
+  );
+
   const costSummary = computeProjectCostSummary(
     Number(project.estimated_cost ?? 0),
     Number(project.contract_value ?? 0),
@@ -47,7 +57,9 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
       estimated_amount: Number(l.estimated_amount ?? 0),
       awarded_amount: l.awarded_amount == null ? null : Number(l.awarded_amount),
       bid_request_id: null,
-    }))
+    })),
+    undefined,
+    approvedCoImpact
   );
 
   const { data: templates } = await supabase

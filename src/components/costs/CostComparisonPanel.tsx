@@ -30,7 +30,12 @@ export function CostComparisonPanel({ projectId, summary, compact }: CostCompari
     },
     {
       label: "Client billing",
-      sub: "What we bill Habitat or the homeowner",
+      sub:
+        summary.approvedCoImpact !== 0 && summary.clientContract > 0
+          ? `Original ${formatMoney(summary.clientContract - summary.approvedCoImpact)} ${
+              summary.approvedCoImpact > 0 ? "+" : "−"
+            } ${formatMoney(Math.abs(summary.approvedCoImpact))} in approved change orders`
+          : "What we bill Habitat or the homeowner",
       value: summary.clientContract,
       href: `/admin/projects/${projectId}/billing`,
       accent: !summary.clientContract,

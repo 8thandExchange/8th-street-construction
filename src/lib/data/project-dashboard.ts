@@ -269,7 +269,8 @@ export async function loadAdminCommandCenter(
     costInputs.estimatedCost,
     costInputs.clientContract,
     costInputs.estimateLines,
-    costInputs.awardedBids
+    costInputs.awardedBids,
+    changeOrderTotal
   );
 
   const billingSummary = computeBillingSummary(

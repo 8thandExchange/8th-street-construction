@@ -12,6 +12,7 @@ import { sendPushToAdmins, sendPushToProfile } from "@/lib/notify/push";
 
 function revalidateProject(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/change-orders`);
+  revalidatePath(`/admin/projects/${projectId}/costs`);
   revalidatePath(`/client/projects/${projectId}/change-orders`);
   revalidatePath(`/client/projects/${projectId}`);
 }
@@ -173,6 +174,57 @@ export async function clientRespondChangeOrder(formData: FormData) {
     url: `/admin/projects/${projectId}/change-orders`,
   });
 
+  revalidateProject(projectId);
+  return { ok: true };
+}
+
+/**
+ * Land (part of) a change order on a cost line. Only APPROVED change
+ * orders count toward the revised budget — allocations on a draft or
+ * pending CO sit ready and take effect the moment the client approves.
+ */
+export async function saveChangeOrderAllocation(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const projectId = String(formData.get("project_id") ?? "").trim();
+  const changeOrderId = String(formData.get("change_order_id") ?? "").trim();
+  const estimateLineId = String(formData.get("estimate_line_id") ?? "").trim();
+  const amount = Number(String(formData.get("amount") ?? "").replace(/[$,\s]/g, ""));
+
+  if (!changeOrderId || !estimateLineId) return { error: "Pick a cost line" };
+  if (!Number.isFinite(amount) || amount === 0)
+    return { error: "Give the allocation a non-zero amount (negative for a credit)" };
+
+  // Both ends must belong to this project — an allocation can never
+  // bridge two jobs.
+  const [{ data: co }, { data: line }] = await Promise.all([
+    supabase.from("change_orders").select("id, project_id").eq("id", changeOrderId).single(),
+    supabase
+      .from("project_estimate_lines")
+      .select("id, project_id")
+      .eq("id", estimateLineId)
+      .single(),
+  ]);
+  if (!co || co.project_id !== projectId) return { error: "Change order not found" };
+  if (!line || line.project_id !== projectId) return { error: "Cost line not found" };
+
+  const { error } = await supabase
+    .from("change_order_allocations")
+    .upsert(
+      { change_order_id: changeOrderId, estimate_line_id: estimateLineId, amount },
+      { onConflict: "change_order_id,estimate_line_id" }
+    );
+  if (error) return { error: error.message };
+
+  revalidateProject(projectId);
+  return { ok: true };
+}
+
+export async function deleteChangeOrderAllocation(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const projectId = String(formData.get("project_id") ?? "").trim();
+  const id = String(formData.get("id") ?? "").trim();
+  const { error } = await supabase.from("change_order_allocations").delete().eq("id", id);
+  if (error) return { error: error.message };
   revalidateProject(projectId);
   return { ok: true };
 }
