@@ -2,12 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ActionItemCard } from "@/components/admin/meetings/ActionItemCard";
+import { EmailMinutesButton } from "@/components/admin/meetings/EmailMinutesButton";
 import {
   addActionItemForm,
   addDecision,
   approveMinutes,
   deleteDecision,
-  emailMinutes,
   reopenMinutes,
   saveAgendaItem,
   updateMeetingBasics,
@@ -37,6 +37,11 @@ export default async function MeetingDetailPage({
   const projects = (projectRows ?? []) as { id: string; title: string }[];
 
   const minutes = meeting.approved_snapshot || renderMinutesMarkdown(detail);
+  const recipientEmails = [
+    ...new Set(
+      attendees.map((a) => a.email?.trim()).filter((e): e is string => Boolean(e))
+    ),
+  ];
 
   return (
     <div className="max-w-4xl space-y-8 p-4 md:p-8 lg:p-10">
@@ -119,8 +124,15 @@ export default async function MeetingDetailPage({
             <div key={a.id} className="flex items-center justify-between gap-3 p-4">
               <div className="min-w-0">
                 <div className="truncate text-[14px] text-navy">{a.name}</div>
-                {a.organization && (
-                  <div className="truncate text-xs app-muted">{a.organization}</div>
+                {(a.organization || a.email) && (
+                  <div className="truncate text-xs app-muted">
+                    {[a.organization, a.email].filter(Boolean).join(" · ")}
+                  </div>
+                )}
+                {!a.email && (
+                  <div className="text-[11px] italic text-rust/80">
+                    No email on file — won&apos;t receive circulated minutes
+                  </div>
                 )}
               </div>
               <span className="app-badge app-badge-neutral shrink-0">
@@ -371,17 +383,14 @@ export default async function MeetingDetailPage({
               </button>
             </form>
           )}
-          <form
-            action={async (fd: FormData) => {
-              "use server";
-              await emailMinutes(fd);
-            }}
+          <EmailMinutesButton meetingId={meeting.id} recipients={recipientEmails} />
+          <a
+            href={`/api/meetings/${meeting.id}/docx`}
+            className="app-btn app-btn-secondary"
+            download
           >
-            <input type="hidden" name="id" value={meeting.id} />
-            <button type="submit" className="app-btn app-btn-secondary">
-              Email to attendees
-            </button>
-          </form>
+            Download for Word
+          </a>
         </div>
       </section>
 
