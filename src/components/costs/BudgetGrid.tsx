@@ -12,6 +12,7 @@ import {
 } from "@/lib/actions/cost-plan";
 import type { CostPlanLine, TakeoffValue, LineRollup, LineAttribution, LineQuotes } from "@/lib/estimate/cost-plan";
 import { EMPTY_ROLLUP, EMPTY_QUOTES, groupLinesBySection } from "@/lib/estimate/cost-plan";
+import { describeBenchmark, type LineBenchmark } from "@/lib/estimate/benchmarks";
 
 /* ------------------------------------------------------------------ */
 /* Editable cell — autosave on blur. No save button; Robby would        */
@@ -107,9 +108,20 @@ type Props = {
   rollup: Record<string, LineRollup>;
   quotes: Record<string, LineQuotes>;
   attribution: Record<string, LineAttribution[]>;
+  /** Cross-project history keyed by cost code; absent codes have none. */
+  benchmarks?: Record<string, LineBenchmark>;
 };
 
-export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, rollup, quotes, attribution }: Props) {
+export function BudgetGrid({
+  projectId,
+  lines,
+  takeoff,
+  totals: initialTotals,
+  rollup,
+  quotes,
+  attribution,
+  benchmarks = {},
+}: Props) {
   const [totals, setTotals] = useState(initialTotals);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
@@ -296,6 +308,11 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                     const status = statusOf(amount, r);
                     const records = attribution[line.id] ?? [];
                     const quote = line.awarded_amount == null ? null : Number(line.awarded_amount);
+                    const bench = line.code ? benchmarks[line.code] : undefined;
+                    // History is a hint while pricing, a warning when the
+                    // budget sits well below what this line has actually run.
+                    const benchLow =
+                      bench != null && amount > 0 && amount < bench.avgActual * 0.8;
                     const q = quotesOf(line);
                     const quoteFigure = q.awarded ?? q.low;
                     // Only meaningful against a budget that has been set.
@@ -319,9 +336,18 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                               onClick={() => toggle(expanded, line.id, setExpanded)}
                               aria-expanded={isOpen}
                               aria-label={`Details for ${line.code ?? line.trade_label}`}
+                              title={bench ? `Past jobs: ${describeBenchmark(bench)}` : undefined}
                               className="font-mono text-xs text-ink/55 hover:text-copper"
                             >
                               {line.code ?? "—"}
+                              {bench && (
+                                <span
+                                  className={`ml-1 inline-block w-1.5 h-1.5 rounded-full align-middle ${
+                                    benchLow ? "bg-amber-500" : "bg-copper/40"
+                                  }`}
+                                  aria-hidden
+                                />
+                              )}
                             </button>
                           </td>
 
@@ -473,6 +499,20 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                                     }
                                   />
                                 </div>
+
+                                {bench && (
+                                  <div className="md:col-span-2 text-sm">
+                                    <div className="app-label mb-1">What past jobs say</div>
+                                    <p className={benchLow ? "text-amber-800" : "text-ink/70"}>
+                                      {describeBenchmark(bench)}
+                                      {benchLow && (
+                                        <span className="ml-2 text-xs">
+                                          — this budget is well under that history.
+                                        </span>
+                                      )}
+                                    </p>
+                                  </div>
+                                )}
 
                                 {(records.length > 0 || quote != null) && (
                                   <div className="md:col-span-2">

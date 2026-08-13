@@ -7,8 +7,10 @@ import { BudgetGrid } from "@/components/costs/BudgetGrid";
 import { CostAttributionQueue } from "@/components/costs/CostAttributionQueue";
 import { CostComparisonPanel } from "@/components/costs/CostComparisonPanel";
 import { CostEstimateGenerator } from "@/components/costs/CostEstimateGenerator";
+import { RecordActualsButton } from "@/components/costs/RecordActualsButton";
 import { computeProjectCostSummary } from "@/lib/estimate/summary";
 import { loadCostPlan } from "@/lib/estimate/cost-plan";
+import { loadCostBenchmarks, loadLastSnapshotAt } from "@/lib/estimate/cost-history";
 import { formatMoney } from "@/lib/billing/constants";
 import { startCostPlanFromTemplate } from "@/lib/actions/cost-plan";
 import { updateProjectEstimatedCost } from "@/lib/actions/estimate";
@@ -27,11 +29,12 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
 
   if (!project) notFound();
 
-  const { lines, takeoff, totals, rollup, quotes, attribution, uncoded } = await loadCostPlan(
-    supabase,
-    id,
-    project
-  );
+  const [{ lines, takeoff, totals, rollup, quotes, attribution, uncoded }, benchmarks, lastSnapshotAt] =
+    await Promise.all([
+      loadCostPlan(supabase, id, project),
+      loadCostBenchmarks(supabase, { excludeProjectId: id }),
+      loadLastSnapshotAt(supabase, id),
+    ]);
 
   const costSummary = computeProjectCostSummary(
     Number(project.estimated_cost ?? 0),
@@ -99,6 +102,7 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
             rollup={rollup}
             quotes={quotes}
             attribution={attribution}
+            benchmarks={benchmarks}
           />
 
           <div className="flex flex-wrap items-center justify-between gap-4 mt-4">
@@ -110,6 +114,10 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
               <Printer className="w-4 h-4" />
               Print sheet
             </Link>
+          </div>
+
+          <div className="mt-6 border-t border-ink/10 pt-5">
+            <RecordActualsButton projectId={id} lastCapturedAt={lastSnapshotAt} />
           </div>
         </section>
       )}

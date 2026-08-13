@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { anthropicConfigured, BRAND_VOICE } from "@/lib/ai/config";
 import { AiNotConfiguredError, generateJson } from "@/lib/ai/client";
 import { ESTIMATE_DIVISIONS } from "@/lib/estimate/divisions";
+import { describeBenchmark } from "@/lib/estimate/benchmarks";
+import { loadCostBenchmarks } from "@/lib/estimate/cost-history";
 
 export type EstimateLineDraft = {
   division_code: string;
@@ -52,12 +54,23 @@ export async function draftEstimate(input: {
 
   const planUrls = (input.planUrls ?? []).filter(Boolean);
 
+  // Our own recorded actuals from past jobs are worth more than any market
+  // rule of thumb — put them in front of the model as the primary anchor.
+  const benchmarks = await loadCostBenchmarks(admin, { excludeProjectId: input.projectId });
+  const benchmarkLines = Object.values(benchmarks)
+    .sort((a, b) => b.avgActual - a.avgActual)
+    .map((b) => `- ${b.tradeLabel} (code ${b.code}): ${describeBenchmark(b)}`)
+    .join("\n");
+  const history = benchmarkLines
+    ? `\nOUR OWN REALIZED COSTS from completed jobs in this market (anchor to these first — they are what these trades actually cost us, not estimates):\n${benchmarkLines}\n`
+    : "";
+
   const prompt = `Project: ${project.title}
 ${project.location ? `Location: ${project.location}` : ""}
 ${project.square_footage ? `Heated square feet: ${project.square_footage}` : "Square footage: unknown"}
 ${project.project_type ? `Type: ${project.project_type}` : ""}
 Market: Augusta, Georgia (CSRA) residential construction.
-${planUrls.length ? "A plan set PDF is attached — use it to inform scope and quantities." : ""}
+${history}${planUrls.length ? "A plan set PDF is attached — use it to inform scope and quantities." : ""}
 
 Produce a ballpark DIRECT-COST estimate across these standard divisions:
 ${divisions}
