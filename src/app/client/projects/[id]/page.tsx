@@ -131,6 +131,7 @@ export default async function ClientProjectDetail(props: { params: Promise<{ id:
               clientVsEstimate: 0,
               linesWithBids: 0,
               lineCount: 0,
+              approvedCoImpact: 0,
             }}
             billing={dashboard.billingSummary}
             variant="client"

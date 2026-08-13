@@ -19,11 +19,14 @@ export default async function CompanyCompliancePage() {
   // cron); calling the sync action here crashed the page — revalidatePath
   // is not allowed during render.
   const supabase = await createClient();
-  const { data: items } = await supabase
-    .from("company_compliance_items")
-    .select("*")
-    .order("category")
-    .order("title");
+  const [{ data: items }, { data: vendorItems }] = await Promise.all([
+    supabase.from("company_compliance_items").select("*").order("category").order("title"),
+    supabase
+      .from("vendor_compliance_items")
+      .select("id, label, expires_on, vendor_id, vendors(name)")
+      .not("expires_on", "is", null)
+      .order("expires_on"),
+  ]);
 
   const today = new Date();
   const rows = (items ?? []).map((item) => ({
@@ -34,6 +37,22 @@ export default async function CompanyCompliancePage() {
 
   const expired = rows.filter((r) => r.computed === "expired").length;
   const expiring = rows.filter((r) => r.computed === "expiring_soon").length;
+
+  // Vendor paperwork running out inside 60 days (or already lapsed).
+  const vendorExpiring = ((vendorItems ?? []) as {
+    id: string;
+    label: string;
+    expires_on: string;
+    vendor_id: string;
+    vendors: { name: string } | { name: string }[] | null;
+  }[])
+    .map((v) => ({
+      ...v,
+      vendorName:
+        (Array.isArray(v.vendors) ? v.vendors[0]?.name : v.vendors?.name) ?? "Vendor",
+      days: daysUntilExpiry(v.expires_on, today),
+    }))
+    .filter((v) => v.days != null && v.days <= 60);
 
   return (
     <div className="p-4 md:p-8 lg:p-10 max-w-5xl">
@@ -232,6 +251,35 @@ export default async function CompanyCompliancePage() {
           </details>
         ))}
       </div>
+
+      {vendorExpiring.length > 0 && (
+        <section className="mb-10 border border-ink/15 bg-paper p-6">
+          <h2 className="app-h2 !text-[16px] mb-1">Vendor paperwork running out</h2>
+          <p className="mb-4 text-sm text-ink/55">
+            COIs and licenses from subs and suppliers, expiring within 60 days. Chase these before
+            the next check gets cut.
+          </p>
+          <ul className="divide-y divide-ink/8">
+            {vendorExpiring.map((v) => (
+              <li key={v.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5">
+                <a
+                  href={`/admin/vendors/${v.vendor_id}`}
+                  className="min-w-0 flex-1 text-sm text-navy hover:text-copper"
+                >
+                  {v.vendorName} — {v.label}
+                </a>
+                <span
+                  className={`text-xs tabular-nums ${
+                    (v.days ?? 0) < 0 ? "text-red-700 font-medium" : "text-amber-700"
+                  }`}
+                >
+                  {(v.days ?? 0) < 0 ? `expired ${Math.abs(v.days!)}d ago` : `${v.days}d left`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="border border-ink/15 p-8 bg-paper">
         <h2 className="app-h2 !text-[16px] mb-4">Add compliance item</h2>

@@ -5,11 +5,26 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { RecordBillForm, VendorLogoUpload } from "@/components/vendors/VendorForms";
 import { SendVendorInvite } from "@/components/vendors/SendVendorInvite";
 import { setVendorBillStatus, deleteVendorBill } from "@/lib/actions/vendors";
+import {
+  deleteVendorComplianceItem,
+  saveVendorComplianceItem,
+} from "@/lib/actions/vendor-compliance";
+import { VENDOR_COMPLIANCE_KINDS } from "@/lib/vendors/compliance-kinds";
 import { formatMoney } from "@/lib/billing/constants";
 import { ATTACHMENT_BUCKET } from "@/lib/assistant/attachments";
 import { publicVendorLogo } from "@/lib/vendors/logos";
 
 export const dynamic = "force-dynamic";
+
+async function saveComplianceAction(formData: FormData) {
+  "use server";
+  await saveVendorComplianceItem(formData);
+}
+
+async function deleteComplianceAction(formData: FormData) {
+  "use server";
+  await deleteVendorComplianceItem(formData);
+}
 
 async function markPaidAction(formData: FormData) {
   "use server";
@@ -43,7 +58,7 @@ export default async function VendorDetailPage(props: {
   const { vendorId } = await props.params;
   const admin = createAdminClient();
 
-  const [{ data: vendor }, { data: bills }, { data: projects }] = await Promise.all([
+  const [{ data: vendor }, { data: bills }, { data: projects }, { data: complianceRows }] = await Promise.all([
     admin
       .from("vendors")
       .select(
@@ -61,6 +76,11 @@ export default async function VendorDetailPage(props: {
       .select("id, title")
       .neq("status", "archived")
       .order("title"),
+    admin
+      .from("vendor_compliance_items")
+      .select("id, kind, label, expires_on, received_on, notes")
+      .eq("vendor_id", vendorId)
+      .order("expires_on", { ascending: true, nullsFirst: false }),
   ]);
   if (!vendor) notFound();
 
@@ -239,6 +259,88 @@ export default async function VendorDetailPage(props: {
             />
           </div>
         </details>
+      </div>
+
+      <div className="app-card p-6">
+        <h3 className="app-h2 !text-[16px] mb-1">Paperwork on file</h3>
+        <p className="mb-4 text-sm app-muted">
+          COIs, W-9s, licenses, lien waivers — with expiration dates so nothing lapses quietly.
+        </p>
+        {(complianceRows ?? []).length > 0 && (
+          <ul className="mb-5 divide-y divide-navy/[0.06]">
+            {(complianceRows ?? []).map((item) => {
+              const days =
+                item.expires_on == null
+                  ? null
+                  : Math.ceil(
+                      (new Date(`${item.expires_on}T12:00:00`).getTime() - Date.now()) / 86400000
+                    );
+              const tone =
+                days == null
+                  ? "text-navy/50"
+                  : days < 0
+                    ? "text-red-700 font-medium"
+                    : days <= 30
+                      ? "text-amber-700 font-medium"
+                      : "text-navy/50";
+              return (
+                <li key={item.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5">
+                  <span className="min-w-0 flex-1 text-sm text-navy">
+                    {item.label}
+                    {item.notes && <span className="ml-2 text-xs app-muted">{item.notes}</span>}
+                  </span>
+                  <span className={`text-xs tabular-nums ${tone}`}>
+                    {item.expires_on
+                      ? days != null && days < 0
+                        ? `Expired ${fmt(item.expires_on)}`
+                        : `Expires ${fmt(item.expires_on)}${days != null && days <= 30 ? ` (${days}d)` : ""}`
+                      : item.received_on
+                        ? `Received ${fmt(item.received_on)}`
+                        : "On file"}
+                  </span>
+                  <form action={deleteComplianceAction}>
+                    <input type="hidden" name="vendor_id" value={vendor.id} />
+                    <input type="hidden" name="id" value={item.id} />
+                    <button
+                      type="submit"
+                      className="text-[12px] app-muted hover:text-red-600 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </form>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <form action={saveComplianceAction} className="flex flex-wrap items-end gap-3">
+          <input type="hidden" name="vendor_id" value={vendor.id} />
+          <div>
+            <label className="app-label">Kind</label>
+            <select name="kind" className="mt-1">
+              {VENDOR_COMPLIANCE_KINDS.map((k) => (
+                <option key={k.value} value={k.value}>
+                  {k.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="min-w-[180px] flex-1">
+            <label className="app-label">Label (optional)</label>
+            <input name="label" placeholder="GL policy #4821" className="mt-1 w-full" />
+          </div>
+          <div>
+            <label className="app-label">Received</label>
+            <input type="date" name="received_on" className="mt-1" />
+          </div>
+          <div>
+            <label className="app-label">Expires</label>
+            <input type="date" name="expires_on" className="mt-1" />
+          </div>
+          <button type="submit" className="app-btn app-btn-secondary">
+            Add
+          </button>
+        </form>
       </div>
 
       <div className="app-card divide-y divide-navy/[0.06]">

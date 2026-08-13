@@ -13,7 +13,7 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
   const { data: project } = await supabase.from("projects").select("id, title").eq("id", id).single();
   if (!project) notFound();
 
-  const [{ data: rfqs }, { data: subs }, { data: estimateLines }] = await Promise.all([
+  const [{ data: rfqs }, { data: subs }, { data: estimateLines }, { data: scopeTemplates }] = await Promise.all([
     supabase
       .from("bid_requests")
       .select(
@@ -31,6 +31,7 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
       .select("id, trade_label, division_code")
       .eq("project_id", id)
       .order("display_order"),
+    supabase.from("scope_templates").select("id, trade, title").order("trade").order("title"),
   ]);
 
   return (
@@ -77,9 +78,31 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
             <input type="datetime-local" name="bid_deadline" className="field-input" />
           </div>
         </div>
+        {(scopeTemplates ?? []).length > 0 && (
+          <div>
+            <label className="field-label">Start from the scope library</label>
+            <select name="scope_template_id" className="field-input" defaultValue="">
+              <option value="">— none —</option>
+              {(scopeTemplates ?? []).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.trade} — {t.title}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-ink/45">
+              The template&apos;s full text is appended to the scope below, so the standard is what
+              subs price. Edit the library at Settings → Scope library.
+            </p>
+          </div>
+        )}
         <div>
-          <label className="field-label">Scope of work *</label>
-          <textarea name="scope_of_work" required rows={4} className="field-input" />
+          <label className="field-label">Scope of work</label>
+          <textarea
+            name="scope_of_work"
+            rows={4}
+            className="field-input"
+            placeholder="Job-specific notes — the chosen library scope is appended automatically"
+          />
         </div>
         <div>
           <label className="field-label mb-2 block">Invite subcontractors *</label>

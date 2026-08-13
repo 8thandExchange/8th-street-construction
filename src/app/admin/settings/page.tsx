@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { SITE_CONTACT_TAG } from "@/lib/site-contact";
@@ -46,6 +47,15 @@ export default async function AdminSettings() {
           on/off toggles save automatically as valid values; structured settings
           fall back to a JSON editor. Changes are pushed to the marketing site on save.
         </p>
+      </div>
+
+      <div className="mb-10 flex flex-wrap gap-4 text-sm">
+        <Link href="/admin/settings/cost-codes" className="text-copper hover:underline">
+          Cost code template →
+        </Link>
+        <Link href="/admin/settings/scopes" className="text-copper hover:underline">
+          Scope library →
+        </Link>
       </div>
 
       <div className="space-y-6">

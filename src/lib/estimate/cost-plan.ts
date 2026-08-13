@@ -45,6 +45,9 @@ export type LineRollup = {
   po_count: number;
   bill_count: number;
   invoice_count: number;
+  /** Approved change orders landed on this line; the budget we're held to
+   *  is estimate + this. */
+  co_approved: number;
 };
 
 /**
@@ -97,6 +100,7 @@ export const EMPTY_ROLLUP: LineRollup = {
   po_count: 0,
   bill_count: 0,
   invoice_count: 0,
+  co_approved: 0,
 };
 
 const LINE_COLUMNS =
@@ -198,7 +202,9 @@ export async function loadCostPlan(
     supabase.from("project_takeoff_values").select(TAKEOFF_COLUMNS).eq("project_id", projectId).order("display_order"),
     supabase
       .from("project_cost_line_rollup")
-      .select("id, committed, actual, billed, remaining, po_count, bill_count, invoice_count")
+      .select(
+        "id, committed, actual, billed, remaining, po_count, bill_count, invoice_count, co_approved"
+      )
       .eq("project_id", projectId),
     supabase
       .from("purchase_order_lines")
@@ -241,6 +247,7 @@ export async function loadCostPlan(
       po_count: Number(r.po_count ?? 0),
       bill_count: Number(r.bill_count ?? 0),
       invoice_count: Number(r.invoice_count ?? 0),
+      co_approved: Number(r.co_approved ?? 0),
     };
   }
 

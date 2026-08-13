@@ -12,6 +12,7 @@ import {
 } from "@/lib/actions/cost-plan";
 import type { CostPlanLine, TakeoffValue, LineRollup, LineAttribution, LineQuotes } from "@/lib/estimate/cost-plan";
 import { EMPTY_ROLLUP, EMPTY_QUOTES, groupLinesBySection } from "@/lib/estimate/cost-plan";
+import { describeBenchmark, type LineBenchmark } from "@/lib/estimate/benchmarks";
 
 /* ------------------------------------------------------------------ */
 /* Editable cell — autosave on blur. No save button; Robby would        */
@@ -107,9 +108,20 @@ type Props = {
   rollup: Record<string, LineRollup>;
   quotes: Record<string, LineQuotes>;
   attribution: Record<string, LineAttribution[]>;
+  /** Cross-project history keyed by cost code; absent codes have none. */
+  benchmarks?: Record<string, LineBenchmark>;
 };
 
-export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, rollup, quotes, attribution }: Props) {
+export function BudgetGrid({
+  projectId,
+  lines,
+  takeoff,
+  totals: initialTotals,
+  rollup,
+  quotes,
+  attribution,
+  benchmarks = {},
+}: Props) {
   const [totals, setTotals] = useState(initialTotals);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
@@ -138,15 +150,17 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
     let actual = 0;
     let billed = 0;
     let quoted = 0;
+    let coApproved = 0;
     for (const line of costLines) {
       const r = rollupOf(line);
       committed += r.committed;
       actual += r.actual;
       billed += r.billed;
+      coApproved += r.co_approved;
       const q = quotesOf(line);
       quoted += q.awarded ?? q.low ?? 0;
     }
-    return { committed, actual, billed, quoted };
+    return { committed, actual, billed, quoted, coApproved };
   }, [costLines, rollupOf, quotesOf]);
 
   const run = useCallback(
@@ -235,7 +249,9 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
               const q = quotesOf(l);
               return s + (q.awarded ?? q.low ?? 0);
             }, 0);
-            const sectionRemaining = sectionBudget - Math.max(sectionCommitted, sectionActual);
+            const sectionCo = group.lines.reduce((s, l) => s + rollupOf(l).co_approved, 0);
+            const sectionRemaining =
+              sectionBudget + sectionCo - Math.max(sectionCommitted, sectionActual);
             const lastOrder = group.lines[group.lines.length - 1]?.display_order ?? 0;
 
             return (
@@ -292,20 +308,29 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                     const r = rollupOf(line);
                     const derived = Boolean(line.formula);
                     const isOpen = expanded.has(line.id);
-                    const remaining = amount - Math.max(r.committed, r.actual);
-                    const status = statusOf(amount, r);
+                    // Approved change orders raise (or credit) what we're
+                    // authorized to spend; remaining measures against that.
+                    const revised = amount + r.co_approved;
+                    const remaining = revised - Math.max(r.committed, r.actual);
+                    const status = statusOf(revised, r);
                     const records = attribution[line.id] ?? [];
                     const quote = line.awarded_amount == null ? null : Number(line.awarded_amount);
+                    const bench = line.code ? benchmarks[line.code] : undefined;
+                    // History is a hint while pricing, a warning when the
+                    // budget sits well below what this line has actually run.
+                    const benchLow =
+                      bench != null && amount > 0 && amount < bench.avgActual * 0.8;
                     const q = quotesOf(line);
                     const quoteFigure = q.awarded ?? q.low;
                     // Only meaningful against a budget that has been set.
-                    const quoteOver = amount > 0 && quoteFigure != null && quoteFigure > amount + 0.005;
+                    const quoteOver =
+                      revised > 0 && quoteFigure != null && quoteFigure > revised + 0.005;
                     const quoteTitle = [
                       q.awardedTo ? `Awarded to ${q.awardedTo}` : null,
                       q.awarded == null && q.count > 0
                         ? `${q.count} quote${q.count === 1 ? "" : "s"} in, none awarded`
                         : null,
-                      quoteOver ? `${formatMoney(quoteFigure! - amount)} over budget` : null,
+                      quoteOver ? `${formatMoney(quoteFigure! - revised)} over budget` : null,
                     ]
                       .filter(Boolean)
                       .join(" · ") || undefined;
@@ -319,9 +344,18 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                               onClick={() => toggle(expanded, line.id, setExpanded)}
                               aria-expanded={isOpen}
                               aria-label={`Details for ${line.code ?? line.trade_label}`}
+                              title={bench ? `Past jobs: ${describeBenchmark(bench)}` : undefined}
                               className="font-mono text-xs text-ink/55 hover:text-copper"
                             >
                               {line.code ?? "—"}
+                              {bench && (
+                                <span
+                                  className={`ml-1 inline-block w-1.5 h-1.5 rounded-full align-middle ${
+                                    benchLow ? "bg-amber-500" : "bg-copper/40"
+                                  }`}
+                                  aria-hidden
+                                />
+                              )}
                             </button>
                           </td>
 
@@ -337,6 +371,15 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                               {line.is_allowance && (
                                 <span className="shrink-0 text-[10px] uppercase tracking-wide text-copper/80 border border-copper/30 px-1.5 py-0.5">
                                   Allow
+                                </span>
+                              )}
+                              {r.co_approved !== 0 && (
+                                <span
+                                  className="shrink-0 text-[10px] uppercase tracking-wide text-sky-700 border border-sky-300 px-1.5 py-0.5"
+                                  title={`Approved change orders: ${formatMoney(r.co_approved)} — revised budget ${formatMoney(revised)}`}
+                                >
+                                  {r.co_approved > 0 ? "+" : ""}
+                                  {formatMoney(r.co_approved)} CO
                                 </span>
                               )}
                             </div>
@@ -474,6 +517,20 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                                   />
                                 </div>
 
+                                {bench && (
+                                  <div className="md:col-span-2 text-sm">
+                                    <div className="app-label mb-1">What past jobs say</div>
+                                    <p className={benchLow ? "text-amber-800" : "text-ink/70"}>
+                                      {describeBenchmark(bench)}
+                                      {benchLow && (
+                                        <span className="ml-2 text-xs">
+                                          — this budget is well under that history.
+                                        </span>
+                                      )}
+                                    </p>
+                                  </div>
+                                )}
+
                                 {(records.length > 0 || quote != null) && (
                                   <div className="md:col-span-2">
                                     <div className="app-label mb-2">Money on this line</div>
@@ -562,10 +619,24 @@ export function BudgetGrid({ projectId, lines, takeoff, totals: initialTotals, r
                 {spend.billed ? formatMoney(spend.billed) : "—"}
               </td>
               <td className="px-3 py-3 text-right font-mono tabular-nums">
-                {formatMoney(totals.subtotal - Math.max(spend.committed, spend.actual))}
+                {formatMoney(totals.subtotal + spend.coApproved - Math.max(spend.committed, spend.actual))}
               </td>
               <td />
             </tr>
+
+            {spend.coApproved !== 0 && (
+              <tr className="bg-paper text-sm">
+                <td className="px-3 py-2" />
+                <td className="px-3 py-2 text-sky-800">Approved change orders</td>
+                <td className="px-3 py-2 text-right font-mono tabular-nums text-sky-800">
+                  {spend.coApproved > 0 ? "+" : ""}
+                  {formatMoney(spend.coApproved)}
+                </td>
+                <td colSpan={6} className="px-3 py-2 text-xs text-ink/45">
+                  Client-approved scope changes placed on lines — the budget we&apos;re held to.
+                </td>
+              </tr>
+            )}
 
             {markupLines.map((line) => {
               const amount = totals.byId[line.id]?.amount ?? Number(line.estimated_amount ?? 0);

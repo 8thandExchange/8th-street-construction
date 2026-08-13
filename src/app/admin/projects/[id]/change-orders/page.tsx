@@ -1,6 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import { createChangeOrder, deleteChangeOrder } from "@/lib/actions/change-orders";
+import {
+  createChangeOrder,
+  deleteChangeOrder,
+  deleteChangeOrderAllocation,
+  saveChangeOrderAllocation,
+} from "@/lib/actions/change-orders";
+import { formatMoney } from "@/lib/billing/constants";
 import { CHANGE_ORDER_STATUS_LABELS } from "@/lib/project/labels";
 import { appStatusBadge } from "@/lib/project/status-badges";
 
@@ -18,6 +24,16 @@ async function deleteChangeOrderAction(formData: FormData) {
   await deleteChangeOrder(formData);
 }
 
+async function saveAllocationAction(formData: FormData) {
+  "use server";
+  await saveChangeOrderAllocation(formData);
+}
+
+async function deleteAllocationAction(formData: FormData) {
+  "use server";
+  await deleteChangeOrderAllocation(formData);
+}
+
 export default async function ProjectChangeOrdersPage(props: {
   params: Promise<{ id: string }>;
 }) {
@@ -26,11 +42,30 @@ export default async function ProjectChangeOrdersPage(props: {
   const { data: project } = await supabase.from("projects").select("id").eq("id", id).single();
   if (!project) notFound();
 
-  const { data: orders } = await supabase
-    .from("change_orders")
-    .select("*")
-    .eq("project_id", id)
-    .order("number", { ascending: false });
+  const [{ data: orders }, { data: costLines }] = await Promise.all([
+    supabase.from("change_orders").select("*").eq("project_id", id).order("number", { ascending: false }),
+    supabase
+      .from("project_estimate_lines")
+      .select("id, code, trade_label, line_type")
+      .eq("project_id", id)
+      .eq("line_type", "cost")
+      .order("display_order"),
+  ]);
+
+  const { data: allocations } = await supabase
+    .from("change_order_allocations")
+    .select("id, change_order_id, estimate_line_id, amount")
+    .in("change_order_id", (orders ?? []).map((c: { id: string }) => c.id));
+
+  const lines = (costLines ?? []) as { id: string; code: string | null; trade_label: string }[];
+  const lineLabel = (lineId: string) => {
+    const l = lines.find((x) => x.id === lineId);
+    return l ? [l.code, l.trade_label].filter(Boolean).join(" · ") : "Deleted line";
+  };
+  const allocationsFor = (coId: string) =>
+    ((allocations ?? []) as { id: string; change_order_id: string; estimate_line_id: string; amount: number }[]).filter(
+      (a) => a.change_order_id === coId
+    );
 
   return (
     <div className="max-w-3xl">
@@ -95,6 +130,84 @@ export default async function ProjectChangeOrdersPage(props: {
                 <span>Schedule: +{co.schedule_impact_days} days</span>
               )}
             </div>
+
+            {lines.length > 0 && (() => {
+              const allocs = allocationsFor(co.id);
+              const allocated = allocs.reduce((s, a) => s + Number(a.amount), 0);
+              const impact = co.cost_impact == null ? null : Number(co.cost_impact);
+              const unallocated = impact == null ? null : impact - allocated;
+              return (
+                <details className="mt-4 border-t border-navy/[0.06] pt-3">
+                  <summary className="cursor-pointer list-none text-xs font-medium text-copper hover:underline">
+                    Where this lands in the budget
+                    {allocs.length > 0 && (
+                      <span className="ml-2 font-normal app-muted">
+                        {formatMoney(allocated)} allocated
+                        {unallocated != null && Math.abs(unallocated) > 0.005
+                          ? ` · ${formatMoney(unallocated)} not yet placed`
+                          : ""}
+                      </span>
+                    )}
+                    {allocs.length === 0 && (
+                      <span className="ml-2 font-normal app-muted">
+                        not on the budget yet
+                        {co.status === "approved" ? " — approved money is invisible to the cost plan until placed" : ""}
+                      </span>
+                    )}
+                  </summary>
+
+                  {allocs.length > 0 && (
+                    <ul className="mt-3 divide-y divide-navy/[0.06] text-sm">
+                      {allocs.map((a) => (
+                        <li key={a.id} className="flex items-center gap-3 py-1.5">
+                          <span className="flex-1 text-navy/80">{lineLabel(a.estimate_line_id)}</span>
+                          <span className="font-mono tabular-nums">{formatMoney(Number(a.amount))}</span>
+                          <form action={deleteAllocationAction}>
+                            <input type="hidden" name="id" value={a.id} />
+                            <input type="hidden" name="project_id" value={id} />
+                            <button type="submit" className="text-xs text-red-700 hover:underline">
+                              Remove
+                            </button>
+                          </form>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <form action={saveAllocationAction} className="mt-3 flex flex-wrap items-end gap-3">
+                    <input type="hidden" name="project_id" value={id} />
+                    <input type="hidden" name="change_order_id" value={co.id} />
+                    <div className="min-w-[240px] flex-1">
+                      <label className="field-label">Cost line</label>
+                      <select name="estimate_line_id" required className="field-input">
+                        {lines.map((l) => (
+                          <option key={l.id} value={l.id}>
+                            {[l.code, l.trade_label].filter(Boolean).join(" · ")}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="w-36">
+                      <label className="field-label">Amount ($)</label>
+                      <input
+                        name="amount"
+                        type="number"
+                        step="0.01"
+                        required
+                        placeholder={unallocated != null ? String(unallocated) : ""}
+                        className="field-input"
+                      />
+                    </div>
+                    <button type="submit" className="app-btn app-btn-secondary">
+                      Place
+                    </button>
+                  </form>
+                  <p className="mt-2 text-[11px] app-muted">
+                    Negative amounts credit a line. Only approved change orders move the budget grid.
+                  </p>
+                </details>
+              );
+            })()}
             {co.status === "draft" && (
               <form action={deleteChangeOrderAction} className="mt-4">
                 <input type="hidden" name="id" value={co.id} />
