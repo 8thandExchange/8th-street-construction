@@ -8,6 +8,14 @@ export function mercuryConfigured() {
   );
 }
 
+/**
+ * True when reads have their own Read Only token and therefore bypass the
+ * Fixie proxy. See the header comment in client.ts.
+ */
+export function mercuryReadsAreDirect() {
+  return Boolean(process.env.MERCURY_READ_TOKEN?.trim());
+}
+
 export function mercuryWebhookConfigured() {
   return Boolean(process.env.MERCURY_WEBHOOK_SECRET?.trim());
 }

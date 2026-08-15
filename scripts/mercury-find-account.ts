@@ -2,13 +2,17 @@
 /**
  * Lists Mercury depository accounts so you can copy MERCURY_DESTINATION_ACCOUNT_ID.
  *
+ * This is a read, so the Read Only token works and needs no proxy. Falls back
+ * to the write token, which does need FIXIE_URL set (or your IP whitelisted).
+ *
  * Usage:
- *   MERCURY_API_TOKEN="secret-token:mercury_production_..." npx tsx scripts/mercury-find-account.ts
+ *   MERCURY_READ_TOKEN="secret-token:mercury_production_..." npx tsx scripts/mercury-find-account.ts
  */
 
-const token = process.env.MERCURY_API_TOKEN?.trim();
+const readToken = process.env.MERCURY_READ_TOKEN?.trim();
+const token = readToken || process.env.MERCURY_API_TOKEN?.trim();
 if (!token) {
-  console.error("Set MERCURY_API_TOKEN first.");
+  console.error("Set MERCURY_READ_TOKEN (or MERCURY_API_TOKEN) first.");
   process.exit(1);
 }
 
@@ -22,7 +26,8 @@ type Account = {
 };
 
 async function main() {
-  const fixie = process.env.FIXIE_URL?.trim();
+  // A Read Only token has no IP allowlist, so never bother with the proxy.
+  const fixie = readToken ? null : process.env.FIXIE_URL?.trim();
   const headers = { Authorization: `Bearer ${token}`, Accept: "application/json" };
 
   let res: Response;

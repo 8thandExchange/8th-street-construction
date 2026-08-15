@@ -1,5 +1,5 @@
-import { MERCURY_API_BASE, MERCURY_PAY_BASE } from "./config";
-import { mercuryFetch } from "./client";
+import { MERCURY_PAY_BASE } from "./config";
+import { mercuryFetch, mercuryRequest } from "./client";
 import type { CreateMercuryInvoiceInput, MercuryInvoice } from "./types";
 
 export function mercuryPayUrl(slug: string) {
@@ -37,21 +37,9 @@ export async function getMercuryInvoice(invoiceId: string): Promise<MercuryInvoi
 }
 
 export async function fetchMercuryInvoicePdf(slug: string): Promise<ArrayBuffer> {
-  const token = process.env.MERCURY_API_TOKEN?.trim();
-  if (!token) throw new Error("Mercury is not configured");
-
-  const fixieUrl = process.env.FIXIE_URL?.trim();
-  const url = `${MERCURY_API_BASE}/ar/invoices/${slug}/pdf`;
-  const headers = { Authorization: `Bearer ${token}`, Accept: "application/pdf" };
-
-  if (fixieUrl) {
-    const { ProxyAgent, fetch: undiciFetch } = await import("undici");
-    const res = await undiciFetch(url, { headers, dispatcher: new ProxyAgent(fixieUrl) });
-    if (!res.ok) throw new Error(`Mercury PDF failed (${res.status})`);
-    return res.arrayBuffer();
-  }
-
-  const res = await fetch(url, { headers });
+  const res = await mercuryRequest(`/ar/invoices/${slug}/pdf`, {
+    headers: { Accept: "application/pdf" },
+  });
   if (!res.ok) throw new Error(`Mercury PDF failed (${res.status})`);
   return res.arrayBuffer();
 }
