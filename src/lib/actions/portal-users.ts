@@ -33,7 +33,7 @@ export async function invitePortalUser(formData: FormData) {
 
   if ("error" in result && result.error) return { error: result.error };
   revalidate();
-  return { ok: true, tempPassword: result.tempPassword };
+  return { ok: true, tempPassword: result.tempPassword, email: result.email };
 }
 
 export async function removePortalUser(formData: FormData) {
@@ -87,7 +87,7 @@ export async function resetPortalPassword(formData: FormData) {
 
   if ("error" in result && result.error) return { error: result.error };
   revalidate();
-  return { ok: true, tempPassword: result.tempPassword };
+  return { ok: true, tempPassword: result.tempPassword, email: result.email };
 }
 
 /** @deprecated Use resetPortalPassword — kept for any stale forms */

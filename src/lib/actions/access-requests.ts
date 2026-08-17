@@ -46,7 +46,7 @@ export async function approveAccessRequest(formData: FormData) {
     .eq("id", id);
 
   revalidate();
-  return { ok: true, tempPassword: result.tempPassword };
+  return { ok: true, tempPassword: result.tempPassword, email: result.email };
 }
 
 export async function denyAccessRequest(formData: FormData) {

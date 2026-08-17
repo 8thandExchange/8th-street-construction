@@ -1274,6 +1274,12 @@ export async function executeAssistantTool(
         login_url: result.loginUrl,
         // Only reveal generated passwords — never echo one the admin chose.
         ...(password ? {} : { temporary_password: result.tempPassword }),
+        credentials_email:
+          result.email.status === "sent"
+            ? "Sent."
+            : result.email.status === "not-requested"
+              ? "Not requested — pass the password on yourself."
+              : `NOT DELIVERED (${result.email.reason}) — the account works, but you must give the password to the user another way.`,
         note: verified
           ? "Login tested with a real sign-in — it works."
           : "Account saved but the sign-in test FAILED — report this to the admin.",

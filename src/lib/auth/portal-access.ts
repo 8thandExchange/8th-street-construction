@@ -19,14 +19,24 @@ function resendClient() {
   return new Resend(key);
 }
 
+/**
+ * Whether the credentials actually reached the person. Provisioning can
+ * succeed while delivery fails, and those are different outcomes — an
+ * admin who is told "sent" has no reason to hand the password over.
+ */
+export type CredentialsEmailOutcome =
+  | { status: "sent" }
+  | { status: "failed"; reason: string }
+  | { status: "not-requested" };
+
 export async function sendPortalCredentialsEmail(payload: {
   to: string;
   firstName: string;
   tempPassword: string;
   role: UserRole;
-}) {
+}): Promise<CredentialsEmailOutcome> {
   const client = resendClient();
-  if (!client) return { skipped: true as const };
+  if (!client) return { status: "failed", reason: "RESEND_API_KEY is not configured" };
 
   const { subject, html, text } = portalCredentialsEmail({
     firstName: payload.firstName,
@@ -36,15 +46,23 @@ export async function sendPortalCredentialsEmail(payload: {
     loginPath: loginPathForRole(payload.role),
   });
 
-  await client.emails.send({
-    from: FROM,
-    to: payload.to,
-    subject,
-    html,
-    text,
-  });
+  try {
+    const { error } = await client.emails.send({
+      from: FROM,
+      to: payload.to,
+      subject,
+      html,
+      text,
+    });
+    if (error) return { status: "failed", reason: error.message };
+  } catch (err) {
+    return {
+      status: "failed",
+      reason: err instanceof Error ? err.message : "Unknown mailer error",
+    };
+  }
 
-  return { ok: true as const };
+  return { status: "sent" };
 }
 
 /**
@@ -136,19 +154,27 @@ export async function provisionPortalUser(input: {
 
   if (profileErr) return { error: profileErr.message };
 
+  let email_: CredentialsEmailOutcome = { status: "not-requested" };
   if (input.sendEmail !== false) {
-    await sendPortalCredentialsEmail({
+    email_ = await sendPortalCredentialsEmail({
       to: email,
       firstName: input.firstName || "there",
       tempPassword,
       role: input.role,
     });
+    if (email_.status === "failed") {
+      // The account exists and the password works — only delivery failed.
+      // Log it where it can be found, and hand the caller the truth so it
+      // can tell an admin to pass the password along another way.
+      console.error(`[portal] credentials email to ${email} failed: ${email_.reason}`);
+    }
   }
 
   return {
     ok: true as const,
     userId,
     tempPassword,
+    email: email_,
     loginUrl: `${SITE}${loginPathForRole(input.role)}`,
   };
 }
