@@ -3,14 +3,19 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { provisionPortalUser } from "@/lib/auth/portal-access";
+import {
+  provisionPortalUser,
+  type ProvisionActionResult,
+} from "@/lib/auth/portal-access";
 import type { UserRole } from "@/types/database";
 
 function revalidate() {
   revalidatePath("/admin/users");
 }
 
-export async function approveAccessRequest(formData: FormData) {
+export async function approveAccessRequest(
+  formData: FormData
+): Promise<ProvisionActionResult> {
   const { user } = await requireAdmin();
   const id = String(formData.get("id"));
   const roleOverride = String(formData.get("role") || "").trim() as UserRole | "";
@@ -34,7 +39,9 @@ export async function approveAccessRequest(formData: FormData) {
     lastName: request.last_name,
   });
 
-  if ("error" in result && result.error) return { error: result.error };
+  // Narrow on the key alone — `&& result.error` leaves the failure branch in
+  // the union, which erases the types of everything returned below it.
+  if ("error" in result) return { error: result.error };
 
   await admin
     .from("portal_access_requests")

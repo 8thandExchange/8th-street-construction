@@ -1,15 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import {
-  invitePortalUser,
-  removePortalUser,
-  resetPortalPassword,
-} from "@/lib/actions/portal-users";
-import {
-  approveAccessRequest,
-  denyAccessRequest,
-} from "@/lib/actions/access-requests";
+import { removePortalUser } from "@/lib/actions/portal-users";
+import { denyAccessRequest } from "@/lib/actions/access-requests";
 import { appStatusBadge } from "@/lib/project/status-badges";
+import {
+  ApproveRequestForm,
+  InviteUserForm,
+  ResetPasswordForm,
+} from "./PortalAccessForms";
 
 export const dynamic = "force-dynamic";
 
@@ -78,26 +76,7 @@ export default async function AdminUsersPage() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 shrink-0">
-                      <form
-                        action={async (fd) => {
-                          "use server";
-                          await approveAccessRequest(fd);
-                        }}
-                        className="flex items-center gap-2"
-                      >
-                        <input type="hidden" name="id" value={r.id} />
-                        <select name="role" className="text-xs" defaultValue={r.requested_role}>
-                          <option value="client">Client</option>
-                          <option value="subcontractor">Subcontractor</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                        <button
-                          type="submit"
-                          className="app-btn app-btn-primary"
-                        >
-                          Approve & Send Login
-                        </button>
-                      </form>
+                      <ApproveRequestForm requestId={r.id} defaultRole={r.requested_role} />
                       <form
                         action={async (fd) => {
                           "use server";
@@ -120,47 +99,7 @@ export default async function AdminUsersPage() {
         </section>
       )}
 
-      <form
-        action={async (fd) => {
-          "use server";
-          await invitePortalUser(fd);
-        }}
-        className="mt-10 app-card p-8 space-y-5"
-      >
-        <h2 className="eyebrow">Grant access directly</h2>
-        <p className="text-sm text-ink/60">
-          Creates an account and emails a temporary password. User must set a new password on first
-          sign-in.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label className="field-label">Email *</label>
-            <input name="email" type="email" required className="field-input" />
-          </div>
-          <div>
-            <label className="field-label">Role *</label>
-            <select name="role" className="field-input" defaultValue="client">
-              <option value="client">Client</option>
-              <option value="subcontractor">Subcontractor</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          <div>
-            <label className="field-label">First name</label>
-            <input name="first_name" className="field-input" />
-          </div>
-          <div>
-            <label className="field-label">Last name</label>
-            <input name="last_name" className="field-input" />
-          </div>
-        </div>
-        <button
-          type="submit"
-          className="app-btn app-btn-primary"
-        >
-          Grant Access & Email Password
-        </button>
-      </form>
+      <InviteUserForm />
 
       {(requests ?? []).some((r) => r.status !== "pending") && (
         <section className="mt-12">
@@ -235,21 +174,7 @@ export default async function AdminUsersPage() {
                   )}
                 </td>
                 <td className="px-4 py-3 text-right space-x-4">
-                  <form
-                    action={async (fd) => {
-                      "use server";
-                      await resetPortalPassword(fd);
-                    }}
-                    className="inline"
-                  >
-                    <input type="hidden" name="id" value={u.id} />
-                    <button
-                      type="submit"
-                      className="app-btn app-btn-ghost !h-7 !px-2 !text-[12px]"
-                    >
-                      Reset password
-                    </button>
-                  </form>
+                  <ResetPasswordForm userId={u.id} />
                   <form
                     action={async (fd) => {
                       "use server";

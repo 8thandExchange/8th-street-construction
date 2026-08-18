@@ -29,6 +29,29 @@ export type CredentialsEmailOutcome =
   | { status: "failed"; reason: string }
   | { status: "not-requested" };
 
+/**
+ * What every "hand somebody a password" action returns. Shared so the admin
+ * UI can render one outcome for all three without re-deriving the shape.
+ */
+export type ProvisionActionResult =
+  | { error: string }
+  | { ok: true; tempPassword: string; email: CredentialsEmailOutcome };
+
+/**
+ * Declared rather than inferred: an inferred union gets normalised so the
+ * success branch carries `error?: undefined`, and then `"error" in result`
+ * fails to narrow it away — which silently widened every caller's types.
+ */
+export type ProvisionPortalUserResult =
+  | { error: string }
+  | {
+      ok: true;
+      userId: string;
+      tempPassword: string;
+      email: CredentialsEmailOutcome;
+      loginUrl: string;
+    };
+
 export async function sendPortalCredentialsEmail(payload: {
   to: string;
   firstName: string;
@@ -92,7 +115,7 @@ export async function provisionPortalUser(input: {
   password?: string;
   /** Force a password change at first login (defaults to true only for generated passwords) */
   forcePasswordChange?: boolean;
-}) {
+}): Promise<ProvisionPortalUserResult> {
   const admin = createAdminClient();
   const email = input.email.trim().toLowerCase();
   const tempPassword = input.password?.trim() || generateTemporaryPassword();

@@ -3,13 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { provisionPortalUser } from "@/lib/auth/portal-access";
+import {
+  provisionPortalUser,
+  type ProvisionActionResult,
+} from "@/lib/auth/portal-access";
 
 function revalidate() {
   revalidatePath("/admin/users");
 }
 
-export async function invitePortalUser(formData: FormData) {
+export async function invitePortalUser(
+  formData: FormData
+): Promise<ProvisionActionResult> {
   await requireAdmin();
 
   const email = String(formData.get("email") || "")
@@ -31,9 +36,11 @@ export async function invitePortalUser(formData: FormData) {
     lastName,
   });
 
-  if ("error" in result && result.error) return { error: result.error };
+  // Narrow on the key alone — `&& result.error` leaves the failure branch in
+  // the union, which erases the types of everything returned below it.
+  if ("error" in result) return { error: result.error };
   revalidate();
-  return { ok: true, tempPassword: result.tempPassword, email: result.email };
+  return { ok: true as const, tempPassword: result.tempPassword, email: result.email };
 }
 
 export async function removePortalUser(formData: FormData) {
@@ -65,7 +72,9 @@ export async function removePortalUser(formData: FormData) {
   return { ok: true };
 }
 
-export async function resetPortalPassword(formData: FormData) {
+export async function resetPortalPassword(
+  formData: FormData
+): Promise<ProvisionActionResult> {
   await requireAdmin();
   const id = String(formData.get("id"));
   const admin = createAdminClient();
@@ -85,9 +94,11 @@ export async function resetPortalPassword(formData: FormData) {
     sendEmail: true,
   });
 
-  if ("error" in result && result.error) return { error: result.error };
+  // Narrow on the key alone — `&& result.error` leaves the failure branch in
+  // the union, which erases the types of everything returned below it.
+  if ("error" in result) return { error: result.error };
   revalidate();
-  return { ok: true, tempPassword: result.tempPassword, email: result.email };
+  return { ok: true as const, tempPassword: result.tempPassword, email: result.email };
 }
 
 /** @deprecated Use resetPortalPassword — kept for any stale forms */
