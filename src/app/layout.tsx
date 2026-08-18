@@ -9,6 +9,7 @@ import "@fontsource/barlow-condensed/400.css";
 import "@fontsource/barlow-condensed/500.css";
 import "@fontsource/barlow-condensed/600.css";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import { LeadConnectorChat } from "@/components/site/LeadConnectorChat";
 import { PwaProvider } from "@/components/pwa/PwaProvider";
 import { getSiteContact, contactTelHref } from "@/lib/site-contact";
@@ -118,6 +119,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {children}
         <LeadConnectorChat />
         <PwaProvider />
+        <Analytics />
       </body>
     </html>
   );
