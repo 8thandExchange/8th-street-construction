@@ -51,7 +51,9 @@ const STATUS_BADGES: Record<string, string> = {
 };
 
 const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", {
+  // Date-only values get a noon anchor so the day never shifts with the
+  // server's timezone.
+  new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
     year: "numeric",

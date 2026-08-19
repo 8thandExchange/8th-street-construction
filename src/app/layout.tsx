@@ -5,6 +5,7 @@ import "@fontsource-variable/source-serif-4";
 import "@fontsource-variable/source-serif-4/wght-italic.css";
 import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/jetbrains-mono";
+import "@fontsource-variable/inter"; // admin shell UI face
 import "@fontsource/barlow-condensed/400.css";
 import "@fontsource/barlow-condensed/500.css";
 import "@fontsource/barlow-condensed/600.css";
