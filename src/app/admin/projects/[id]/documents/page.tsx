@@ -27,7 +27,7 @@ export default async function ProjectDocumentsPage(props: { params: Promise<{ id
       <div className="flex items-start justify-between gap-6 mb-8">
         <div>
           <h2 className="app-h1 !text-[18px]">Documents</h2>
-          <p className="text-sm text-ink/60 mt-2">
+          <p className="text-sm app-muted mt-2">
             Private storage — clients download via signed links.
           </p>
         </div>
@@ -38,11 +38,11 @@ export default async function ProjectDocumentsPage(props: { params: Promise<{ id
         {(documents ?? []).map((d) => (
           <li
             key={d.id}
-            className="flex items-center justify-between gap-4 p-5 bg-paper border border-ink/15"
+            className="app-card flex items-center justify-between gap-4 p-5"
           >
             <div>
               <div className="font-medium text-ink">{d.title}</div>
-              <div className="text-xs font-mono text-stone-300 mt-1 uppercase tracking-wider">
+              <div className="text-xs app-muted mt-1">
                 {catLabel(d.category)} · {d.visibility}
                 {d.file_size_bytes
                   ? ` · ${Math.round(d.file_size_bytes / 1024)} KB`
@@ -52,12 +52,13 @@ export default async function ProjectDocumentsPage(props: { params: Promise<{ id
             <div className="flex items-center gap-4 shrink-0">
               <Link
                 href={`/api/documents/${d.id}/download`}
-                className="font-mono text-[10px] tracking-[0.15em] uppercase text-copper hover:underline"
+                className="text-[13px] font-medium text-copper hover:underline"
               >
                 Download
               </Link>
               <form
                 action={async (fd) => {
+                  "use server";
                   await deleteProjectDocument(fd);
                 }}
               >
@@ -65,7 +66,7 @@ export default async function ProjectDocumentsPage(props: { params: Promise<{ id
                 <input type="hidden" name="project_id" value={id} />
                 <button
                   type="submit"
-                  className="app-label hover:text-red-600"
+                  className="text-xs text-red-700 hover:underline"
                 >
                   Delete
                 </button>
@@ -75,7 +76,7 @@ export default async function ProjectDocumentsPage(props: { params: Promise<{ id
         ))}
       </ul>
       {!documents?.length && (
-        <p className="text-ink/50 italic py-12 text-center border border-dashed border-ink/20 mt-6">
+        <p className="app-card p-10 text-center text-sm italic app-muted mt-6">
           No documents uploaded yet.
         </p>
       )}

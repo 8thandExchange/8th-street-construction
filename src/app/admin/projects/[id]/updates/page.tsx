@@ -25,7 +25,7 @@ export default async function ProjectUpdatesPage(props: { params: Promise<{ id: 
       <div className="flex items-start justify-between gap-6 mb-8">
         <div>
           <h2 className="app-h1 !text-[18px]">Progress Updates</h2>
-          <p className="text-sm text-ink/60 mt-2">
+          <p className="text-sm app-muted mt-2">
             Share field photos and notes — clients see these in their portal.
           </p>
         </div>
@@ -40,16 +40,17 @@ export default async function ProjectUpdatesPage(props: { params: Promise<{ id: 
           created_at: string;
           project_update_images: { id: string; public_url: string; caption: string | null }[];
         }) => (
-          <article key={u.id} className="bg-paper border border-ink/15 p-8">
+          <article key={u.id} className="app-card p-8">
             <div className="flex justify-between items-start gap-4">
               <div>
-                <time className="text-xs font-mono text-stone-300 uppercase tracking-wider">
+                <time className="text-xs app-muted">
                   {new Date(u.created_at).toLocaleDateString()}
                 </time>
                 <h3 className="app-h2 !text-[16px] mt-2">{u.title}</h3>
               </div>
               <form
                 action={async (fd) => {
+                  "use server";
                   await deleteProjectUpdate(fd);
                 }}
               >
@@ -57,7 +58,7 @@ export default async function ProjectUpdatesPage(props: { params: Promise<{ id: 
                 <input type="hidden" name="project_id" value={id} />
                 <button
                   type="submit"
-                  className="app-label hover:text-red-600"
+                  className="text-xs text-red-700 hover:underline"
                 >
                   Delete
                 </button>
@@ -84,7 +85,7 @@ export default async function ProjectUpdatesPage(props: { params: Promise<{ id: 
           </article>
         ))}
         {!updates?.length && (
-          <p className="text-ink/50 italic py-12 text-center border border-dashed border-ink/20">
+          <p className="app-card p-10 text-center text-sm italic app-muted">
             No updates yet — post your first progress report.
           </p>
         )}

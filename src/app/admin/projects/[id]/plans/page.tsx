@@ -59,7 +59,7 @@ export default async function ProjectPlansPage(props: { params: Promise<{ id: st
       <div className="flex items-start justify-between gap-6 mb-8">
         <div>
           <h2 className="app-h1 !text-[18px]">Plans & Renderings</h2>
-          <p className="text-sm text-ink/60 mt-2">
+          <p className="text-sm app-muted mt-2">
             Versioned plan packages with client sign-off records and local AHJ requirements.
           </p>
         </div>
@@ -73,9 +73,9 @@ export default async function ProjectPlansPage(props: { params: Promise<{ id: st
           const snapshot = ps.regulations_snapshot as JurisdictionRegulations | null;
           const files = filesBySet[ps.id] ?? [];
           return (
-            <article key={ps.id} className="bg-paper border border-ink/15 p-8">
+            <article key={ps.id} className="app-card p-8">
               <div className="flex flex-wrap items-center gap-3 mb-3">
-                <span className="font-mono text-xs text-stone-300">v{ps.version}</span>
+                <span className="text-xs app-muted app-num">v{ps.version}</span>
                 <h3 className="app-h2 !text-[16px]">{ps.title}</h3>
                 <span className={appStatusBadge("plan_set", ps.status)}>
                   {PLAN_SET_STATUS_LABELS[ps.status]}
@@ -90,13 +90,13 @@ export default async function ProjectPlansPage(props: { params: Promise<{ id: st
                   <li key={f.id} className="flex items-center justify-between gap-4 text-sm">
                     <div>
                       <span className="text-ink">{f.title}</span>
-                      <span className="text-xs font-mono text-stone-300 ml-2 uppercase">
+                      <span className="text-xs app-muted ml-2">
                         {kindLabel(f.kind)}
                       </span>
                     </div>
                     <Link
                       href={`/api/plan-files/${f.id}/download`}
-                      className="font-mono text-[10px] tracking-[0.15em] uppercase text-copper hover:underline"
+                      className="text-[13px] font-medium text-copper hover:underline"
                     >
                       Download
                     </Link>
@@ -130,7 +130,7 @@ export default async function ProjectPlansPage(props: { params: Promise<{ id: st
               )}
 
               {snapshot && (
-                <p className="mt-4 text-xs font-mono text-stone-300">
+                <p className="mt-4 text-xs app-muted">
                   Regulations snapshot: {snapshot.name} ({snapshot.state})
                 </p>
               )}
@@ -139,6 +139,7 @@ export default async function ProjectPlansPage(props: { params: Promise<{ id: st
                 {(ps.status === "draft" || ps.status === "revision_requested") && (
                   <form
                     action={async (fd) => {
+                      "use server";
                       await sendPlanSetToClient(fd);
                     }}
                   >
@@ -146,7 +147,7 @@ export default async function ProjectPlansPage(props: { params: Promise<{ id: st
                     <input type="hidden" name="project_id" value={id} />
                     <button
                       type="submit"
-                      className="font-mono text-[10px] tracking-[0.15em] uppercase text-copper hover:underline"
+                      className="text-[13px] font-medium text-copper hover:underline"
                     >
                       {ps.status === "revision_requested" ? "Resend for sign-off" : "Send to client"}
                     </button>
@@ -154,6 +155,7 @@ export default async function ProjectPlansPage(props: { params: Promise<{ id: st
                 )}
                 <form
                   action={async (fd) => {
+                    "use server";
                     await deletePlanSet(fd);
                   }}
                 >
@@ -161,7 +163,7 @@ export default async function ProjectPlansPage(props: { params: Promise<{ id: st
                   <input type="hidden" name="project_id" value={id} />
                   <button
                     type="submit"
-                    className="font-mono text-[10px] tracking-[0.15em] uppercase text-stone-300 hover:text-red-600"
+                    className="text-xs text-red-700 hover:underline"
                   >
                     Delete set
                   </button>
@@ -173,7 +175,7 @@ export default async function ProjectPlansPage(props: { params: Promise<{ id: st
       </div>
 
       {!planSets?.length && (
-        <p className="text-ink/50 italic py-12 text-center border border-dashed border-ink/20 mt-10">
+        <p className="app-card p-10 text-center text-sm italic app-muted mt-10">
           No plan sets yet. Upload drawings and renderings to start the sign-off workflow.
         </p>
       )}

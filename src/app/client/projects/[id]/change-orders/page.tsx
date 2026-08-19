@@ -61,6 +61,7 @@ export default async function ClientChangeOrdersPage(props: {
               <div className="mt-8 flex gap-3">
                 <form
                   action={async (fd) => {
+                    "use server";
                     await clientRespondChangeOrder(fd);
                   }}
                 >
@@ -76,6 +77,7 @@ export default async function ClientChangeOrdersPage(props: {
                 </form>
                 <form
                   action={async (fd) => {
+                    "use server";
                     await clientRespondChangeOrder(fd);
                   }}
                 >
