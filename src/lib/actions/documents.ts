@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/actions/admin-auth";
 
 function revalidateProject(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/documents`);
+  revalidatePath(`/admin/contracts`);
   revalidatePath(`/client/projects/${projectId}`);
 }
 
