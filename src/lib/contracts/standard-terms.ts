@@ -14,6 +14,12 @@
  * attorney review before first use on a new counterparty type.
  */
 
+/**
+ * The program max, and the standard price for every single-family house.
+ * Confirmed by Troy 2026-08-19 against the signed 608 Macon agreement.
+ */
+export const STANDARD_SINGLE_FAMILY_PRICE = 239665;
+
 export type ContractMergeFields = {
   owner_name: string;              // "Habitat for Humanity — CSRA, Inc."
   owner_entity_description: string; // "a Georgia nonprofit corporation"

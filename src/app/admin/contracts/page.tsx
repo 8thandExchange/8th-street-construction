@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { NewContractForm } from "@/components/admin/NewContractForm";
 import { deleteProjectDocument } from "@/lib/actions/documents";
 import { createContractFromTemplate } from "@/lib/actions/contracts";
-import { usd } from "@/lib/contracts/standard-terms";
+import { STANDARD_SINGLE_FAMILY_PRICE, usd } from "@/lib/contracts/standard-terms";
 
 export const dynamic = "force-dynamic";
 
@@ -180,7 +180,16 @@ export default async function ContractsPage() {
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="field-label">Contract price *</label>
-                <input name="contract_price" required className="field-input" placeholder="$239,665" />
+                <input
+                  name="contract_price"
+                  required
+                  className="field-input"
+                  defaultValue={usd(STANDARD_SINGLE_FAMILY_PRICE)}
+                />
+                <p className="mt-1 text-xs text-ink/50">
+                  The single-family standard. Change it only for multifamily or
+                  a job priced differently.
+                </p>
               </div>
               <div>
                 <label className="field-label">Effective date *</label>

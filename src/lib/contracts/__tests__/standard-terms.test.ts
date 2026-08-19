@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   dollarsToWords,
+  STANDARD_SINGLE_FAMILY_PRICE,
   hasUnmergedFields,
   longDate,
   mergeContractTemplate,
@@ -29,6 +30,13 @@ const FIELDS: ContractMergeFields = {
 describe("dollarsToWords", () => {
   it("writes the 608 Macon price the way the signed contract does", () => {
     expect(dollarsToWords(239665)).toBe(
+      "Two Hundred Thirty-Nine Thousand Six Hundred Sixty-Five and 00/100 Dollars"
+    );
+  });
+
+  it("the standard single-family price is the signed 608 Macon amount", () => {
+    expect(STANDARD_SINGLE_FAMILY_PRICE).toBe(239665);
+    expect(dollarsToWords(STANDARD_SINGLE_FAMILY_PRICE)).toBe(
       "Two Hundred Thirty-Nine Thousand Six Hundred Sixty-Five and 00/100 Dollars"
     );
   });
