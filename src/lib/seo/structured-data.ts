@@ -16,7 +16,9 @@ export const SITE_URL =
  * social accounts for the knowledge panel — an empty array is simply
  * omitted rather than emitted as a hollow claim.
  */
-export const SOCIAL_PROFILES: string[] = [];
+export const SOCIAL_PROFILES: string[] = [
+  "https://www.facebook.com/8thstreetconstruction",
+];
 
 /** Hours the office answers the phone, for LocalBusiness rich results. */
 export const OPENING_HOURS = [
