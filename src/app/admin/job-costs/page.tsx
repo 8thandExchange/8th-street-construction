@@ -104,27 +104,27 @@ export default async function JobCostsPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2.5 text-right font-mono tabular-nums text-sm">
+                  <td className="px-3 py-2.5 text-right app-num text-sm">
                     {formatMoney(j.revisedBudget)}
                   </td>
-                  <td className="px-3 py-2.5 text-right font-mono tabular-nums text-sm text-ink/70">
+                  <td className="px-3 py-2.5 text-right app-num text-sm text-ink/70">
                     {j.committed ? formatMoney(j.committed) : "—"}
                   </td>
-                  <td className="px-3 py-2.5 text-right font-mono tabular-nums text-sm text-ink/70">
+                  <td className="px-3 py-2.5 text-right app-num text-sm text-ink/70">
                     {j.actual ? formatMoney(j.actual) : "—"}
                   </td>
                   <td
-                    className={`px-3 py-2.5 text-right font-mono tabular-nums text-sm ${
+                    className={`px-3 py-2.5 text-right app-num text-sm ${
                       j.remaining < -0.005 ? "text-red-700 font-medium" : "text-ink/70"
                     }`}
                   >
                     {formatMoney(j.remaining)}
                   </td>
-                  <td className="px-3 py-2.5 text-right font-mono tabular-nums text-sm">
+                  <td className="px-3 py-2.5 text-right app-num text-sm">
                     {j.contract != null ? formatMoney(j.contract) : "—"}
                   </td>
                   <td
-                    className={`px-3 py-2.5 text-right font-mono tabular-nums text-sm ${
+                    className={`px-3 py-2.5 text-right app-num text-sm ${
                       j.marginAtBudget != null && j.marginAtBudget < 0
                         ? "text-red-700 font-medium"
                         : "text-emerald-800"
@@ -132,7 +132,7 @@ export default async function JobCostsPage() {
                   >
                     {j.marginAtBudget != null ? formatMoney(j.marginAtBudget) : "—"}
                   </td>
-                  <td className="px-3 py-2.5 text-right font-mono tabular-nums text-sm text-ink/70">
+                  <td className="px-3 py-2.5 text-right app-num text-sm text-ink/70">
                     {j.spentPerHeatedSqft != null ? formatMoney(j.spentPerHeatedSqft) : "—"}
                   </td>
                 </tr>
@@ -142,19 +142,19 @@ export default async function JobCostsPage() {
               <tfoot className="border-t-2 border-ink/15">
                 <tr className="bg-bone/40 font-medium">
                   <td className="px-3 py-3">All jobs</td>
-                  <td className="px-3 py-3 text-right font-mono tabular-nums">
+                  <td className="px-3 py-3 text-right app-num">
                     {formatMoney(totals.budget)}
                   </td>
-                  <td colSpan={2} className="px-3 py-3 text-right font-mono tabular-nums">
+                  <td colSpan={2} className="px-3 py-3 text-right app-num">
                     {formatMoney(totals.spent)} spent
                   </td>
-                  <td className="px-3 py-3 text-right font-mono tabular-nums">
+                  <td className="px-3 py-3 text-right app-num">
                     {formatMoney(totals.budget - totals.spent)}
                   </td>
-                  <td className="px-3 py-3 text-right font-mono tabular-nums">
+                  <td className="px-3 py-3 text-right app-num">
                     {formatMoney(totals.contract)}
                   </td>
-                  <td className="px-3 py-3 text-right font-mono tabular-nums">
+                  <td className="px-3 py-3 text-right app-num">
                     {formatMoney(totals.contract - totals.budget)}
                   </td>
                   <td />
@@ -163,7 +163,7 @@ export default async function JobCostsPage() {
             )}
           </table>
         </div>
-        <p className="mt-3 text-xs text-ink/45 leading-relaxed max-w-3xl">
+        <p className="mt-3 text-xs app-muted leading-relaxed max-w-3xl">
           Budget includes approved change orders. &ldquo;Margin at budget&rdquo; is contract minus
           revised budget — what each job earns if it lands on plan. Spend counts the larger of
           committed and actual, never both.
@@ -188,14 +188,14 @@ export default async function JobCostsPage() {
                 {trades.map((t) => (
                   <tr key={t.section} className="bg-paper">
                     <td className="px-3 py-2.5 text-sm text-navy">{t.section}</td>
-                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-sm">
+                    <td className="px-3 py-2.5 text-right app-num text-sm">
                       {formatMoney(t.revisedBudget)}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-sm">
+                    <td className="px-3 py-2.5 text-right app-num text-sm">
                       {formatMoney(t.actual)}
                     </td>
                     <td
-                      className={`px-3 py-2.5 text-right font-mono tabular-nums text-sm ${
+                      className={`px-3 py-2.5 text-right app-num text-sm ${
                         (t.variancePct ?? 0) > 0.02
                           ? "text-red-700 font-medium"
                           : "text-emerald-800"
@@ -205,7 +205,7 @@ export default async function JobCostsPage() {
                         ? `${t.variancePct > 0 ? "+" : ""}${Math.round(t.variancePct * 100)}%`
                         : "—"}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-sm text-ink/70">
+                    <td className="px-3 py-2.5 text-right app-num text-sm text-ink/70">
                       {t.projectCount}
                     </td>
                   </tr>
@@ -213,7 +213,7 @@ export default async function JobCostsPage() {
               </tbody>
             </table>
           </div>
-          <p className="mt-3 text-xs text-ink/45">
+          <p className="mt-3 text-xs app-muted">
             Only lines with vendor bills coded to them count. Sections that keep landing red are
             where the estimating template needs a harder look.
           </p>

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { setProfilePortalActive, setUserProjectPortalAccess } from "@/lib/actions/portal-access-control";
 import { PortalAccessToggle } from "@/components/portal/PortalAccessToggle";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -52,13 +53,13 @@ export default async function UserPortalAccessPage(props: { params: Promise<{ id
     <div className="p-4 md:p-8 lg:p-10 max-w-3xl">
       <Link
         href="/admin/users"
-        className="text-xs font-mono tracking-[0.18em] uppercase text-stone-300 hover:text-ink"
+        className="text-[13px] font-medium text-copper hover:underline"
       >
         ← Portal Users
       </Link>
 
       <h1 className="mt-4 app-h1">{displayName}</h1>
-      <p className="mt-2 text-sm text-ink/55 font-mono">{profile.email}</p>
+      <p className="mt-2 text-sm app-muted">{profile.email}</p>
 
       <form action={setProfilePortalActive} className="mt-8 dash-panel p-6">
         <input type="hidden" name="profile_id" value={profile.id} />
@@ -68,17 +69,14 @@ export default async function UserPortalAccessPage(props: { params: Promise<{ id
           label="Portal account active"
           description="Master switch. When off, this user cannot sign into the client portal at all."
         />
-        <button
-          type="submit"
-          className="mt-4 app-btn app-btn-primary"
-        >
+        <SubmitButton className="mt-4 app-btn app-btn-primary">
           Save account access
-        </button>
+        </SubmitButton>
       </form>
 
       <section className="mt-10">
-        <h2 className="eyebrow mb-2">Project access</h2>
-        <p className="text-sm text-ink/55 mb-6 max-w-xl">
+        <h2 className="app-label mb-2">Project access</h2>
+        <p className="text-sm app-muted mb-6 max-w-xl">
           Toggle which projects this client can see. Primary client assignments and additional
           viewer grants are both controlled here.
         </p>
@@ -102,7 +100,7 @@ export default async function UserPortalAccessPage(props: { params: Promise<{ id
               return (
                 <li
                   key={p.id}
-                  className="flex flex-wrap items-center justify-between gap-4 p-4 border border-ink/10 bg-paper/50 opacity-60"
+                  className="app-card flex flex-wrap items-center justify-between gap-4 p-4 opacity-60"
                 >
                   <div>
                     <p className="font-medium text-ink">{p.title}</p>
@@ -116,7 +114,7 @@ export default async function UserPortalAccessPage(props: { params: Promise<{ id
                     <input type="hidden" name="portal_enabled" value="true" />
                     <button
                       type="submit"
-                      className="app-label !text-copper hover:underline"
+                      className="text-[13px] font-medium text-copper hover:underline"
                     >
                       Grant access →
                     </button>
@@ -128,7 +126,7 @@ export default async function UserPortalAccessPage(props: { params: Promise<{ id
             return (
               <li
                 key={p.id}
-                className="flex flex-wrap items-center justify-between gap-4 p-4 border border-ink/10 bg-paper"
+                className="app-card flex flex-wrap items-center justify-between gap-4 p-4"
               >
                 <div>
                   <Link
@@ -153,7 +151,7 @@ export default async function UserPortalAccessPage(props: { params: Promise<{ id
                   />
                   <button
                     type="submit"
-                    className="app-label !text-copper hover:underline"
+                    className="text-[13px] font-medium text-copper hover:underline"
                   >
                     Save
                   </button>
@@ -164,7 +162,9 @@ export default async function UserPortalAccessPage(props: { params: Promise<{ id
         </ul>
 
         {(projects ?? []).length === 0 && (
-          <p className="text-sm text-ink/45 italic">No active projects in the system yet.</p>
+          <p className="app-card p-10 text-center text-sm italic app-muted">
+            No active projects in the system yet.
+          </p>
         )}
       </section>
     </div>

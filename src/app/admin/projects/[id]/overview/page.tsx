@@ -11,6 +11,7 @@ import { listJurisdictions } from "@/lib/building-regulations/registry";
 import { ClientAssignmentPanel } from "@/components/project/ClientAssignmentPanel";
 import { updateProjectPortalFeatures } from "@/lib/actions/portal-access-control";
 import { PORTAL_FEATURES, isFeatureEnabled } from "@/lib/portal/features";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -83,11 +84,11 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
           "use server";
           await updateProjectPortalFeatures(fd);
         }}
-        className="bg-paper border border-ink/15 p-6 md:p-8 mb-10"
+        className="app-card p-6 md:p-8 mb-10"
       >
         <input type="hidden" name="project_id" value={project.id} />
-        <h3 className="eyebrow mb-1">Portal features for this job</h3>
-        <p className="text-sm text-ink/60 mb-4">
+        <h3 className="app-label mb-1">Portal features for this job</h3>
+        <p className="text-sm app-muted mb-4">
           Untick anything this client doesn&apos;t need — hidden tabs disappear from their
           portal. Overview and access rules are unaffected.
         </p>
@@ -104,9 +105,9 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
             </label>
           ))}
         </div>
-        <button type="submit" className="mt-5 app-btn app-btn-secondary">
+        <SubmitButton className="mt-5 app-btn app-btn-secondary">
           Save Portal Features
-        </button>
+        </SubmitButton>
       </form>
 
       <form
@@ -114,10 +115,10 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
           "use server";
           await updateProject(fd);
         }}
-        className="bg-paper border border-ink/15 p-4 md:p-8 lg:p-10 mb-10"
+        className="app-card p-4 md:p-8 lg:p-10 mb-10"
       >
         <input type="hidden" name="id" value={project.id} />
-        <span className="eyebrow">— Project Details</span>
+        <span className="app-label">— Project Details</span>
         <div className="mt-6">
           <ProjectFormFields defaults={project} />
         </div>
@@ -145,7 +146,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
                 </option>
               ))}
             </select>
-            <p className="text-xs text-ink/50 mt-2">
+            <p className="text-xs app-muted mt-2">
               Drives local building regulations shown on Plans & Renderings.
             </p>
           </div>
@@ -182,7 +183,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
                 </option>
               ))}
             </select>
-            <p className="text-xs text-ink/50 mt-2">
+            <p className="text-xs app-muted mt-2">
               Each lot needs revisions from this base plan against its plat.
             </p>
           </div>
@@ -214,7 +215,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
               className="field-input"
               placeholder="Agreement amount"
             />
-            <p className="text-xs text-ink/50 mt-2">
+            <p className="text-xs app-muted mt-2">
               Client billing only — our cost plan is on the{" "}
               <a href={`/admin/projects/${project.id}/costs`} className="text-copper hover:underline">
                 Cost Plan
@@ -225,17 +226,12 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
         </div>
 
         <div className="mt-10 pt-6 border-t border-ink/15">
-          <button
-            type="submit"
-            className="app-btn app-btn-primary"
-          >
-            Save Changes
-          </button>
+          <SubmitButton>Save Changes</SubmitButton>
         </div>
       </form>
 
-      <div className="bg-paper border border-ink/15 p-4 md:p-8 lg:p-10">
-        <h2 className="app-h1 !text-[18px] mb-2">Gallery Images</h2>
+      <div className="app-card p-4 md:p-8 lg:p-10">
+        <h2 className="app-h2 mb-2">Gallery Images</h2>
         {images && images.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
             {images.map((img) => (
@@ -258,7 +254,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
                 >
                   <input type="hidden" name="image_id" value={img.id} />
                   <input type="hidden" name="project_id" value={project.id} />
-                  <button type="submit" className="app-label">
+                  <button type="submit" className="text-xs text-red-700 hover:underline">
                     Remove
                   </button>
                 </form>
@@ -275,9 +271,9 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
         >
           <input type="hidden" name="project_id" value={project.id} />
           <input name="public_url" required className="field-input" placeholder="Image public URL" />
-          <button type="submit" className="self-start app-btn app-btn-primary">
+          <SubmitButton className="self-start app-btn app-btn-primary">
             + Add Image
-          </button>
+          </SubmitButton>
         </form>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toggleTaskDone, deleteTask, createTask, updateTask } from "@/lib/actions/tasks";
 import { CUSTOM_PHASE_KEY } from "@/lib/build/task-phases";
 import { ChecklistItems, type ChecklistItem } from "./ChecklistItems";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export type TaskRow = {
   id: string;
@@ -30,7 +31,7 @@ export type PhaseGroup = {
 function PriorityBadge({ priority }: { priority: string }) {
   if (priority === "normal") return null;
   return (
-    <span className="text-[9px] font-mono uppercase tracking-wider text-copper">{priority}</span>
+    <span className="app-badge app-badge-accent">{priority}</span>
   );
 }
 
@@ -50,7 +51,7 @@ function AddTaskForm({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full p-4 text-left text-sm font-mono text-[10px] tracking-[0.15em] uppercase text-copper hover:bg-bone/60 transition-colors"
+        className="w-full p-4 text-left text-[13px] font-medium text-copper hover:underline"
       >
         + Add task to this phase
       </button>
@@ -90,12 +91,7 @@ function AddTaskForm({
         <input type="date" name="due_date" className="field-input text-sm w-auto" />
       </div>
       <div className="flex gap-2">
-        <button
-          type="submit"
-          className="app-btn app-btn-primary"
-        >
-          Add Task
-        </button>
+        <SubmitButton>Add Task</SubmitButton>
         <button
           type="button"
           onClick={() => setOpen(false)}
@@ -189,12 +185,7 @@ function TaskRowItem({
               )}
             </div>
             <div className="flex gap-2">
-              <button
-                type="submit"
-                className="app-btn app-btn-primary"
-              >
-                Save
-              </button>
+              <SubmitButton>Save</SubmitButton>
               <button
                 type="button"
                 onClick={() => setEditing(false)}
@@ -209,29 +200,27 @@ function TaskRowItem({
             <div className="flex flex-wrap items-center gap-2">
               <span
                 className={`text-sm ${
-                  task.status === "done" ? "text-stone-300 line-through" : "text-ink"
+                  task.status === "done" ? "app-muted line-through" : "text-ink"
                 }`}
               >
                 {task.title}
               </span>
               {task.is_custom && (
-                <span className="text-[9px] font-mono uppercase tracking-wider text-ink/40 border border-ink/15 px-1.5 py-0.5">
-                  Custom
-                </span>
+                <span className="app-badge app-badge-neutral">Custom</span>
               )}
               <PriorityBadge priority={task.priority} />
               {task.due_date && (
-                <span className="text-[9px] font-mono text-stone-300">Due {task.due_date}</span>
+                <span className="text-xs app-muted">Due {task.due_date}</span>
               )}
             </div>
             {task.description && (
-              <p className="text-xs text-ink/55 mt-1 leading-relaxed">{task.description}</p>
+              <p className="text-xs app-muted mt-1 leading-relaxed">{task.description}</p>
             )}
             <ChecklistItems taskId={task.id} projectId={projectId} items={checklist} />
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="mt-2 text-[10px] font-mono uppercase text-stone-300 hover:text-copper opacity-0 group-hover:opacity-100 transition-opacity"
+              className="mt-2 text-[13px] font-medium text-copper hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
             >
               Edit
             </button>
@@ -244,7 +233,7 @@ function TaskRowItem({
         <input type="hidden" name="project_id" value={projectId} />
         <button
           type="submit"
-          className="text-[10px] font-mono uppercase text-stone-300 hover:text-red-600"
+          className="text-xs text-red-700 hover:underline"
           title="Delete task"
         >
           ×
@@ -281,7 +270,7 @@ export function TaskChecklist({
         const allowAdd = phase.allowAdd !== false;
 
         return (
-          <section key={phase.phaseKey} className="border border-ink/15 bg-paper">
+          <section key={phase.phaseKey} className="app-card overflow-hidden">
             <button
               type="button"
               onClick={() => setOpenPhase(isOpen ? null : phase.phaseKey)}
@@ -290,9 +279,9 @@ export function TaskChecklist({
               <div>
                 <h3 className="font-display text-lg text-ink">{phase.title}</h3>
                 {phase.hint && (
-                  <p className="text-xs text-ink/50 mt-1 max-w-lg">{phase.hint}</p>
+                  <p className="text-xs app-muted mt-1 max-w-lg">{phase.hint}</p>
                 )}
-                <p className="text-xs font-mono text-stone-300 mt-1 uppercase tracking-wider">
+                <p className="text-xs app-muted mt-1">
                   {done}/{total} complete · {pct}%
                 </p>
               </div>
@@ -314,7 +303,7 @@ export function TaskChecklist({
                     />
                   ))}
                   {!phase.tasks.length && (
-                    <li className="p-6 text-sm text-ink/50 italic border-t border-ink/10">
+                    <li className="p-6 text-sm app-muted italic border-t border-ink/10">
                       No tasks yet — add site-specific items below.
                     </li>
                   )}

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { StorageUpload } from "./StorageUpload";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import { createProjectUpdate } from "@/lib/actions/updates";
 import { draftClientUpdate } from "@/lib/actions/ai-updates";
 
@@ -53,7 +54,7 @@ export function NewUpdateForm({ projectId }: { projectId: string }) {
       <input type="hidden" name="project_id" value={projectId} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="eyebrow">New Progress Update</h3>
+        <h3 className="app-label">New Progress Update</h3>
         <button
           type="button"
           onClick={handleDraft}
@@ -70,7 +71,7 @@ export function NewUpdateForm({ projectId }: { projectId: string }) {
           {aiError}
         </p>
       )}
-      <p className="text-xs text-ink/45 -mt-2 leading-relaxed">
+      <p className="text-xs app-muted -mt-2 leading-relaxed">
         AI drafts from recent field logs and completed work — review and edit before publishing.
       </p>
 
@@ -110,22 +111,17 @@ export function NewUpdateForm({ projectId }: { projectId: string }) {
           }
         />
         {imageUrls.length > 0 && (
-          <p className="mt-2 text-xs font-mono text-stone-300">
+          <p className="mt-2 text-xs app-muted">
             {imageUrls.length} image(s) ready
           </p>
         )}
       </div>
-      <p className="text-xs text-ink/60">
+      <p className="text-xs app-muted">
         Your client is automatically notified by email (and text, when enabled) the moment
         this publishes.
       </p>
       <div className="flex gap-3">
-        <button
-          type="submit"
-          className="app-btn app-btn-primary"
-        >
-          Publish
-        </button>
+        <SubmitButton>Publish</SubmitButton>
         <button
           type="button"
           onClick={() => setOpen(false)}

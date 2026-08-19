@@ -5,6 +5,7 @@ import { NewContractForm } from "@/components/admin/NewContractForm";
 import { deleteProjectDocument } from "@/lib/actions/documents";
 import { createContractFromTemplate } from "@/lib/actions/contracts";
 import { STANDARD_SINGLE_FAMILY_PRICE, usd } from "@/lib/contracts/standard-terms";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,13 @@ const STATUS_LABELS: Record<string, string> = {
   out_for_signature: "Out for signature",
   signed: "Signed",
   void: "Void",
+};
+
+const STATUS_BADGES: Record<string, string> = {
+  draft: "app-badge-neutral",
+  out_for_signature: "app-badge-amber",
+  signed: "app-badge-green",
+  void: "app-badge-red",
 };
 
 const fmtDate = (iso: string) =>
@@ -95,7 +103,7 @@ export default async function ContractsPage() {
       <div className="flex items-start justify-between gap-6 mb-8">
         <div>
           <h1 className="app-h1">Contracts</h1>
-          <p className="text-sm text-ink/60 mt-2 max-w-2xl">
+          <p className="text-sm app-muted mt-2 max-w-2xl">
             Every agreement across every job. Draft new ones from the company
             standard, edit them per job, and keep the signed PDFs on record.
             Files are private — downloads use signed links and only admins see
@@ -104,7 +112,7 @@ export default async function ContractsPage() {
         </div>
         <Link
           href="/admin/contracts/templates"
-          className="font-mono text-[10px] tracking-[0.15em] uppercase text-copper hover:underline shrink-0 mt-2"
+          className="text-[13px] font-medium text-copper hover:underline shrink-0 mt-2"
         >
           Standard terms
         </Link>
@@ -112,12 +120,12 @@ export default async function ContractsPage() {
 
       {/* ------------------------------------------------- agreements -- */}
       <section className="mb-12">
-        <div className="flex items-baseline justify-between gap-4 border-b border-ink/15 pb-2 mb-4">
-          <h2 className="font-medium text-ink">Agreements</h2>
+        <div className="flex items-baseline justify-between gap-4 border-b border-ink/10 pb-2 mb-4">
+          <h2 className="app-h2">Agreements</h2>
         </div>
 
-        <details className="mb-6 border border-ink/15 bg-paper">
-          <summary className="cursor-pointer px-5 py-4 font-mono text-[11px] tracking-[0.15em] uppercase text-copper">
+        <details className="app-card mb-6">
+          <summary className="cursor-pointer px-5 py-4 text-[13px] font-medium text-copper">
             + Draft agreement from the standard
           </summary>
           <form action={draftAgreement} className="p-6 pt-2 space-y-4">
@@ -186,7 +194,7 @@ export default async function ContractsPage() {
                   className="field-input"
                   defaultValue={usd(STANDARD_SINGLE_FAMILY_PRICE)}
                 />
-                <p className="mt-1 text-xs text-ink/50">
+                <p className="mt-1 text-xs app-muted">
                   The single-family standard. Change it only for multifamily or
                   a job priced differently.
                 </p>
@@ -227,9 +235,7 @@ export default async function ContractsPage() {
                 <input name="project_name" className="field-input" placeholder="608 Macon Avenue Residence" />
               </div>
             </div>
-            <button type="submit" className="app-btn app-btn-primary">
-              Draft agreement
-            </button>
+            <SubmitButton pendingLabel="Drafting…">Draft agreement</SubmitButton>
           </form>
         </details>
 
@@ -237,21 +243,25 @@ export default async function ContractsPage() {
           {agreements.map((a) => (
             <li
               key={a.id}
-              className="flex items-center justify-between gap-4 p-5 bg-paper border border-ink/15"
+              className="app-card flex items-center justify-between gap-4 p-5"
             >
               <div>
                 <Link href={`/admin/contracts/${a.id}`} className="font-medium text-ink hover:text-copper">
                   {a.project?.title ?? "Unknown job"} · Agreement #{a.number} — {a.title}
                 </Link>
-                <div className="text-xs font-mono text-stone-300 mt-1 uppercase tracking-wider">
-                  {STATUS_LABELS[a.status] ?? a.status} · {a.owner_name} ·{" "}
-                  {usd(Number(a.contract_price))}
-                  {a.effective_date ? ` · effective ${fmtDate(a.effective_date)}` : ""}
+                <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs app-muted">
+                  <span className={`app-badge ${STATUS_BADGES[a.status] ?? "app-badge-neutral"}`}>
+                    {STATUS_LABELS[a.status] ?? a.status}
+                  </span>
+                  <span>
+                    {a.owner_name} · <span className="app-num">{usd(Number(a.contract_price))}</span>
+                    {a.effective_date ? ` · effective ${fmtDate(a.effective_date)}` : ""}
+                  </span>
                 </div>
               </div>
               <Link
                 href={`/admin/contracts/${a.id}`}
-                className="font-mono text-[10px] tracking-[0.15em] uppercase text-copper hover:underline shrink-0"
+                className="text-[13px] font-medium text-copper hover:underline shrink-0"
               >
                 Open
               </Link>
@@ -259,7 +269,7 @@ export default async function ContractsPage() {
           ))}
         </ul>
         {!agreements.length && (
-          <p className="text-ink/50 italic py-8 text-center border border-dashed border-ink/20">
+          <p className="app-card p-10 text-center text-sm italic app-muted">
             No drafted agreements yet. Use <strong>Draft agreement from the standard</strong> above.
           </p>
         )}
@@ -267,8 +277,8 @@ export default async function ContractsPage() {
 
       {/* ------------------------------------------------ signed files -- */}
       <section>
-        <div className="flex items-baseline justify-between gap-4 border-b border-ink/15 pb-2 mb-4">
-          <h2 className="font-medium text-ink">Signed files on record</h2>
+        <div className="flex items-baseline justify-between gap-4 border-b border-ink/10 pb-2 mb-4">
+          <h2 className="app-h2">Signed files on record</h2>
           <NewContractForm
             projects={(projects ?? []).map((p) => ({ id: p.id, title: p.title }))}
           />
@@ -288,7 +298,7 @@ export default async function ContractsPage() {
                   </h3>
                   <Link
                     href={`/admin/projects/${projectId}/documents`}
-                    className="font-mono text-[10px] tracking-[0.15em] uppercase text-copper hover:underline shrink-0"
+                    className="text-[13px] font-medium text-copper hover:underline shrink-0"
                   >
                     Job files
                   </Link>
@@ -297,14 +307,14 @@ export default async function ContractsPage() {
                   {docs.map((d) => (
                     <li
                       key={d.id}
-                      className="flex items-center justify-between gap-4 p-5 bg-paper border border-ink/15"
+                      className="app-card flex items-center justify-between gap-4 p-5"
                     >
                       <div>
                         <div className="font-medium text-ink">{d.title}</div>
                         {d.description && (
-                          <div className="text-sm text-ink/60 mt-1">{d.description}</div>
+                          <div className="text-sm app-muted mt-1">{d.description}</div>
                         )}
-                        <div className="text-xs font-mono text-stone-300 mt-1 uppercase tracking-wider">
+                        <div className="text-xs app-muted mt-1">
                           Added {fmtDate(d.created_at)} · {d.visibility}
                           {d.file_size_bytes
                             ? ` · ${Math.round(d.file_size_bytes / 1024)} KB`
@@ -314,7 +324,7 @@ export default async function ContractsPage() {
                       <div className="flex items-center gap-4 shrink-0">
                         <Link
                           href={`/api/documents/${d.id}/download`}
-                          className="font-mono text-[10px] tracking-[0.15em] uppercase text-copper hover:underline"
+                          className="text-[13px] font-medium text-copper hover:underline"
                         >
                           Download
                         </Link>
@@ -326,7 +336,7 @@ export default async function ContractsPage() {
                         >
                           <input type="hidden" name="id" value={d.id} />
                           <input type="hidden" name="project_id" value={d.project_id} />
-                          <button type="submit" className="app-label hover:text-red-600">
+                          <button type="submit" className="text-xs text-red-700 hover:underline">
                             Delete
                           </button>
                         </form>
@@ -339,7 +349,7 @@ export default async function ContractsPage() {
           })}
         </div>
         {!contracts.length && (
-          <p className="text-ink/50 italic py-8 text-center border border-dashed border-ink/20">
+          <p className="app-card p-10 text-center text-sm italic app-muted">
             No signed contract files on record yet.
           </p>
         )}

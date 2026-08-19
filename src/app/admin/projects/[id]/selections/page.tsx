@@ -7,6 +7,7 @@ import {
   addSelectionOption,
   deleteSelectionOption,
 } from "@/lib/actions/selections";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,15 @@ const CATEGORIES = [
 
 const STATUSES = ["pending", "client_review", "selected", "ordered", "installed", "approved"];
 
+const STATUS_BADGES: Record<string, string> = {
+  pending: "app-badge-neutral",
+  client_review: "app-badge-blue",
+  selected: "app-badge-green",
+  ordered: "app-badge-blue",
+  installed: "app-badge-green",
+  approved: "app-badge-green",
+};
+
 export default async function ProjectSelectionsPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
   const supabase = await createClient();
@@ -44,21 +54,27 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
   return (
     <div className="max-w-3xl">
       <h2 className="app-h1 !text-[18px] mb-2">Selections & Allowances</h2>
-      <p className="text-sm text-ink/60 mb-6">
+      <p className="text-sm app-muted mb-6">
         Track finish selections, allowances, and deadlines. Client-visible items appear in their
         portal for approval.
       </p>
       <div className="grid grid-cols-2 gap-4 mb-8">
-        <div className="p-5 border border-ink/15 bg-paper">
-          <div className="eyebrow">Allowances</div>
-          <div className="app-h1 !text-[18px] mt-1">${allowanceTotal.toLocaleString()}</div>
+        <div className="app-card p-5">
+          <div className="app-label">Allowances</div>
+          <div className="app-h2 !text-[18px] app-num mt-1">${allowanceTotal.toLocaleString()}</div>
         </div>
-        <div className="p-5 border border-ink/15 bg-paper">
-          <div className="eyebrow">Selected</div>
-          <div className="app-h1 !text-[18px] mt-1">${selectedTotal.toLocaleString()}</div>
+        <div className="app-card p-5">
+          <div className="app-label">Selected</div>
+          <div className="app-h2 !text-[18px] app-num mt-1">${selectedTotal.toLocaleString()}</div>
           {allowanceTotal > 0 && (
-            <div className="text-xs font-mono text-stone-300 mt-1">
-              {selectedTotal > allowanceTotal ? "Over allowance" : "Within budget"}
+            <div className="mt-2">
+              <span
+                className={`app-badge ${
+                  selectedTotal > allowanceTotal ? "app-badge-amber" : "app-badge-green"
+                }`}
+              >
+                {selectedTotal > allowanceTotal ? "Over allowance" : "Within budget"}
+              </span>
             </div>
           )}
         </div>
@@ -69,10 +85,10 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
           "use server";
           await createSelection(fd);
         }}
-        className="p-6 border border-ink/15 bg-paper space-y-4 mb-10"
+        className="app-card p-6 space-y-4 mb-10"
       >
         <input type="hidden" name="project_id" value={id} />
-        <h3 className="eyebrow">Add selection</h3>
+        <h3 className="app-label">Add selection</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <label className="field-label">Title *</label>
@@ -123,22 +139,23 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
           <input type="checkbox" name="client_visible" defaultChecked className="accent-copper" />
           Visible to client
         </label>
-        <button type="submit" className="app-btn app-btn-primary">
-          Add Selection
-        </button>
+        <SubmitButton>Add Selection</SubmitButton>
       </form>
 
       <div className="space-y-4">
         {(items ?? []).map((item) => (
-          <details key={item.id} className="border border-ink/15 bg-paper">
+          <details key={item.id} className="app-card">
             <summary className="p-5 cursor-pointer flex justify-between gap-4 list-none">
               <div>
                 <div className="font-medium text-ink">{item.title}</div>
-                <div className="text-xs font-mono text-stone-300 mt-1">
-                  {item.category.replace(/_/g, " ")} · {item.status.replace(/_/g, " ")}
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs app-muted">
+                  <span>{item.category.replace(/_/g, " ")}</span>
+                  <span className={`app-badge ${STATUS_BADGES[item.status] ?? "app-badge-neutral"}`}>
+                    {item.status.replace(/_/g, " ")}
+                  </span>
                 </div>
               </div>
-              <div className="text-right text-sm font-mono">
+              <div className="text-right text-sm app-num">
                 {item.allowance_amount != null && (
                   <div>${Number(item.allowance_amount).toLocaleString()} allowance</div>
                 )}
@@ -206,12 +223,10 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
                 />
                 Client visible
               </label>
-              <button type="submit" className="app-btn app-btn-primary">
-                Save
-              </button>
+              <SubmitButton>Save</SubmitButton>
             </form>
             <div className="px-5 pb-2 border-t border-ink/10 pt-4">
-              <div className="eyebrow mb-2">Options for the client to choose from</div>
+              <div className="app-label mb-2">Options for the client to choose from</div>
               {((item.selection_options ?? []) as {
                 id: string;
                 title: string;
@@ -231,7 +246,7 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
                         {opt.title}
                         {item.selected_option_id === opt.id && " ✓ client's choice"}
                       </span>
-                      <span className="ml-2 text-xs text-stone-300">
+                      <span className="ml-2 text-xs app-muted">
                         {opt.price != null && `$${Number(opt.price).toLocaleString()}`}
                         {opt.vendor && ` · ${opt.vendor}`}
                         {opt.image_url && " · photo"}
@@ -245,7 +260,7 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
                     >
                       <input type="hidden" name="project_id" value={id} />
                       <input type="hidden" name="option_id" value={opt.id} />
-                      <button type="submit" className="text-[10px] font-mono uppercase text-red-600/70">
+                      <button type="submit" className="text-xs text-red-700 hover:underline">
                         Remove
                       </button>
                     </form>
@@ -271,10 +286,8 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
                   placeholder="Short description the client sees"
                 />
                 <div className="col-span-2">
-                  <button type="submit" className="app-btn app-btn-secondary">
-                    Add Option
-                  </button>
-                  <span className="ml-3 text-xs text-ink/50">
+                  <SubmitButton className="app-btn app-btn-secondary">Add Option</SubmitButton>
+                  <span className="ml-3 text-xs app-muted">
                     Set status to “client review” so the client can choose.
                   </span>
                 </div>
@@ -289,7 +302,7 @@ export default async function ProjectSelectionsPage(props: { params: Promise<{ i
             >
               <input type="hidden" name="project_id" value={id} />
               <input type="hidden" name="id" value={item.id} />
-              <button type="submit" className="text-[10px] font-mono uppercase text-red-600/70">
+              <button type="submit" className="text-xs text-red-700 hover:underline">
                 Delete
               </button>
             </form>

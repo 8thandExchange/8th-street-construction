@@ -29,6 +29,7 @@ import {
   MILESTONE_STATUS_LABELS,
   } from "@/lib/project/labels";
 import { appStatusBadge } from "@/lib/project/status-badges";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export type MilestoneRow = {
   id: string;
@@ -62,7 +63,7 @@ function SortableRow({
     <li
       ref={setNodeRef}
       style={style}
-      className="flex gap-4 p-5 bg-paper border border-ink/15 group"
+      className="app-card flex gap-4 p-5 group"
     >
       <button
         type="button"
@@ -81,10 +82,10 @@ function SortableRow({
           </span>
         </div>
         {m.description && (
-          <p className="text-sm text-ink/65 line-clamp-2">{m.description}</p>
+          <p className="text-sm app-muted line-clamp-2">{m.description}</p>
         )}
         {m.target_date && (
-          <p className="text-xs font-mono text-stone-300 mt-2">
+          <p className="text-xs app-muted mt-2">
             Target {new Date(m.target_date).toLocaleDateString()}
           </p>
         )}
@@ -106,7 +107,7 @@ function SortableRow({
         <button
           type="button"
           onClick={() => onEdit(m)}
-          className="text-[10px] font-mono uppercase tracking-wider text-stone-300 hover:text-ink"
+          className="text-[13px] font-medium text-copper hover:underline"
         >
           Edit
         </button>
@@ -119,7 +120,7 @@ function SortableRow({
           <input type="hidden" name="project_id" value={projectId} />
           <button
             type="submit"
-            className="text-[10px] font-mono uppercase tracking-wider text-stone-300 hover:text-red-600"
+            className="text-xs text-red-700 hover:underline"
           >
             Delete
           </button>
@@ -161,7 +162,7 @@ export function MilestoneBoard({
   return (
     <div className="max-w-3xl">
       <div className="flex items-center justify-between mb-6">
-        <p className="text-sm text-ink/60">
+        <p className="text-sm app-muted">
           Drag to reorder. Clients see this timeline in their portal.
         </p>
         <button
@@ -192,7 +193,7 @@ export function MilestoneBoard({
         >
           <input type="hidden" name="project_id" value={projectId} />
           {editing && <input type="hidden" name="id" value={editing.id} />}
-          <h3 className="eyebrow">{editing ? "Edit Milestone" : "New Milestone"}</h3>
+          <h3 className="app-label">{editing ? "Edit Milestone" : "New Milestone"}</h3>
           <div>
             <label className="field-label">Title *</label>
             <input
@@ -239,12 +240,7 @@ export function MilestoneBoard({
             )}
           </div>
           <div className="flex gap-3">
-            <button
-              type="submit"
-              className="app-btn app-btn-primary"
-            >
-              {editing ? "Save" : "Create"}
-            </button>
+            <SubmitButton>{editing ? "Save" : "Create"}</SubmitButton>
             <button
               type="button"
               onClick={() => {
@@ -270,8 +266,8 @@ export function MilestoneBoard({
       </DndContext>
 
       {items.length === 0 && !showNew && (
-        <div className="py-16 text-center border border-dashed border-ink/20">
-          <p className="text-ink/50 italic">No milestones yet — add your first phase.</p>
+        <div className="app-card p-10 text-center">
+          <p className="text-sm italic app-muted">No milestones yet — add your first phase.</p>
         </div>
       )}
     </div>

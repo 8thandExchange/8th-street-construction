@@ -59,9 +59,9 @@ export default async function VendorsPage() {
   return (
     <div className="max-w-4xl space-y-8">
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper">Money</p>
+        <p className="app-label">Money</p>
         <h2 className="mt-2 app-h1">Vendors &amp; Bills</h2>
-        <p className="mt-2 text-sm text-ink/60 max-w-2xl leading-relaxed">
+        <p className="mt-2 text-sm app-muted max-w-2xl leading-relaxed">
           The companies that bill you — consultants, suppliers, service providers. Record their
           invoices here, tie them to jobs, and track what&apos;s owed.
         </p>
@@ -99,23 +99,17 @@ export default async function VendorsPage() {
                     {v.notes || v.contact_email || "—"}
                   </span>
                   {v.remit_account_number ? (
-                    <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-700">
-                      ACH ready
-                    </span>
+                    <span className="shrink-0 app-badge app-badge-green">ACH ready</span>
                   ) : awaitingVendors.has(v.id) ? (
-                    <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-700">
-                      Form sent
-                    </span>
+                    <span className="shrink-0 app-badge app-badge-amber">Form sent</span>
                   ) : (
-                    <span className="shrink-0 rounded-full bg-navy/[0.06] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-navy/50">
-                      No bank info
-                    </span>
+                    <span className="shrink-0 app-badge app-badge-neutral">No bank info</span>
                   )}
                 </span>
               </span>
               <span className="shrink-0 text-right">
                 <span
-                  className={`block text-[15px] font-semibold tabular-nums ${
+                  className={`block text-[15px] font-semibold app-num ${
                     open > 0 ? "text-amber-700" : "text-navy/60"
                   }`}
                 >
@@ -132,7 +126,7 @@ export default async function VendorsPage() {
 
       <div className="app-card p-6 md:p-8">
         <h3 className="app-h2 !text-[16px]">Add a vendor &amp; send them the form</h3>
-        <p className="mt-1.5 mb-5 max-w-xl text-[13px] leading-relaxed text-ink/55">
+        <p className="mt-1.5 mb-5 max-w-xl text-[13px] leading-relaxed app-muted">
           They get a private link and fill in their own address, tax ID, W-9 and bank details.
           Nothing sensitive travels by email, and they&apos;re ready to pay by ACH the moment
           they&apos;re done.
@@ -144,7 +138,7 @@ export default async function VendorsPage() {
         <summary className="cursor-pointer app-h2 !text-[16px] marker:text-copper">
           Or add a vendor by hand
         </summary>
-        <p className="mt-1.5 mb-5 text-[13px] leading-relaxed text-ink/55">
+        <p className="mt-1.5 mb-5 text-[13px] leading-relaxed app-muted">
           For vendors you won&apos;t pay by ACH, or when you already have their paperwork.
         </p>
         <AddVendorForm />

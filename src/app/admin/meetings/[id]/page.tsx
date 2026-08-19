@@ -18,6 +18,7 @@ import { getMeetingDetail } from "@/lib/meetings/queries";
 import { formatMeetingDate, renderMinutesMarkdown } from "@/lib/meetings/minutes-format";
 import { ATTENDEE_ROLES, MEETING_STATUS_LABELS } from "@/lib/meetings/types";
 import { appStatusBadge } from "@/lib/project/status-badges";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import type { ActionItemWithContext } from "@/lib/meetings/queries";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ export default async function MeetingDetailPage({
       <div>
         <Link
           href="/admin/meetings"
-          className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper hover:underline"
+          className="text-[13px] font-medium text-copper hover:underline"
         >
           ← Meetings
         </Link>
@@ -103,9 +104,7 @@ export default async function MeetingDetailPage({
               </label>
               <input id="reopen-reason" name="reason" required className="mt-1 w-full" />
             </div>
-            <button type="submit" className="app-btn app-btn-secondary">
-              Reopen
-            </button>
+            <SubmitButton className="app-btn app-btn-secondary">Reopen</SubmitButton>
           </form>
         </div>
       )}
@@ -195,9 +194,7 @@ export default async function MeetingDetailPage({
                       Was present
                     </label>
                     <div className="md:col-span-2">
-                      <button type="submit" className="app-btn app-btn-primary">
-                        Save
-                      </button>
+                      <SubmitButton>Save</SubmitButton>
                     </div>
                   </form>
                   <form
@@ -209,9 +206,9 @@ export default async function MeetingDetailPage({
                   >
                     <input type="hidden" name="meeting_id" value={meeting.id} />
                     <input type="hidden" name="id" value={a.id} />
-                    <button type="submit" className="app-btn app-btn-ghost">
+                    <SubmitButton className="app-btn app-btn-ghost">
                       Remove from meeting
-                    </button>
+                    </SubmitButton>
                   </form>
                 </div>
               )}
@@ -252,9 +249,7 @@ export default async function MeetingDetailPage({
             </div>
             <input type="hidden" name="present" value="on" />
             <div className="md:col-span-4">
-              <button type="submit" className="app-btn app-btn-secondary">
-                Add
-              </button>
+              <SubmitButton className="app-btn app-btn-secondary">Add</SubmitButton>
             </div>
           </form>
         )}
@@ -324,9 +319,7 @@ export default async function MeetingDetailPage({
                   />
                 </div>
                 <div>
-                  <button type="submit" className="app-btn app-btn-primary">
-                    Save
-                  </button>
+                  <SubmitButton>Save</SubmitButton>
                 </div>
               </form>
             )}
@@ -351,9 +344,7 @@ export default async function MeetingDetailPage({
               <input name="title" required className="mt-1 w-full" />
             </div>
             <div className="flex items-end">
-              <button type="submit" className="app-btn app-btn-secondary">
-                Add
-              </button>
+              <SubmitButton className="app-btn app-btn-secondary">Add</SubmitButton>
             </div>
           </form>
         )}
@@ -384,9 +375,9 @@ export default async function MeetingDetailPage({
                 >
                   <input type="hidden" name="meeting_id" value={meeting.id} />
                   <input type="hidden" name="id" value={d.id} />
-                  <button type="submit" className="app-btn app-btn-ghost shrink-0">
+                  <SubmitButton className="app-btn app-btn-ghost shrink-0">
                     Remove
-                  </button>
+                  </SubmitButton>
                 </form>
               )}
             </div>
@@ -416,9 +407,9 @@ export default async function MeetingDetailPage({
               />
             </div>
             <div>
-              <button type="submit" className="app-btn app-btn-secondary">
+              <SubmitButton className="app-btn app-btn-secondary">
                 Add decision
-              </button>
+              </SubmitButton>
             </div>
           </form>
         )}
@@ -470,9 +461,7 @@ export default async function MeetingDetailPage({
             <input type="date" name="due_date" className="mt-1 w-full" />
           </div>
           <div className="md:col-span-4">
-            <button type="submit" className="app-btn app-btn-secondary">
-              Add
-            </button>
+            <SubmitButton className="app-btn app-btn-secondary">Add</SubmitButton>
           </div>
         </form>
       </section>
@@ -495,9 +484,9 @@ export default async function MeetingDetailPage({
               }}
             >
               <input type="hidden" name="id" value={meeting.id} />
-              <button type="submit" className="app-btn app-btn-accent">
+              <SubmitButton className="app-btn app-btn-accent">
                 Approve &amp; lock
-              </button>
+              </SubmitButton>
             </form>
           )}
           <EmailMinutesButton meetingId={meeting.id} recipients={recipients} />
@@ -560,9 +549,7 @@ export default async function MeetingDetailPage({
               />
             </div>
             <div className="md:col-span-2">
-              <button type="submit" className="app-btn app-btn-primary">
-                Save
-              </button>
+              <SubmitButton>Save</SubmitButton>
             </div>
           </form>
         </section>

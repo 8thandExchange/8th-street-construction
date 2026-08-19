@@ -14,6 +14,7 @@ import { loadCostBenchmarks, loadLastSnapshotAt } from "@/lib/estimate/cost-hist
 import { formatMoney } from "@/lib/billing/constants";
 import { startCostPlanFromTemplate } from "@/lib/actions/cost-plan";
 import { updateProjectEstimatedCost } from "@/lib/actions/estimate";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -82,7 +83,7 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
           {(templates ?? []).length > 0 && (
             <div className="hub-panel p-6 mb-6 border-copper/20">
               <h3 className="font-medium text-ink">Start from a template</h3>
-              <p className="text-sm text-ink/55 mt-2 leading-relaxed">
+              <p className="text-sm app-muted mt-2 leading-relaxed">
                 Copies the standard code list and takeoff into this job. Every line and quantity is
                 editable afterward.
               </p>
@@ -91,10 +92,10 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
                   <form key={t.id} action={startCostPlanFromTemplate} className="flex flex-wrap items-center gap-3">
                     <input type="hidden" name="project_id" value={id} />
                     <input type="hidden" name="template_id" value={t.id} />
-                    <button type="submit" className="app-btn app-btn-accent">
+                    <SubmitButton className="app-btn app-btn-accent">
                       Use “{t.name}”
-                    </button>
-                    {t.description && <span className="text-xs text-ink/45">{t.description}</span>}
+                    </SubmitButton>
+                    {t.description && <span className="text-xs app-muted">{t.description}</span>}
                   </form>
                 ))}
               </div>
@@ -118,7 +119,7 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
           />
 
           <div className="flex flex-wrap items-center justify-between gap-4 mt-4">
-            <p className="text-xs text-ink/45 leading-relaxed">
+            <p className="text-xs app-muted leading-relaxed">
               Click a code to open a line — formula, notes and allowance live there. Calculated cells
               show a <span className="text-copper">ƒ</span> and are priced from the takeoff.
             </p>
@@ -135,7 +136,7 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
       )}
 
       <section className="hub-panel p-6">
-        <h3 className="eyebrow mb-4">Notes on this estimate</h3>
+        <h3 className="app-label mb-4">Notes on this estimate</h3>
         <form action={updateProjectEstimatedCost} className="flex flex-wrap gap-4 items-end">
           <input type="hidden" name="project_id" value={id} />
           <div className="flex-1 min-w-[16rem]">
@@ -148,13 +149,15 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
               placeholder="Assumptions, exclusions, who quoted what"
             />
           </div>
-          <button type="submit" className="app-btn app-btn-primary">
-            Save notes
-          </button>
+          <SubmitButton>Save notes</SubmitButton>
         </form>
-        <p className="text-xs text-ink/45 mt-3">
-          Total build cost is {formatMoney(totals.total)}. Client billing (
-          {formatMoney(Number(project.contract_value ?? 0)) || "not set"}) is managed in{" "}
+        <p className="text-xs app-muted mt-3">
+          Total build cost is <span className="app-num">{formatMoney(totals.total)}</span>. Client
+          billing (
+          <span className="app-num">
+            {formatMoney(Number(project.contract_value ?? 0)) || "not set"}
+          </span>
+          ) is managed in{" "}
           <Link href={`/admin/projects/${id}/billing`} className="text-copper hover:underline">
             Money &amp; Invoices
           </Link>
@@ -163,10 +166,10 @@ export default async function ProjectCostsPage(props: { params: Promise<{ id: st
       </section>
 
       <div className="mt-10 flex items-center gap-6">
-        <Link href={`/admin/projects/${id}`} className="app-label !text-copper hover:underline">
+        <Link href={`/admin/projects/${id}`} className="text-[13px] font-medium text-copper hover:underline">
           ← Back to master board
         </Link>
-        <Link href="/admin/settings/cost-codes" className="app-label !text-ink/45 hover:!text-copper hover:underline">
+        <Link href="/admin/settings/cost-codes" className="text-[13px] font-medium app-muted hover:text-copper hover:underline">
           Edit cost code template
         </Link>
       </div>

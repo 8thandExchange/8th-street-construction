@@ -51,14 +51,12 @@ export function ProjectTitleSlugFields({
       </div>
 
       <div className="rounded border border-ink/10 bg-bone/40 px-5 py-4">
-        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-stone-300">
-          Public project page
-        </p>
+        <p className="app-label">Public project page</p>
         <p className="mt-2 font-mono text-sm text-ink/80 break-all">
-          <span className="text-stone-300">{SITE_HOST}/projects/</span>
+          <span className="app-muted">{SITE_HOST}/projects/</span>
           <span className="text-copper">{previewSlug}</span>
         </p>
-        <p className="mt-2 text-xs text-ink/55 leading-relaxed">
+        <p className="mt-2 text-xs app-muted leading-relaxed">
           {autoSlugFromTitle
             ? "This link is created from the job name. Only change it if you need a different address on the website."
             : "Changing this breaks old links — update only if you moved the public page."}

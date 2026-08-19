@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ProjectFormFields } from "@/components/admin/ProjectFormFields";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import { PlaybookSelect } from "@/components/admin/PlaybookSelect";
 import { createProjectWithPlaybook } from "@/lib/actions/project-create";
 
@@ -9,15 +10,15 @@ export default function NewProjectPage() {
       <div className="mb-6">
         <Link
           href="/admin/projects"
-          className="text-xs font-mono tracking-[0.18em] uppercase text-stone-300 hover:text-ink"
+          className="text-[13px] font-medium text-copper hover:underline"
         >
           ← All Projects
         </Link>
       </div>
       <div className="mb-10">
-        <span className="eyebrow">— New Job</span>
+        <span className="app-label">— New Job</span>
         <h1 className="mt-2 app-h1">Start a Build</h1>
-        <p className="mt-3 text-ink/65 max-w-xl">
+        <p className="mt-3 app-muted max-w-xl">
           Creates the project and optionally seeds a state residential playbook — Georgia or South
           Carolina — with 11 phases and 70+ checklist items from pre-construction through warranty.
         </p>
@@ -25,7 +26,7 @@ export default function NewProjectPage() {
 
       <form
         action={createProjectWithPlaybook}
-        className="bg-paper border border-ink/15 p-4 md:p-8 lg:p-10 space-y-8"
+        className="app-card p-4 md:p-8 lg:p-10 space-y-8"
       >
         <ProjectFormFields
           autoSlugFromTitle
@@ -67,7 +68,7 @@ export default function NewProjectPage() {
               <span className="text-sm font-medium text-ink block">
                 Apply residential build playbook
               </span>
-              <span className="text-xs text-ink/60 mt-1 block leading-relaxed">
+              <span className="text-xs app-muted mt-1 block leading-relaxed">
                 Seeds milestones + internal checklists (permits, inspections, lien waivers, CO,
                 warranty walks).
               </span>
@@ -80,12 +81,7 @@ export default function NewProjectPage() {
         </div>
 
         <div className="pt-6 border-t border-ink/15 flex gap-3">
-          <button
-            type="submit"
-            className="app-btn app-btn-primary"
-          >
-            Create & Open Build System
-          </button>
+          <SubmitButton>Create & Open Build System</SubmitButton>
           <Link
             href="/admin/projects"
             className="app-btn app-btn-secondary"

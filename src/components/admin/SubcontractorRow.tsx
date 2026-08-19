@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateSubcontractor, toggleSubcontractorActive } from "@/lib/actions/bids";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export type SubRow = {
   id: string;
@@ -30,13 +31,13 @@ function insuranceWarning(expires: string | null): { label: string; className: s
   if (days < 0) {
     return {
       label: "Insurance expired",
-      className: "bg-red-50 text-red-700 border-red-200",
+      className: "app-badge app-badge-red",
     };
   }
   if (days <= 30) {
     return {
       label: `Insurance expires in ${days}d`,
-      className: "bg-amber-50 text-amber-800 border-amber-200",
+      className: "app-badge app-badge-amber",
     };
   }
   return null;
@@ -54,45 +55,33 @@ export function SubcontractorRow({
 
   return (
     <div
-      className={`p-5 border bg-paper ${
-        sub.active === false ? "border-ink/10 opacity-70" : "border-ink/15"
-      }`}
+      className={`app-card p-5 ${sub.active === false ? "opacity-70" : ""}`}
     >
       <div className="flex justify-between gap-4">
         <div className="min-w-0">
           <div className="font-medium text-ink flex flex-wrap items-center gap-2">
             {sub.company_name}
             {sub.preferred && (
-              <span className="text-[10px] font-mono text-copper uppercase tracking-wider">
-                Preferred
-              </span>
+              <span className="app-badge app-badge-accent">Preferred</span>
             )}
             {sub.active === false && (
-              <span className="text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 border bg-stone-100 text-stone-500 border-stone-200">
-                Inactive
-              </span>
+              <span className="app-badge app-badge-neutral">Inactive</span>
             )}
-            {warning && (
-              <span
-                className={`text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 border ${warning.className}`}
-              >
-                {warning.label}
-              </span>
-            )}
+            {warning && <span className={warning.className}>{warning.label}</span>}
           </div>
-          <div className="text-xs font-mono text-stone-300 mt-1 uppercase">{sub.trade}</div>
+          <div className="text-xs app-muted mt-1">{sub.trade}</div>
           {sub.insurance_expires && (
-            <div className="text-xs text-ink/50 mt-2">Insurance exp: {sub.insurance_expires}</div>
+            <div className="text-xs app-muted mt-2">Insurance exp: {sub.insurance_expires}</div>
           )}
         </div>
         <div className="flex flex-col items-end gap-2 shrink-0 text-xs">
-          <span className="text-stone-300">
+          <span className="app-muted">
             {sub.profile_id ? "Portal linked" : "No portal user"}
           </span>
           <button
             type="button"
             onClick={() => setEditing((v) => !v)}
-            className="font-mono text-[10px] uppercase tracking-wider text-stone-400 hover:text-ink"
+            className="text-[13px] font-medium text-copper hover:underline"
           >
             {editing ? "Close" : "Edit"}
           </button>
@@ -101,7 +90,9 @@ export function SubcontractorRow({
             <input type="hidden" name="active" value={String(sub.active !== false)} />
             <button
               type="submit"
-              className="font-mono text-[10px] uppercase tracking-wider text-stone-400 hover:text-copper"
+              className={`text-xs hover:underline ${
+                sub.active === false ? "text-emerald-700" : "text-red-700"
+              }`}
             >
               {sub.active === false ? "Activate" : "Deactivate"}
             </button>
@@ -166,12 +157,7 @@ export function SubcontractorRow({
             Preferred vendor
           </label>
           <div className="md:col-span-2">
-            <button
-              type="submit"
-              className="app-btn app-btn-primary"
-            >
-              Save Changes
-            </button>
+            <SubmitButton>Save Changes</SubmitButton>
           </div>
         </form>
       )}

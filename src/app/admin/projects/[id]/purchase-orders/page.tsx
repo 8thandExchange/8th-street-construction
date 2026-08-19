@@ -11,6 +11,7 @@ import {
 import { PurchaseOrderForm } from "@/components/costs/PurchaseOrderForm";
 import { appStatusBadge } from "@/lib/project/status-badges";
 import { formatMoney } from "@/lib/billing/constants";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -94,8 +95,8 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
   return (
     <div className="max-w-4xl space-y-8">
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper">Money</p>
-        <h2 className="mt-2 app-h1 !text-[18px]">Purchase Orders</h2>
+        <p className="app-label">Money</p>
+        <h2 className="mt-2 app-h2">Purchase Orders</h2>
         <p className="mt-2 text-sm app-muted max-w-2xl">
           Commit costs to subs and vendors before the bills arrive. Issued POs count as committed
           cost against your plan; subs invoice against the PO number.
@@ -118,7 +119,7 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
         ].map((card) => (
           <div key={card.label} className="app-card p-4">
             <p className="app-label">{card.label}</p>
-            <p className="mt-1 text-lg font-semibold text-navy tabular-nums">{card.value}</p>
+            <p className="mt-1 text-lg font-semibold text-navy app-num">{card.value}</p>
             <p className="mt-0.5 text-[11px] app-muted">{card.sub}</p>
           </div>
         ))}
@@ -137,15 +138,16 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
                   <div>
                     <p className="text-sm font-medium text-navy">{req?.title}</p>
                     <p className="text-xs app-muted">
-                      {sub?.company_name ?? "Unknown sub"} · {formatMoney(Number(bid.amount))}
+                      {sub?.company_name ?? "Unknown sub"} ·{" "}
+                      <span className="app-num">{formatMoney(Number(bid.amount))}</span>
                     </p>
                   </div>
                   <form action={createPurchaseOrderFromBid}>
                     <input type="hidden" name="bid_id" value={bid.id} />
                     <input type="hidden" name="project_id" value={id} />
-                    <button type="submit" className="app-btn app-btn-secondary !h-8 !text-[12.5px]">
+                    <SubmitButton className="app-btn app-btn-secondary !h-8 !text-[12.5px]">
                       Create PO from bid
-                    </button>
+                    </SubmitButton>
                   </form>
                 </li>
               );
@@ -172,7 +174,7 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
                 <span className={appStatusBadge("purchase_order", po.status)}>
                   {PO_STATUS_LABELS[po.status] ?? po.status}
                 </span>
-                <span className="ml-auto text-sm font-semibold text-navy tabular-nums">
+                <span className="ml-auto text-sm font-semibold text-navy app-num">
                   {formatMoney(Number(po.total))}
                 </span>
               </div>
@@ -199,19 +201,16 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
                         <input type="checkbox" name="send_email" defaultChecked className="h-4 w-4 accent-copper" />
                         Email the sub
                       </label>
-                      <button type="submit" className="app-btn app-btn-primary !h-8 !text-[12.5px]">
+                      <SubmitButton className="app-btn app-btn-primary !h-8 !text-[12.5px]" pendingLabel="Issuing…">
                         Issue PO
-                      </button>
+                      </SubmitButton>
                     </form>
                     <form action={deletePurchaseOrderDraft}>
                       <input type="hidden" name="id" value={po.id} />
                       <input type="hidden" name="project_id" value={id} />
-                      <button
-                        type="submit"
-                        className="app-btn app-btn-ghost !h-8 !text-[12.5px] hover:!text-red-600"
-                      >
+                      <SubmitButton className="app-btn app-btn-ghost !h-8 !text-[12.5px] hover:!text-red-600">
                         Delete draft
-                      </button>
+                      </SubmitButton>
                     </form>
                   </>
                 )}
@@ -219,9 +218,9 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
                   <form action={markPurchaseOrderBilled}>
                     <input type="hidden" name="id" value={po.id} />
                     <input type="hidden" name="project_id" value={id} />
-                    <button type="submit" className="app-btn app-btn-secondary !h-8 !text-[12.5px]">
+                    <SubmitButton className="app-btn app-btn-secondary !h-8 !text-[12.5px]">
                       Mark billed
-                    </button>
+                    </SubmitButton>
                   </form>
                 )}
                 {(po.status === "issued" || po.status === "billed") && (
@@ -229,20 +228,17 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
                     <form action={closePurchaseOrder}>
                       <input type="hidden" name="id" value={po.id} />
                       <input type="hidden" name="project_id" value={id} />
-                      <button type="submit" className="app-btn app-btn-secondary !h-8 !text-[12.5px]">
+                      <SubmitButton className="app-btn app-btn-secondary !h-8 !text-[12.5px]">
                         Close out
-                      </button>
+                      </SubmitButton>
                     </form>
                     {po.status === "issued" && (
                       <form action={cancelPurchaseOrder}>
                         <input type="hidden" name="id" value={po.id} />
                         <input type="hidden" name="project_id" value={id} />
-                        <button
-                          type="submit"
-                          className="app-btn app-btn-ghost !h-8 !text-[12.5px] hover:!text-red-600"
-                        >
+                        <SubmitButton className="app-btn app-btn-ghost !h-8 !text-[12.5px] hover:!text-red-600">
                           Cancel
-                        </button>
+                        </SubmitButton>
                       </form>
                     )}
                   </>

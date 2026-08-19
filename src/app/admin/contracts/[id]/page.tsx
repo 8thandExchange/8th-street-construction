@@ -7,6 +7,7 @@ import {
   updateContract,
 } from "@/lib/actions/contracts";
 import { hasUnmergedFields, usd } from "@/lib/contracts/standard-terms";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,13 @@ const STATUS_LABELS: Record<string, string> = {
   out_for_signature: "Out for signature",
   signed: "Signed",
   void: "Void",
+};
+
+const STATUS_BADGES: Record<string, string> = {
+  draft: "app-badge-neutral",
+  out_for_signature: "app-badge-amber",
+  signed: "app-badge-green",
+  void: "app-badge-red",
 };
 
 export default async function AgreementPage(props: { params: Promise<{ id: string }> }) {
@@ -45,23 +53,28 @@ export default async function AgreementPage(props: { params: Promise<{ id: strin
       <div className="mb-8">
         <Link
           href="/admin/contracts"
-          className="font-mono text-[10px] tracking-[0.15em] uppercase text-copper hover:underline"
+          className="text-[13px] font-medium text-copper hover:underline"
         >
           ← All contracts
         </Link>
         <h1 className="app-h1 mt-3">
           {project?.title} · Agreement #{contract.number}
         </h1>
-        <p className="text-sm text-ink/60 mt-2">
-          {STATUS_LABELS[contract.status] ?? contract.status} ·{" "}
-          {usd(Number(contract.contract_price))} · {contract.owner_name}
-          {contract.status_note ? ` · ${contract.status_note}` : ""}
-        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm app-muted">
+          <span className={`app-badge ${STATUS_BADGES[contract.status] ?? "app-badge-neutral"}`}>
+            {STATUS_LABELS[contract.status] ?? contract.status}
+          </span>
+          <span>
+            <span className="app-num">{usd(Number(contract.contract_price))}</span> ·{" "}
+            {contract.owner_name}
+            {contract.status_note ? ` · ${contract.status_note}` : ""}
+          </span>
+        </div>
         <div className="mt-3 flex gap-5">
           <Link
             href={`/print/contract/${contract.id}`}
             target="_blank"
-            className="font-mono text-[10px] tracking-[0.15em] uppercase text-copper hover:underline"
+            className="text-[13px] font-medium text-copper hover:underline"
           >
             Print / save as PDF
           </Link>
@@ -69,7 +82,7 @@ export default async function AgreementPage(props: { params: Promise<{ id: strin
       </div>
 
       {unmerged && !locked && (
-        <p className="mb-6 border border-amber-500/50 bg-amber-500/10 p-4 text-sm text-ink">
+        <p className="mb-6 rounded-[10px] border border-amber-600/25 bg-amber-50 p-4 text-sm text-ink">
           This agreement still has unfilled placeholders (they look like{" "}
           <span className="font-mono">{"{{field}}"}</span>). Fill them in the
           text below before sending it out.
@@ -87,9 +100,7 @@ export default async function AgreementPage(props: { params: Promise<{ id: strin
           >
             <input type="hidden" name="id" value={contract.id} />
             <input type="hidden" name="status" value="out_for_signature" />
-            <button type="submit" className="app-btn app-btn-primary">
-              Mark out for signature
-            </button>
+            <SubmitButton>Mark out for signature</SubmitButton>
           </form>
         )}
         {(contract.status === "draft" || contract.status === "out_for_signature") && (
@@ -115,9 +126,9 @@ export default async function AgreementPage(props: { params: Promise<{ id: strin
               className="field-input !w-52"
               placeholder="How it was signed (BoldSign, paper)"
             />
-            <button type="submit" className="app-btn app-btn-secondary">
+            <SubmitButton className="app-btn app-btn-secondary" pendingLabel="Marking…">
               Mark signed
-            </button>
+            </SubmitButton>
           </form>
         )}
         {contract.status === "out_for_signature" && (
@@ -129,7 +140,7 @@ export default async function AgreementPage(props: { params: Promise<{ id: strin
           >
             <input type="hidden" name="id" value={contract.id} />
             <input type="hidden" name="status" value="draft" />
-            <button type="submit" className="app-label hover:text-copper">
+            <button type="submit" className="text-xs text-copper hover:underline">
               Back to draft
             </button>
           </form>
@@ -143,7 +154,7 @@ export default async function AgreementPage(props: { params: Promise<{ id: strin
           >
             <input type="hidden" name="id" value={contract.id} />
             <input type="hidden" name="status" value="void" />
-            <button type="submit" className="app-label hover:text-red-600">
+            <button type="submit" className="text-xs text-red-700 hover:underline">
               Void
             </button>
           </form>
@@ -158,7 +169,7 @@ export default async function AgreementPage(props: { params: Promise<{ id: strin
           >
             <input type="hidden" name="id" value={contract.id} />
             <input type="hidden" name="project_id" value={contract.project_id} />
-            <button type="submit" className="app-label hover:text-red-600">
+            <button type="submit" className="text-xs text-red-700 hover:underline">
               Delete draft
             </button>
           </form>
@@ -166,7 +177,7 @@ export default async function AgreementPage(props: { params: Promise<{ id: strin
       </section>
 
       {contract.status === "signed" && (
-        <p className="mb-8 text-sm text-ink/60">
+        <p className="mb-8 text-sm app-muted">
           Signed agreements are records and cannot be edited. The project&apos;s
           contract value was set to {usd(Number(contract.contract_price))} when
           this was marked signed.
@@ -186,7 +197,7 @@ export default async function AgreementPage(props: { params: Promise<{ id: strin
 
       {/* -------------------------------------------------------- edit -- */}
       {locked ? (
-        <pre className="whitespace-pre-wrap border border-ink/15 bg-paper p-6 text-[13px] leading-relaxed text-ink font-sans">
+        <pre className="app-card whitespace-pre-wrap p-6 text-[13px] leading-relaxed text-ink font-sans">
           {contract.body_md}
         </pre>
       ) : (
@@ -227,7 +238,7 @@ export default async function AgreementPage(props: { params: Promise<{ id: strin
               />
             </div>
           </div>
-          <p className="text-xs text-ink/50">
+          <p className="text-xs app-muted">
             Price and date above are the tracked fields. Changing them does not
             rewrite the agreement text — keep the text below in step, including
             the written-out price.
@@ -241,9 +252,7 @@ export default async function AgreementPage(props: { params: Promise<{ id: strin
               className="field-input font-mono !text-xs leading-relaxed"
             />
           </div>
-          <button type="submit" className="app-btn app-btn-primary">
-            Save changes
-          </button>
+          <SubmitButton pendingLabel="Saving…">Save changes</SubmitButton>
         </form>
       )}
     </div>

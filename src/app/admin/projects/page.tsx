@@ -44,9 +44,9 @@ export default async function AdminProjects() {
     <div className="p-4 md:p-8 lg:p-10">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
-          <span className="eyebrow">— All jobs</span>
+          <span className="app-label">— All jobs</span>
           <h1 className="mt-2 app-h1">Projects</h1>
-          <p className="mt-2 text-sm text-ink/55">Tap any row to open the job master board.</p>
+          <p className="mt-2 text-sm app-muted">Tap any row to open the job master board.</p>
         </div>
         <Link
           href="/admin/projects/new"

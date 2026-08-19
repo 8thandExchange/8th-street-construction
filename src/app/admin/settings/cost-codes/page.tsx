@@ -97,8 +97,8 @@ export default async function CostCodeSettingsPage(props: {
       )}
 
       <div className="hub-panel p-5 mb-8">
-        <h3 className="eyebrow mb-3">Takeoff defaults</h3>
-        <p className="text-sm text-ink/55 mb-5">
+        <h3 className="app-label mb-3">Takeoff defaults</h3>
+        <p className="text-sm app-muted mb-5">
           The named quantities formulas are priced from. {derivedTakeoff.length} of these are worked
           out from the others and can&apos;t be typed.
         </p>
@@ -147,7 +147,7 @@ export default async function CostCodeSettingsPage(props: {
       <h3 className="app-h2 !text-[16px] mb-1">
         {lines.length} lines
       </h3>
-      <p className="text-sm text-ink/55 mb-6">
+      <p className="text-sm app-muted mb-6">
         A line with a formula is priced from the takeoff. Clear the formula to type a flat amount
         instead.
       </p>
@@ -191,7 +191,7 @@ export default async function CostCodeSettingsPage(props: {
                     className="field-input !py-1 !text-sm text-right font-mono disabled:opacity-40"
                   />
 
-                  <label className="flex items-center gap-1.5 text-xs text-ink/60">
+                  <label className="flex items-center gap-1.5 text-xs app-muted">
                     <input type="checkbox" name="is_allowance" defaultChecked={line.is_allowance} />
                     Allow
                   </label>
@@ -207,7 +207,7 @@ export default async function CostCodeSettingsPage(props: {
       </div>
 
       <div className="mt-10">
-        <Link href="/admin/settings" className="app-label !text-copper hover:underline">
+        <Link href="/admin/settings" className="text-[13px] font-medium text-copper hover:underline">
           ← Back to settings
         </Link>
       </div>

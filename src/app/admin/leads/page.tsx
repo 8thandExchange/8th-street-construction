@@ -33,7 +33,7 @@ export default async function AdminLeads(
     <div className="p-4 md:p-8 lg:p-10">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
-          <span className="eyebrow">— Inbox</span>
+          <span className="app-label">— Inbox</span>
           <h1 className="mt-2 app-h1">Leads</h1>
         </div>
         <div className="text-sm app-muted">
@@ -96,7 +96,7 @@ export default async function AdminLeads(
                       {lead.email}
                     </a>
                   </td>
-                  <td className="px-4 py-3 text-sm text-ink/60 hidden lg:table-cell">
+                  <td className="px-4 py-3 text-sm app-muted hidden lg:table-cell">
                     {lead.project_type ? PROJECT_CATEGORY_LABELS[lead.project_type] : "—"}
                   </td>
                   <td className="px-4 py-3">

@@ -90,8 +90,8 @@ export function InviteUserForm() {
 
   return (
     <form action={formAction} className="mt-10 app-card p-8 space-y-5">
-      <h2 className="eyebrow">Grant access directly</h2>
-      <p className="text-sm text-ink/60">
+      <h2 className="app-label">Grant access directly</h2>
+      <p className="text-sm app-muted">
         Creates an account and emails a temporary password. User must set a new password on first
         sign-in.
       </p>

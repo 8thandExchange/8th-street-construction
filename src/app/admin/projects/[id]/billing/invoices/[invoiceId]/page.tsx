@@ -20,6 +20,7 @@ import { mercuryPayUrl } from "@/lib/mercury/invoices";
 import { invoiceReadyEmail } from "@/lib/email/templates/invoice-ready";
 import { getSiteUrl } from "@/lib/brand/assets";
 import { FileText } from "lucide-react";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -142,7 +143,7 @@ export default async function InvoiceDetailPage(props: {
           <span className={appStatusBadge("invoice", invoice.status)}>
             {INVOICE_STATUS_LABELS[invoice.status] ?? invoice.status}
           </span>
-          <span className="ml-auto text-xl font-semibold text-navy tabular-nums">
+          <span className="ml-auto text-xl font-semibold text-navy app-num">
             {formatMoneyExact(Number(invoice.total))}
           </span>
         </div>
@@ -254,16 +255,16 @@ export default async function InvoiceDetailPage(props: {
                   <form action={deleteDraftAction}>
                     <input type="hidden" name="project_id" value={id} />
                     <input type="hidden" name="invoice_id" value={invoiceId} />
-                    <button type="submit" className="app-btn app-btn-ghost hover:!text-red-600">
+                    <SubmitButton className="app-btn app-btn-ghost hover:!text-red-600">
                       Delete draft
-                    </button>
+                    </SubmitButton>
                   </form>
                   <form action={sendInvoiceAction}>
                     <input type="hidden" name="project_id" value={id} />
                     <input type="hidden" name="invoice_id" value={invoiceId} />
-                    <button type="submit" className="app-btn app-btn-accent">
+                    <SubmitButton className="app-btn app-btn-accent" pendingLabel="Sending…">
                       Send to client
-                    </button>
+                    </SubmitButton>
                   </form>
                 </div>
               </div>
@@ -287,15 +288,15 @@ export default async function InvoiceDetailPage(props: {
                       </span>
                     )}
                   </span>
-                  <span className="tabular-nums text-navy shrink-0">
+                  <span className="app-num text-navy shrink-0">
                     {formatMoneyExact(Number(li.amount))}
                   </span>
                 </li>
               ))}
             </ul>
             <div className="mt-4 flex justify-end text-sm">
-              <span className="font-semibold text-navy tabular-nums">
-                Total {formatMoneyExact(Number(invoice.total))}
+              <span className="font-semibold text-navy">
+                Total <span className="app-num">{formatMoneyExact(Number(invoice.total))}</span>
               </span>
             </div>
             {invoice.notes && (
@@ -328,9 +329,9 @@ export default async function InvoiceDetailPage(props: {
                 <form action={markPaidAction}>
                   <input type="hidden" name="project_id" value={id} />
                   <input type="hidden" name="invoice_id" value={invoiceId} />
-                  <button type="submit" className="app-btn app-btn-primary !h-9">
+                  <SubmitButton className="app-btn app-btn-primary !h-9">
                     Mark as paid
-                  </button>
+                  </SubmitButton>
                 </form>
               )}
             </div>

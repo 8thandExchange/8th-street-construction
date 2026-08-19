@@ -14,6 +14,7 @@ import {
 } from "@/lib/meetings/types";
 import type { ActionItemWithContext } from "@/lib/meetings/queries";
 import type { ActionUpdateRow } from "@/lib/meetings/types";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 /**
  * One action item, with the update box attached. Status can't be changed
@@ -149,9 +150,7 @@ export function ActionItemCard({
             className="mt-1"
           />
         </div>
-        <button type="submit" className="app-btn app-btn-primary">
-          Save update
-        </button>
+        <SubmitButton>Save update</SubmitButton>
       </form>
 
       <div className="mt-3 flex flex-wrap items-center gap-3 text-xs app-muted">
@@ -186,9 +185,7 @@ export function ActionItemCard({
                 </option>
               ))}
             </select>
-            <button type="submit" className="app-btn app-btn-ghost">
-              Add
-            </button>
+            <SubmitButton className="app-btn app-btn-ghost">Add</SubmitButton>
           </form>
         )}
       </div>

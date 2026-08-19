@@ -5,6 +5,7 @@ import { SITE_CONTACT_TAG } from "@/lib/site-contact";
 import { SettingField } from "@/components/admin/SettingField";
 import { ContactSettingField } from "@/components/admin/ContactSettingField";
 import { isContactValue } from "@/lib/contact-value";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -40,20 +41,26 @@ export default async function AdminSettings() {
   return (
     <div className="p-4 md:p-8 lg:p-10 max-w-4xl">
       <div className="mb-10">
-        <span className="eyebrow">— Configuration</span>
+        <span className="app-label">— Configuration</span>
         <h1 className="mt-2 app-h1">Site Settings</h1>
-        <p className="mt-4 text-sm text-ink/65 max-w-2xl">
+        <p className="mt-4 text-sm app-muted max-w-2xl">
           Edit global site content with friendly controls. Text, numbers, and
           on/off toggles save automatically as valid values; structured settings
           fall back to a JSON editor. Changes are pushed to the marketing site on save.
         </p>
       </div>
 
-      <div className="mb-10 flex flex-wrap gap-4 text-sm">
-        <Link href="/admin/settings/cost-codes" className="text-copper hover:underline">
+      <div className="mb-10 flex flex-wrap gap-4">
+        <Link
+          href="/admin/settings/cost-codes"
+          className="text-[13px] font-medium text-copper hover:underline"
+        >
           Cost code template →
         </Link>
-        <Link href="/admin/settings/scopes" className="text-copper hover:underline">
+        <Link
+          href="/admin/settings/scopes"
+          className="text-[13px] font-medium text-copper hover:underline"
+        >
           Scope library →
         </Link>
       </div>
@@ -63,14 +70,14 @@ export default async function AdminSettings() {
           <form
             key={setting.key}
             action={updateSetting}
-            className="bg-paper border border-ink/15 p-6 md:p-8"
+            className="app-card p-6 md:p-8"
           >
             <input type="hidden" name="key" value={setting.key} />
             <div className="flex items-baseline justify-between mb-4">
               <h2 className="app-h2 !text-[16px] capitalize">
                 {setting.key.replace(/_/g, " ")}
               </h2>
-              <span className="text-xs text-stone-300 font-mono">
+              <span className="text-xs app-muted">
                 Updated {new Date(setting.updated_at).toLocaleString()}
               </span>
             </div>
@@ -79,12 +86,7 @@ export default async function AdminSettings() {
             ) : (
               <SettingField value={setting.value} />
             )}
-            <button
-              type="submit"
-              className="mt-4 app-btn app-btn-primary"
-            >
-              Save
-            </button>
+            <SubmitButton className="mt-4 app-btn app-btn-primary">Save</SubmitButton>
           </form>
         ))}
       </div>

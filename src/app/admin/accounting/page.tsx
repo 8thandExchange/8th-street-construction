@@ -56,7 +56,7 @@ export default async function AccountingPage() {
 
   return (
     <div className="p-4 md:p-8 lg:p-10 max-w-4xl">
-      <span className="eyebrow">— Books</span>
+      <span className="app-label">— Books</span>
       <h1 className="mt-2 app-h1">Accounting</h1>
       <p className="mt-3 app-muted max-w-2xl leading-relaxed">
         Everything your bookkeeper needs, exported straight from the live books. The invoice file
@@ -71,7 +71,7 @@ export default async function AccountingPage() {
         ].map((card) => (
           <div key={card.label} className="app-card p-4">
             <p className="app-label">{card.label}</p>
-            <p className="mt-1 text-lg font-semibold text-navy tabular-nums">{card.value}</p>
+            <p className="mt-1 text-lg font-semibold text-navy app-num">{card.value}</p>
           </div>
         ))}
       </div>

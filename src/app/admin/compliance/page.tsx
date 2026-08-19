@@ -11,6 +11,7 @@ import {
   daysUntilExpiry,
 } from "@/lib/compliance/compliance-utils";
 import { appStatusBadge } from "@/lib/project/status-badges";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -57,9 +58,9 @@ export default async function CompanyCompliancePage() {
   return (
     <div className="p-4 md:p-8 lg:p-10 max-w-5xl">
       <div className="mb-10">
-        <span className="eyebrow">— Company</span>
+        <span className="app-label">— Company</span>
         <h1 className="mt-2 app-h1">Compliance & Renewals</h1>
-        <p className="mt-3 text-ink/65 max-w-2xl leading-relaxed">
+        <p className="mt-3 app-muted max-w-2xl leading-relaxed">
           Licenses, insurance, bonds, and registrations for 8th Street Construction across Georgia
           and South Carolina. Set expiry dates — the system emails admins on a daily schedule at 60,
           14, and 0 days (and after expiration) so renewals are proactive, not reactive.
@@ -77,7 +78,7 @@ export default async function CompanyCompliancePage() {
               <span className="text-amber-900">{expiring} need attention soon</span>
             )}
           </div>
-          <p className="text-sm text-ink/60 mt-2">
+          <p className="text-sm app-muted mt-2">
             Daily cron at 8:00 AM ET sends reminder emails when items enter the renewal window.
             Add <code className="text-xs">CRON_SECRET</code> in Vercel for the scheduled job.
           </p>
@@ -92,12 +93,9 @@ export default async function CompanyCompliancePage() {
               await seedCompanyCompliance();
             }}
           >
-            <button
-              type="submit"
-              className="app-btn app-btn-accent"
-            >
+            <SubmitButton className="app-btn app-btn-accent">
               Initialize GA + SC Checklist
-            </button>
+            </SubmitButton>
           </form>
         )}
         <form
@@ -106,16 +104,13 @@ export default async function CompanyCompliancePage() {
             await triggerComplianceReminders();
           }}
         >
-          <button
-            type="submit"
-            className="app-btn app-btn-secondary"
-          >
+          <SubmitButton className="app-btn app-btn-secondary">
             Send Reminders Now
-          </button>
+          </SubmitButton>
         </form>
         <Link
           href="/admin"
-          className="h-11 inline-flex items-center px-5 font-mono text-[10px] tracking-[0.2em] uppercase text-stone-300"
+          className="h-11 inline-flex items-center px-5 text-[13px] font-medium text-copper hover:underline"
         >
           ← Dashboard
         </Link>
@@ -123,18 +118,18 @@ export default async function CompanyCompliancePage() {
 
       <div className="space-y-4 mb-12">
         {rows.map((item) => (
-          <details key={item.id} className="border border-ink/15 bg-paper group">
+          <details key={item.id} className="app-card group">
             <summary className="cursor-pointer p-5 flex flex-wrap items-center justify-between gap-3 list-none">
               <div>
                 <div className="font-medium text-ink">{item.title}</div>
-                <div className="text-xs font-mono text-stone-300 mt-1">
+                <div className="text-xs app-muted mt-1">
                   {item.category}
                   {item.jurisdiction && ` · ${item.jurisdiction}`}
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 {item.days != null && (
-                  <span className="text-xs font-mono text-stone-300">
+                  <span className="text-xs app-muted">
                     {item.days < 0
                       ? `${Math.abs(item.days)}d overdue`
                       : item.days === 0
@@ -149,7 +144,7 @@ export default async function CompanyCompliancePage() {
             </summary>
             <div className="px-5 pb-5 border-t border-ink/10 pt-5">
               {item.description && (
-                <p className="text-sm text-ink/60 mb-4">{item.description}</p>
+                <p className="text-sm app-muted mb-4">{item.description}</p>
               )}
               <form
                 action={async (fd) => {
@@ -225,12 +220,7 @@ export default async function CompanyCompliancePage() {
                   />
                 </div>
                 <input type="hidden" name="renewal_cycle" value={item.renewal_cycle ?? ""} />
-                <button
-                  type="submit"
-                  className="app-btn app-btn-primary"
-                >
-                  Save & Recalculate Status
-                </button>
+                <SubmitButton>Save & Recalculate Status</SubmitButton>
               </form>
               <form
                 action={async (fd) => {
@@ -242,7 +232,7 @@ export default async function CompanyCompliancePage() {
                 <input type="hidden" name="id" value={item.id} />
                 <button
                   type="submit"
-                  className="text-[10px] font-mono uppercase text-red-600/70 hover:text-red-700"
+                  className="text-xs text-red-700 hover:underline"
                 >
                   Remove item
                 </button>
@@ -253,9 +243,9 @@ export default async function CompanyCompliancePage() {
       </div>
 
       {vendorExpiring.length > 0 && (
-        <section className="mb-10 border border-ink/15 bg-paper p-6">
+        <section className="mb-10 app-card p-6">
           <h2 className="app-h2 !text-[16px] mb-1">Vendor paperwork running out</h2>
-          <p className="mb-4 text-sm text-ink/55">
+          <p className="mb-4 text-sm app-muted">
             COIs and licenses from subs and suppliers, expiring within 60 days. Chase these before
             the next check gets cut.
           </p>
@@ -281,7 +271,7 @@ export default async function CompanyCompliancePage() {
         </section>
       )}
 
-      <section className="border border-ink/15 p-8 bg-paper">
+      <section className="app-card p-8">
         <h2 className="app-h2 !text-[16px] mb-4">Add compliance item</h2>
         <form
           action={async (fd) => {
@@ -335,12 +325,7 @@ export default async function CompanyCompliancePage() {
             />
           </div>
           <input type="hidden" name="renewal_urgent_days" value={14} />
-          <button
-            type="submit"
-            className="app-btn app-btn-primary"
-          >
-            Add Item
-          </button>
+          <SubmitButton>Add Item</SubmitButton>
         </form>
       </section>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { updateMilestoneSchedule, updateProjectSchedule } from "@/lib/actions/schedule";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export type ScheduleMilestone = {
   id: string;
@@ -26,7 +27,7 @@ export function ScheduleTimeline({
 }) {
   return (
     <div className="space-y-8">
-      <form action={updateProjectSchedule} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 border border-ink/15 bg-paper">
+      <form action={updateProjectSchedule} className="app-card grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
         <input type="hidden" name="project_id" value={projectId} />
         <div>
           <label className="field-label">Project start</label>
@@ -41,18 +42,18 @@ export function ScheduleTimeline({
             className="field-input"
           />
         </div>
-        <button type="submit" className="md:col-span-2 app-btn app-btn-primary">
+        <SubmitButton className="md:col-span-2 app-btn app-btn-primary">
           Save project dates
-        </button>
+        </SubmitButton>
       </form>
 
       <div className="space-y-4">
-        <h3 className="eyebrow">Edit phase dates</h3>
+        <h3 className="app-label">Edit phase dates</h3>
         {milestones.map((m) => (
           <form
             key={m.id}
             action={updateMilestoneSchedule}
-            className="p-5 border border-ink/15 bg-paper grid grid-cols-1 md:grid-cols-5 gap-3 items-end"
+            className="app-card p-5 grid grid-cols-1 md:grid-cols-5 gap-3 items-end"
           >
             <input type="hidden" name="project_id" value={projectId} />
             <input type="hidden" name="id" value={m.id} />
@@ -86,9 +87,9 @@ export function ScheduleTimeline({
                   ))}
               </select>
             </div>
-            <button type="submit" className="app-btn app-btn-secondary">
+            <SubmitButton className="app-btn app-btn-secondary">
               Update
-            </button>
+            </SubmitButton>
           </form>
         ))}
       </div>

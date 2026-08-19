@@ -161,7 +161,7 @@ export default async function VendorDetailPage(props: {
             </p>
           </div>
           <div className="ml-auto text-right">
-            <p className={`text-xl font-semibold tabular-nums ${openTotal > 0 ? "text-amber-700" : "text-navy"}`}>
+            <p className={`text-xl font-semibold app-num ${openTotal > 0 ? "text-amber-700" : "text-navy"}`}>
               {formatMoney(openTotal)}
             </p>
             <p className="text-[11px] uppercase tracking-wide app-muted">
@@ -175,17 +175,11 @@ export default async function VendorDetailPage(props: {
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h3 className="app-h2 !text-[16px]">Payment &amp; tax details</h3>
           {vendor.remit_account_number ? (
-            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-emerald-700">
-              Ready to pay by ACH
-            </span>
+            <span className="app-badge app-badge-green">Ready to pay by ACH</span>
           ) : openInvite ? (
-            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-amber-700">
-              Waiting on {openInvite.email}
-            </span>
+            <span className="app-badge app-badge-amber">Waiting on {openInvite.email}</span>
           ) : (
-            <span className="rounded-full bg-navy/[0.06] px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide text-navy/50">
-              Nothing on file
-            </span>
+            <span className="app-badge app-badge-neutral">Nothing on file</span>
           )}
         </div>
 
@@ -208,7 +202,7 @@ export default async function VendorDetailPage(props: {
               ))}
           </dl>
         ) : (
-          <p className="mt-4 text-[13px] leading-relaxed text-ink/55">
+          <p className="mt-4 text-[13px] leading-relaxed app-muted">
             Send them the setup form and they&apos;ll fill in their own address, tax ID, W-9 and
             bank details — no account numbers over email.
           </p>
@@ -247,7 +241,7 @@ export default async function VendorDetailPage(props: {
                 : "Send the setup form"}
           </summary>
           <div className="mt-4">
-            <p className="mb-4 text-[12.5px] leading-relaxed text-ink/55">
+            <p className="mb-4 text-[12.5px] leading-relaxed app-muted">
               Sending a new link cancels any link they already have.
             </p>
             <SendVendorInvite
@@ -303,7 +297,7 @@ export default async function VendorDetailPage(props: {
                     <input type="hidden" name="id" value={item.id} />
                     <button
                       type="submit"
-                      className="text-[12px] app-muted hover:text-red-600 transition-colors"
+                      className="text-xs text-red-700 hover:underline"
                     >
                       Remove
                     </button>
@@ -381,7 +375,7 @@ export default async function VendorDetailPage(props: {
               </a>
             )}
             <span
-              className={`text-[15px] font-semibold tabular-nums ${
+              className={`text-[15px] font-semibold app-num ${
                 bill.status === "open"
                   ? "text-amber-700"
                   : bill.status === "void"
@@ -401,7 +395,15 @@ export default async function VendorDetailPage(props: {
                 </button>
               </form>
             ) : (
-              <span className="text-[11px] font-medium uppercase tracking-wide app-muted">
+              <span
+                className={`app-badge ${
+                  bill.status === "paid"
+                    ? "app-badge-green"
+                    : bill.status === "void"
+                      ? "app-badge-red"
+                      : "app-badge-neutral"
+                }`}
+              >
                 {bill.status}
               </span>
             )}
@@ -410,7 +412,7 @@ export default async function VendorDetailPage(props: {
               <input type="hidden" name="vendor_id" value={vendor.id} />
               <button
                 type="submit"
-                className="text-[12px] app-muted hover:text-red-600 transition-colors"
+                className="text-xs text-red-700 hover:underline"
                 title="Delete this bill record"
               >
                 Remove

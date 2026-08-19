@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ActionItemCard } from "@/components/admin/meetings/ActionItemCard";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import { addActionItemForm, requestActionUpdatesForm } from "@/lib/actions/meetings";
 import { listActionItems } from "@/lib/meetings/queries";
 import {
@@ -69,9 +70,9 @@ export default async function ActionItemsPage({
   return (
     <div className="max-w-4xl space-y-8 p-4 md:p-8 lg:p-10">
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper">Company</p>
+        <p className="app-label">Company</p>
         <h2 className="mt-2 app-h1">Action Items</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink/60">
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed app-muted">
           Everything anyone committed to, across every meeting. Say where something stands in your
           own words — the note is kept permanently against the item, which is what makes the record
           worth anything later.
@@ -96,9 +97,9 @@ export default async function ActionItemsPage({
             await requestActionUpdatesForm(fd);
           }}
         >
-          <button type="submit" className="app-btn app-btn-secondary">
+          <SubmitButton className="app-btn app-btn-secondary">
             Ask everyone for an update
-          </button>
+          </SubmitButton>
         </form>
         <Link href="/admin/meetings" className="app-btn app-btn-ghost">
           Meetings
@@ -176,9 +177,7 @@ export default async function ActionItemsPage({
             </select>
           </div>
           <div className="md:col-span-2">
-            <button type="submit" className="app-btn app-btn-accent">
-              Add it
-            </button>
+            <SubmitButton className="app-btn app-btn-accent">Add it</SubmitButton>
           </div>
         </form>
       </div>

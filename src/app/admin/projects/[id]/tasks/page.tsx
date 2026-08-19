@@ -135,7 +135,7 @@ export default async function ProjectTasksPage(props: { params: Promise<{ id: st
       <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
         <div>
           <h2 className="app-h1 !text-[18px]">Phase Checklists</h2>
-          <p className="text-sm text-ink/60 mt-2">
+          <p className="text-sm app-muted mt-2">
             {done}/{total} complete
             {customCount > 0 && ` · ${customCount} custom`}
             {project.playbook_applied_at
@@ -145,7 +145,7 @@ export default async function ProjectTasksPage(props: { params: Promise<{ id: st
         </div>
         <Link
           href={`/admin/projects/${id}/build`}
-          className="font-mono text-[10px] tracking-[0.15em] uppercase text-copper hover:underline"
+          className="text-[13px] font-medium text-copper hover:underline shrink-0"
         >
           Build System overview
         </Link>

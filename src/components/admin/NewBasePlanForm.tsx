@@ -76,10 +76,10 @@ export function NewBasePlanForm({ nextDisplayOrder }: { nextDisplayOrder: number
         }
         reset();
       }}
-      className="mb-10 p-8 border border-ink/15 bg-paper space-y-5"
+      className="mb-10 app-card p-8 space-y-5"
     >
-      <h3 className="eyebrow">Add Standard Plan</h3>
-      <p className="text-sm text-ink/60">
+      <h3 className="app-label">Add Standard Plan</h3>
+      <p className="text-sm app-muted">
         Upload a PDF to the company catalog. It will be available to assign on project overviews.
       </p>
 

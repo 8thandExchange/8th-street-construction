@@ -5,6 +5,7 @@ import {
   togglePunchComplete,
   deletePunchItem,
 } from "@/lib/actions/punch-list";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export default async function ProjectPunchListPage(props: { params: Promise<{ id
   return (
     <div className="max-w-3xl">
       <h2 className="app-h1 !text-[18px] mb-2">Punch List</h2>
-      <p className="text-sm text-ink/60 mb-4">
+      <p className="text-sm app-muted mb-4">
         Closeout deficiencies — {open} open, {done} complete. Client can view items in their portal.
       </p>
 
@@ -36,10 +37,10 @@ export default async function ProjectPunchListPage(props: { params: Promise<{ id
           "use server";
           await createPunchItem(fd);
         }}
-        className="p-6 border border-ink/15 bg-paper space-y-4 mb-10"
+        className="app-card p-6 space-y-4 mb-10"
       >
         <input type="hidden" name="project_id" value={id} />
-        <h3 className="eyebrow">Add punch item</h3>
+        <h3 className="app-label">Add punch item</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <label className="field-label">Issue *</label>
@@ -69,14 +70,12 @@ export default async function ProjectPunchListPage(props: { params: Promise<{ id
             <textarea name="description" rows={2} className="field-input" placeholder="Notes" />
           </div>
         </div>
-        <button type="submit" className="app-btn app-btn-primary">
-          Add Item
-        </button>
+        <SubmitButton>Add Item</SubmitButton>
       </form>
 
       <ul className="space-y-3">
         {(items ?? []).map((item) => (
-          <li key={item.id} className="p-5 border border-ink/15 bg-paper flex gap-4">
+          <li key={item.id} className="app-card p-5 flex gap-4">
             <form action={togglePunchComplete}>
               <input type="hidden" name="project_id" value={id} />
               <input type="hidden" name="id" value={item.id} />
@@ -95,26 +94,32 @@ export default async function ProjectPunchListPage(props: { params: Promise<{ id
             <div className="flex-1">
               <div className="flex flex-wrap gap-2 items-center">
                 <span
-                  className={`text-sm ${item.status === "complete" ? "line-through text-stone-300" : "text-ink"}`}
+                  className={`text-sm ${item.status === "complete" ? "line-through app-muted" : "text-ink"}`}
                 >
                   {item.title}
                 </span>
                 {item.location && (
-                  <span className="text-[10px] font-mono text-stone-300">{item.location}</span>
+                  <span className="text-xs app-muted">{item.location}</span>
                 )}
               </div>
               {item.description && (
-                <p className="text-xs text-ink/55 mt-1">{item.description}</p>
+                <p className="text-xs app-muted mt-1">{item.description}</p>
               )}
-              <div className="text-[10px] font-mono text-stone-300 mt-2 uppercase">
-                {item.assigned_trade && `${item.assigned_trade} · `}
-                {item.status.replace("_", " ")}
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs app-muted">
+                <span
+                  className={`app-badge ${
+                    item.status === "complete" ? "app-badge-green" : "app-badge-neutral"
+                  }`}
+                >
+                  {item.status.replace("_", " ")}
+                </span>
+                {item.assigned_trade && <span>{item.assigned_trade}</span>}
               </div>
             </div>
             <form action={deletePunchItem}>
               <input type="hidden" name="project_id" value={id} />
               <input type="hidden" name="id" value={item.id} />
-              <button type="submit" className="text-stone-300 hover:text-red-600 text-xs">
+              <button type="submit" className="text-xs text-red-700 hover:underline">
                 ×
               </button>
             </form>

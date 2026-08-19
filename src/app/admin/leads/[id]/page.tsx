@@ -9,6 +9,7 @@ import {
 } from "@/lib/actions/leads";
 import { DeleteLeadButton } from "@/components/admin/DeleteLeadButton";
 import { ConvertToProjectButton } from "@/components/admin/ConvertToProjectButton";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import { PROJECT_CATEGORIES } from "@/lib/validations";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -33,7 +34,7 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
       <div className="mb-6">
         <Link
           href="/admin/leads"
-          className="text-xs font-mono tracking-[0.18em] uppercase text-stone-300 hover:text-ink"
+          className="text-[13px] font-medium text-copper hover:underline"
         >
           ← All Leads
         </Link>
@@ -41,7 +42,7 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
 
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-10">
         <div>
-          <span className="eyebrow">— Lead</span>
+          <span className="app-label">— Lead</span>
           <h1 className="mt-2 app-h1">{leadName}</h1>
           <div className="mt-3 flex items-center gap-3">
             <span className={appStatusBadge("lead", lead.status)}>
@@ -55,14 +56,14 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
         <div className="flex flex-col gap-2 text-sm">
           <a
             href={`mailto:${lead.email}`}
-            className="text-copper hover:text-copper-400 editorial-link"
+            className="text-[13px] font-medium text-copper hover:underline"
           >
             {lead.email}
           </a>
           {lead.phone && (
             <a
               href={`tel:${lead.phone}`}
-              className="text-copper hover:text-copper-400 editorial-link"
+              className="text-[13px] font-medium text-copper hover:underline"
             >
               {lead.phone}
             </a>
@@ -72,11 +73,11 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          <form action={updateLead} className="bg-paper border border-ink/15 p-8 space-y-6">
+          <form action={updateLead} className="app-card p-8 space-y-6">
             <input type="hidden" name="id" value={lead.id} />
             <input type="hidden" name="status" value={lead.status} />
             <input type="hidden" name="notes" value={lead.notes ?? ""} />
-            <h2 className="eyebrow">Contact</h2>
+            <h2 className="app-label">Contact</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="field-label">First Name</label>
@@ -138,34 +139,29 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
               />
             </div>
 
-            <button
-              type="submit"
-              className="app-btn app-btn-primary"
-            >
-              Save Changes
-            </button>
+            <SubmitButton>Save Changes</SubmitButton>
           </form>
 
-          <div className="bg-paper border border-ink/15 p-8">
-            <h2 className="eyebrow mb-4">Submission Details</h2>
+          <div className="app-card p-8">
+            <h2 className="app-label mb-4">Submission Details</h2>
             <dl className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
-              <dt className="text-stone-300 font-mono tracking-wider text-xs">Source</dt>
+              <dt className="text-xs app-muted">Source</dt>
               <dd className="text-ink">{lead.source || "website"}</dd>
               {lead.utm_source && (
                 <>
-                  <dt className="text-stone-300 font-mono tracking-wider text-xs">UTM Source</dt>
+                  <dt className="text-xs app-muted">UTM Source</dt>
                   <dd className="text-ink">{lead.utm_source}</dd>
                 </>
               )}
               {lead.utm_campaign && (
                 <>
-                  <dt className="text-stone-300 font-mono tracking-wider text-xs">UTM Campaign</dt>
+                  <dt className="text-xs app-muted">UTM Campaign</dt>
                   <dd className="text-ink">{lead.utm_campaign}</dd>
                 </>
               )}
               {lead.contacted_at && (
                 <>
-                  <dt className="text-stone-300 font-mono tracking-wider text-xs">Contacted At</dt>
+                  <dt className="text-xs app-muted">Contacted At</dt>
                   <dd className="text-ink">{new Date(lead.contacted_at).toLocaleString()}</dd>
                 </>
               )}
@@ -174,9 +170,9 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
         </div>
 
         <div className="space-y-8">
-          <form action={updateLeadPipeline} className="bg-paper border border-ink/15 p-6">
+          <form action={updateLeadPipeline} className="app-card p-6">
             <input type="hidden" name="id" value={lead.id} />
-            <h2 className="eyebrow mb-4">Pipeline</h2>
+            <h2 className="app-label mb-4">Pipeline</h2>
             <div className="flex flex-col gap-5">
               <div>
                 <label className="field-label">Status</label>
@@ -198,28 +194,23 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
                   placeholder="Visible only to admin"
                 />
               </div>
-              <button
-                type="submit"
-                className="app-btn app-btn-primary"
-              >
-                Save Status
-              </button>
+              <SubmitButton>Save Status</SubmitButton>
             </div>
           </form>
 
-          <div className="bg-paper border border-ink/15 p-6">
-            <h2 className="eyebrow mb-4">Quick Actions</h2>
+          <div className="app-card p-6">
+            <h2 className="app-label mb-4">Quick Actions</h2>
             <div className="flex flex-col gap-2 text-sm">
               <a
                 href={`mailto:${lead.email}`}
-                className="editorial-link text-copper hover:text-copper-400"
+                className="text-[13px] font-medium text-copper hover:underline"
               >
                 ✉ Reply by email
               </a>
               {lead.phone && (
                 <a
                   href={`tel:${lead.phone}`}
-                  className="editorial-link text-copper hover:text-copper-400"
+                  className="text-[13px] font-medium text-copper hover:underline"
                 >
                   ☎ Call {lead.phone}
                 </a>
@@ -227,10 +218,10 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
             </div>
           </div>
 
-          <form action={convertLeadToProject} className="bg-paper border border-ink/15 p-6">
+          <form action={convertLeadToProject} className="app-card p-6">
             <input type="hidden" name="id" value={lead.id} />
-            <h2 className="eyebrow mb-2">Won this lead?</h2>
-            <p className="text-sm text-ink/60 mb-4">
+            <h2 className="app-label mb-2">Won this lead?</h2>
+            <p className="text-sm app-muted mb-4">
               Create a pre-construction project pre-filled from this lead and mark it won.
             </p>
             <ConvertToProjectButton
@@ -238,10 +229,10 @@ export default async function AdminLeadDetail(props: { params: Promise<{ id: str
             />
           </form>
 
-          <form action={deleteLead} className="bg-paper border border-red-200/60 p-6">
+          <form action={deleteLead} className="app-card border-l-2 border-l-red-400 p-6">
             <input type="hidden" name="id" value={lead.id} />
-            <h2 className="eyebrow mb-2 text-red-700/80">Danger Zone</h2>
-            <p className="text-sm text-ink/60 mb-4">
+            <h2 className="app-label mb-2 !text-red-700/80">Danger Zone</h2>
+            <p className="text-sm app-muted mb-4">
               Permanently remove this lead. Use this to clean up test submissions.
             </p>
             <DeleteLeadButton leadName={leadName} />

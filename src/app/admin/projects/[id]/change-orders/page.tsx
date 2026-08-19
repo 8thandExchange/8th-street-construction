@@ -9,6 +9,7 @@ import {
 import { formatMoney } from "@/lib/billing/constants";
 import { CHANGE_ORDER_STATUS_LABELS } from "@/lib/project/labels";
 import { appStatusBadge } from "@/lib/project/status-badges";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -103,12 +104,7 @@ export default async function ProjectChangeOrdersPage(props: {
           <input type="checkbox" name="send_to_client" className="w-5 h-5 accent-copper" />
           <span className="text-sm text-navy">Send to client immediately for approval</span>
         </label>
-        <button
-          type="submit"
-          className="app-btn app-btn-primary"
-        >
-          Create
-        </button>
+        <SubmitButton>Create</SubmitButton>
       </form>
 
       <ul className="space-y-4">
@@ -198,9 +194,7 @@ export default async function ProjectChangeOrdersPage(props: {
                         className="field-input"
                       />
                     </div>
-                    <button type="submit" className="app-btn app-btn-secondary">
-                      Place
-                    </button>
+                    <SubmitButton className="app-btn app-btn-secondary">Place</SubmitButton>
                   </form>
                   <p className="mt-2 text-[11px] app-muted">
                     Negative amounts credit a line. Only approved change orders move the budget grid.
@@ -212,10 +206,7 @@ export default async function ProjectChangeOrdersPage(props: {
               <form action={deleteChangeOrderAction} className="mt-4">
                 <input type="hidden" name="id" value={co.id} />
                 <input type="hidden" name="project_id" value={id} />
-                <button
-                  type="submit"
-                  className="app-btn app-btn-ghost !h-8 !px-2.5 !text-[12.5px] hover:!text-red-600"
-                >
+                <button type="submit" className="text-xs text-red-700 hover:underline">
                   Delete draft
                 </button>
               </form>

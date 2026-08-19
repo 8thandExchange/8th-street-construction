@@ -23,6 +23,7 @@ import {
 import { mercuryConfigured } from "@/lib/mercury/config";
 import { syncProjectMercuryInvoices } from "@/lib/mercury/sync";
 import { stripeConfigured } from "@/lib/stripe/config";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -228,7 +229,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
             <>
               <DrawTimeline projectId={id} draws={drawList} />
               {drawList.length > 0 && (
-                <div className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-navy/10 bg-white px-5 py-4">
+                <div className="mt-4 app-card flex items-center justify-between gap-4 px-5 py-4">
                   <div>
                     <p className="text-[13px] font-semibold text-navy">
                       {isHabitat ? "HUD draw packet" : "Draw packet"}
@@ -260,7 +261,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
 
       {contractValue > 0 && (
         <details className="mt-12 hub-panel p-5">
-          <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-wider text-stone-300">
+          <summary className="cursor-pointer text-[13px] font-medium text-copper">
             Adjust contract amount
           </summary>
           <form
@@ -283,14 +284,9 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
                 required
               />
             </div>
-            <button
-              type="submit"
-              className="app-btn app-btn-primary"
-            >
-              Update
-            </button>
+            <SubmitButton>Update</SubmitButton>
           </form>
-          <p className="mt-3 text-xs text-ink/45">
+          <p className="mt-3 text-xs app-muted">
             Changing the total does not update existing payment amounts. Edit draws individually
             below if needed.
           </p>
@@ -299,7 +295,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
 
       {drawList.length > 0 && (
         <details className="mt-4 hub-panel p-5">
-          <summary className="cursor-pointer font-mono text-[10px] uppercase tracking-wider text-stone-300">
+          <summary className="cursor-pointer text-[13px] font-medium text-copper">
             Add a one-time payment
           </summary>
           <form
@@ -323,12 +319,9 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
             />
             <input type="number" name="amount" placeholder="Amount ($)" required className="field-input" />
             <input type="date" name="scheduled_date" className="field-input" />
-            <button
-              type="submit"
-              className="sm:col-span-2 app-btn app-btn-primary"
-            >
+            <SubmitButton className="sm:col-span-2 app-btn app-btn-primary">
               Add payment
-            </button>
+            </SubmitButton>
           </form>
         </details>
       )}
@@ -336,13 +329,13 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
       <div className="mt-10 pt-8 border-t border-ink/10 flex flex-wrap gap-4 text-sm">
         <Link
           href={`/admin/projects/${id}`}
-          className="text-copper hover:underline font-mono text-[10px] uppercase tracking-wider"
+          className="text-[13px] font-medium text-copper hover:underline"
         >
           ← Back to Job Home
         </Link>
         <Link
           href={`/admin/projects/${id}/overview`}
-          className="text-stone-300 hover:text-ink font-mono text-[10px] uppercase tracking-wider"
+          className="text-[13px] font-medium app-muted hover:text-copper"
         >
           Job Details
         </Link>
@@ -350,7 +343,7 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
           <Link
             href={`/client/projects/${id}/billing`}
             target="_blank"
-            className="text-stone-300 hover:text-ink font-mono text-[10px] uppercase tracking-wider"
+            className="text-[13px] font-medium app-muted hover:text-copper"
           >
             Preview client billing ↗
           </Link>

@@ -25,7 +25,7 @@ export default async function ProjectDailyLogsPage(props: {
   return (
     <div className="max-w-3xl">
       <h2 className="app-h1 !text-[18px]">Daily Logs</h2>
-      <p className="mt-2 text-sm text-ink/60 max-w-xl">
+      <p className="mt-2 text-sm app-muted max-w-xl">
         Field notes for {project.title} — weather, crew, work completed, and issues. One entry per
         calendar day.
       </p>
@@ -34,12 +34,12 @@ export default async function ProjectDailyLogsPage(props: {
 
       <div className="mt-10 space-y-4">
         {(logs ?? []).length === 0 ? (
-          <p className="text-ink/50 italic">No daily logs yet.</p>
+          <p className="app-card p-10 text-center text-sm italic app-muted">No daily logs yet.</p>
         ) : (
           logs!.map((log) => (
-            <article key={log.id} className="p-6 border border-ink/15 bg-paper">
+            <article key={log.id} className="app-card p-6">
               <div className="flex flex-wrap justify-between gap-2 mb-3">
-                <div className="font-mono text-xs tracking-wider text-stone-300">
+                <div className="text-xs app-muted">
                   {log.log_date}
                   {log.weather && ` · ${log.weather}`}
                   {log.crew_count != null && ` · ${log.crew_count} on site`}
@@ -54,7 +54,7 @@ export default async function ProjectDailyLogsPage(props: {
                   <input type="hidden" name="id" value={log.id} />
                   <button
                     type="submit"
-                    className="text-[10px] font-mono uppercase text-red-600/80 hover:text-red-700"
+                    className="text-xs text-red-700 hover:underline"
                   >
                     Delete
                   </button>
@@ -62,8 +62,8 @@ export default async function ProjectDailyLogsPage(props: {
               </div>
               <p className="text-ink whitespace-pre-wrap">{log.summary}</p>
               {log.issues && (
-                <p className="mt-3 text-sm text-ink/65 border-t border-ink/10 pt-3">
-                  <span className="font-mono text-[10px] uppercase text-stone-300">Issues — </span>
+                <p className="mt-3 text-sm app-muted border-t border-ink/10 pt-3">
+                  <span className="font-medium text-ink">Issues — </span>
                   {log.issues}
                 </p>
               )}

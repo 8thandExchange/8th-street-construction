@@ -8,6 +8,7 @@ import {
   setProposalStatus,
 } from "@/lib/actions/proposals";
 import { formatMoney } from "@/lib/billing/constants";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -25,11 +26,11 @@ type ProposalRow = {
 };
 
 const STATUS_TONES: Record<ProposalRow["status"], string> = {
-  draft: "border-ink/20 text-ink/60 bg-bone/40",
-  sent: "border-sky-300 text-sky-800 bg-sky-50",
-  accepted: "border-emerald-300 text-emerald-800 bg-emerald-50",
-  declined: "border-red-300 text-red-800 bg-red-50",
-  withdrawn: "border-ink/20 text-ink/50 bg-bone/40",
+  draft: "app-badge-neutral",
+  sent: "app-badge-blue",
+  accepted: "app-badge-green",
+  declined: "app-badge-red",
+  withdrawn: "app-badge-neutral",
 };
 
 async function createProposalAction(formData: FormData) {
@@ -78,7 +79,7 @@ export default async function ProjectProposalsPage(props: {
 
   return (
     <div className="max-w-3xl">
-      <h2 className="app-h1 !text-[18px] mb-2">Proposals</h2>
+      <h2 className="app-h2 mb-2">Proposals</h2>
       <p className="text-sm app-muted mb-8">
         The customer-facing offer: scope, price, and the record of how the answer came back.
         Accepting one sets the project&apos;s contract value.
@@ -123,9 +124,7 @@ export default async function ProjectProposalsPage(props: {
           <label className="field-label">Terms (payment schedule, exclusions)</label>
           <textarea name="terms_md" rows={4} className="field-input" />
         </div>
-        <button type="submit" className="app-btn app-btn-primary">
-          Create draft
-        </button>
+        <SubmitButton>Create draft</SubmitButton>
       </form>
 
       <ul className="space-y-4">
@@ -134,12 +133,8 @@ export default async function ProjectProposalsPage(props: {
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-xs app-muted tabular-nums">#{p.number}</span>
               <h3 className="app-h2">{p.title}</h3>
-              <span
-                className={`border px-2 py-0.5 text-[10px] uppercase tracking-wide ${STATUS_TONES[p.status]}`}
-              >
-                {p.status}
-              </span>
-              <span className="ml-auto font-mono text-[15px] tabular-nums text-navy">
+              <span className={`app-badge ${STATUS_TONES[p.status]}`}>{p.status}</span>
+              <span className="ml-auto text-[15px] app-num text-navy">
                 {formatMoney(Number(p.amount))}
               </span>
             </div>
@@ -172,9 +167,9 @@ export default async function ProjectProposalsPage(props: {
                 <form action={sendProposalAction}>
                   <input type="hidden" name="project_id" value={id} />
                   <input type="hidden" name="id" value={p.id} />
-                  <button type="submit" className="app-btn app-btn-secondary !h-8 !px-3 !text-xs">
+                  <SubmitButton className="app-btn app-btn-secondary !h-8 !px-3 !text-xs" pendingLabel="Sending…">
                     {p.status === "sent" ? "Send again" : "Email to client"}
-                  </button>
+                  </SubmitButton>
                 </form>
               )}
               {p.status === "sent" && (

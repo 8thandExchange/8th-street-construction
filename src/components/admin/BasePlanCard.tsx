@@ -31,24 +31,20 @@ export function BasePlanCard({ plan }: { plan: HouseBasePlan }) {
   const [saving, setSaving] = useState(false);
 
   return (
-    <article className="bg-paper border border-ink/15 p-6 md:p-8">
+    <article className="app-card p-6 md:p-8">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-3 mb-2">
-            <span className="font-mono text-xs text-stone-300">#{plan.plan_number}</span>
+            <span className="text-xs app-muted">#{plan.plan_number}</span>
             <h2 className="font-display text-xl text-ink">{plan.name}</h2>
             {plan.variant && (
-              <span className="text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-0.5 border border-ink/20 text-ink/70">
-                {plan.variant}
-              </span>
+              <span className="app-badge app-badge-neutral">{plan.variant}</span>
             )}
             {!plan.active && (
-              <span className="text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-0.5 border border-red-200 text-red-700">
-                Inactive
-              </span>
+              <span className="app-badge app-badge-red">Inactive</span>
             )}
           </div>
-          <p className="text-sm text-ink/60">
+          <p className="text-sm app-muted">
             {plan.designer}
             {plan.sheet_count ? ` · ${plan.sheet_count} sheets` : ""}
             {" · "}
@@ -97,7 +93,7 @@ export function BasePlanCard({ plan }: { plan: HouseBasePlan }) {
             className="space-y-4"
           >
             <input type="hidden" name="id" value={plan.id} />
-            <h3 className="eyebrow">Plan Details</h3>
+            <h3 className="app-label">Plan Details</h3>
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
@@ -192,7 +188,7 @@ export function BasePlanCard({ plan }: { plan: HouseBasePlan }) {
           </form>
 
           <div className="space-y-3">
-            <h3 className="eyebrow">Replace PDF</h3>
+            <h3 className="app-label">Replace PDF</h3>
             {!replacingPdf ? (
               <button
                 type="button"
@@ -268,10 +264,8 @@ export function BasePlanCard({ plan }: { plan: HouseBasePlan }) {
             <input type="hidden" name="active" value={plan.active ? "false" : "true"} />
             <button
               type="submit"
-              className={`h-10 px-5 border font-mono text-[10px] tracking-[0.2em] uppercase ${
-                plan.active
-                  ? "border-red-200 text-red-700 hover:border-red-400"
-                  : "border-emerald-200 text-emerald-700 hover:border-emerald-400"
+              className={`text-xs hover:underline ${
+                plan.active ? "text-red-700" : "text-emerald-700"
               }`}
             >
               {plan.active ? "Deactivate Plan" : "Reactivate Plan"}

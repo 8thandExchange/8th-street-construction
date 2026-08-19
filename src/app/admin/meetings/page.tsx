@@ -6,6 +6,7 @@ import { listActionItems, listMeetings, getMeetingSeries } from "@/lib/meetings/
 import { formatMeetingDate } from "@/lib/meetings/minutes-format";
 import { MEETING_STATUS_LABELS, OPEN_ACTION_STATUSES } from "@/lib/meetings/types";
 import { appStatusBadge } from "@/lib/project/status-badges";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -32,9 +33,9 @@ export default async function MeetingsPage() {
   return (
     <div className="max-w-4xl space-y-8 p-4 md:p-8 lg:p-10">
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper">Company</p>
+        <p className="app-label">Company</p>
         <h2 className="mt-2 app-h1">Meetings &amp; Minutes</h2>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink/60">
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed app-muted">
           Every meeting, what was decided, and who owes what by when. Minutes are filed as a draft,
           confirmed at the following meeting, then locked. Action items are chased automatically and
           can be pushed onto a job&apos;s build board.
@@ -144,9 +145,9 @@ export default async function MeetingsPage() {
             />
           </div>
           <div className="flex items-end">
-            <button type="submit" className="app-btn app-btn-accent w-full">
+            <SubmitButton className="app-btn app-btn-accent w-full">
               Build the agenda
-            </button>
+            </SubmitButton>
           </div>
           <div className="md:col-span-3">
             <label className="app-label" htmlFor="title">

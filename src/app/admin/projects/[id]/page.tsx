@@ -20,6 +20,7 @@ import {
 } from "@/lib/project/labels";
 import { InlineStatusSelect } from "@/components/admin/InlineStatusSelect";
 import { setProjectStatusAction, setTaskStatusAction } from "@/lib/actions/project-status";
+import { appStatusBadge } from "@/lib/project/status-badges";
 import type { DashboardAction } from "@/lib/data/project-dashboard";
 import { ProjectFundingBadge } from "@/components/project/ProjectFundingBadge";
 import { parseFundingType } from "@/lib/project/funding";
@@ -158,7 +159,7 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
             {!project.client_id && (
               <Link
                 href={`${base}/overview#client-funding`}
-                className="font-mono text-[10px] uppercase text-amber-300/90 hover:underline"
+                className="text-[13px] font-medium text-amber-300/90 hover:underline"
               >
                 Assign client →
               </Link>
@@ -196,7 +197,10 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
           <section className="dash-panel p-6">
             <div className="flex justify-between items-baseline mb-4">
               <h3 className="app-h2">Open checklists</h3>
-              <Link href={`${base}/tasks`} className="app-label !text-copper">
+              <Link
+                href={`${base}/tasks`}
+                className="text-[13px] font-medium text-copper hover:underline"
+              >
                 All →
               </Link>
             </div>
@@ -217,18 +221,18 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-ink/45 italic">All checklist items complete.</p>
+              <p className="text-sm app-muted italic">All checklist items complete.</p>
             )}
           </section>
 
           {board.client && (
             <section className="dash-panel p-6">
-              <span className="eyebrow">Client portal</span>
+              <span className="app-label">Client portal</span>
               <p className="mt-3 font-medium text-ink text-lg">
                 {[board.client.first_name, board.client.last_name].filter(Boolean).join(" ") ||
                   board.client.email}
               </p>
-              <p className="text-sm text-ink/55">{board.client.email}</p>
+              <p className="text-sm app-muted">{board.client.email}</p>
               <Link
                 href={`${base}/messages`}
                 className="mt-4 app-btn app-btn-secondary"
@@ -252,7 +256,10 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
         <section className="dash-panel p-6 md:p-8 mb-6">
           <div className="flex justify-between items-baseline mb-4">
             <h3 className="app-h2">Client billing schedule</h3>
-            <Link href={`${base}/billing`} className="app-label !text-copper">
+            <Link
+              href={`${base}/billing`}
+              className="text-[13px] font-medium text-copper hover:underline"
+            >
               Money & invoices →
             </Link>
           </div>
@@ -263,15 +270,17 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
                 className="p-4 border border-ink/8 bg-bone/30 flex justify-between gap-4"
               >
                 <div>
-                  <span className="font-mono text-[10px] text-stone-300 uppercase">
+                  <span className="text-xs app-muted">
                     Draw {d.draw_number}
                   </span>
                   <p className="text-sm text-ink mt-1">{d.title}</p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="app-num text-lg font-medium">{formatMoney(Number(d.amount))}</p>
-                  <p className="app-label mt-0.5">
-                    {DRAW_STATUS_LABELS[d.status] ?? d.status}
+                  <p className="mt-1">
+                    <span className={appStatusBadge("draw", d.status)}>
+                      {DRAW_STATUS_LABELS[d.status] ?? d.status}
+                    </span>
                   </p>
                 </div>
               </li>

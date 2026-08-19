@@ -44,13 +44,17 @@ export default async function VendorBillPage(props: {
             {bill.bill_number ? `Invoice ${bill.bill_number}` : bill.title}
           </h2>
           <span
-            className={`text-[11px] font-semibold uppercase tracking-wide ${
-              isPaid ? "text-navy/50" : "text-amber-700"
+            className={`app-badge ${
+              isPaid
+                ? "app-badge-green"
+                : bill.status === "void"
+                  ? "app-badge-red"
+                  : "app-badge-amber"
             }`}
           >
             {bill.status}
           </span>
-          <span className="ml-auto text-xl font-semibold text-navy tabular-nums">
+          <span className="ml-auto text-xl font-semibold text-navy app-num">
             {formatMoney(Number(bill.amount))}
           </span>
         </div>

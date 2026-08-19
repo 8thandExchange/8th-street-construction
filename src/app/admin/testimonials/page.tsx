@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -46,16 +47,16 @@ export default async function AdminTestimonials() {
   return (
     <div className="p-4 md:p-8 lg:p-10 max-w-5xl">
       <div className="mb-10">
-        <span className="eyebrow">— Social proof</span>
+        <span className="app-label">— Social proof</span>
         <h1 className="mt-2 app-h1">Testimonials</h1>
       </div>
 
       {/* Add new */}
       <form
         action={createTestimonial}
-        className="bg-paper border border-ink/15 p-8 mb-10 flex flex-col gap-5"
+        className="app-card p-8 mb-10 flex flex-col gap-5"
       >
-        <h2 className="eyebrow">Add Testimonial</h2>
+        <h2 className="app-h2 !text-[16px]">Add Testimonial</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="field-label">Client Name *</label>
@@ -84,18 +85,15 @@ export default async function AdminTestimonials() {
             <span className="text-sm text-ink">Feature on homepage</span>
           </label>
         </div>
-        <button
-          type="submit"
-          className="self-start app-btn app-btn-primary"
-        >
+        <SubmitButton className="self-start app-btn app-btn-primary">
           + Add Testimonial
-        </button>
+        </SubmitButton>
       </form>
 
       {testimonials && testimonials.length > 0 ? (
         <div className="space-y-4">
           {testimonials.map((t) => (
-            <div key={t.id} className="bg-paper border border-ink/15 p-6">
+            <div key={t.id} className="app-card p-6">
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div className="flex-1">
                   <p className="app-h2 leading-snug mb-3">
@@ -103,23 +101,19 @@ export default async function AdminTestimonials() {
                   </p>
                   <div className="text-sm text-ink">
                     <strong>{t.client_name}</strong>
-                    {t.client_title && <span className="text-stone-300"> · {t.client_title}</span>}
+                    {t.client_title && <span className="app-muted"> · {t.client_title}</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span
-                    className={`inline-block app-badge border !text-[11px] ${
-                      t.published
-                        ? "border-emerald-500/50 text-emerald-600"
-                        : "border-stone-300 text-stone-300"
+                    className={`app-badge ${
+                      t.published ? "app-badge-green" : "app-badge-neutral"
                     }`}
                   >
                     {t.published ? "Published" : "Draft"}
                   </span>
                   {t.featured && (
-                    <span className="inline-block text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border border-copper/50 text-copper">
-                      Featured
-                    </span>
+                    <span className="app-badge app-badge-accent">Featured</span>
                   )}
                 </div>
               </div>
@@ -129,7 +123,7 @@ export default async function AdminTestimonials() {
                   <input type="hidden" name="published" value={String(t.published)} />
                   <button
                     type="submit"
-                    className="text-xs font-mono tracking-[0.18em] uppercase text-copper hover:text-copper-400"
+                    className="text-[13px] font-medium text-copper hover:underline"
                   >
                     {t.published ? "Unpublish" : "Publish"}
                   </button>
@@ -138,7 +132,7 @@ export default async function AdminTestimonials() {
                   <input type="hidden" name="id" value={t.id} />
                   <button
                     type="submit"
-                    className="text-xs font-mono tracking-[0.18em] uppercase text-stone-300 hover:text-copper"
+                    className="text-xs text-red-700 hover:underline"
                   >
                     Delete
                   </button>
@@ -148,8 +142,8 @@ export default async function AdminTestimonials() {
           ))}
         </div>
       ) : (
-        <div className="border border-ink/15 p-12 text-center bg-paper">
-          <p className="text-ink/50 italic">No testimonials yet.</p>
+        <div className="app-card p-10 text-center text-sm italic app-muted">
+          No testimonials yet.
         </div>
       )}
     </div>

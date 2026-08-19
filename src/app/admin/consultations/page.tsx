@@ -4,6 +4,7 @@ import { PROJECT_CATEGORY_LABELS } from "@/lib/utils";
 import { convertConsultationToProject } from "@/lib/actions/consultations";
 import { ConvertToProjectButton } from "@/components/admin/ConvertToProjectButton";
 import { appStatusBadge } from "@/lib/project/status-badges";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -39,18 +40,18 @@ export default async function AdminConsultations() {
   return (
     <div className="p-4 md:p-8 lg:p-10">
       <div className="mb-10">
-        <span className="eyebrow">— Bookings</span>
+        <span className="app-label">— Bookings</span>
         <h1 className="mt-2 app-h1">Consultations</h1>
       </div>
 
       {consultations && consultations.length > 0 ? (
         <div className="space-y-4">
           {consultations.map((c) => (
-            <div key={c.id} className="bg-paper border border-ink/15 p-6 md:p-8">
+            <div key={c.id} className="app-card p-6 md:p-8">
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
-                    <h3 className="app-h1 !text-[18px]">
+                    <h3 className="app-h2">
                       {c.first_name} {c.last_name}
                     </h3>
                     <span className={appStatusBadge("consultation", c.status)}>
@@ -59,32 +60,32 @@ export default async function AdminConsultations() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="eyebrow text-stone-300 mr-2">Email</span>
-                      <a href={`mailto:${c.email}`} className="text-copper editorial-link">
+                      <span className="app-label mr-2">Email</span>
+                      <a href={`mailto:${c.email}`} className="text-[13px] font-medium text-copper hover:underline">
                         {c.email}
                       </a>
                     </div>
                     <div>
-                      <span className="eyebrow text-stone-300 mr-2">Phone</span>
-                      <a href={`tel:${c.phone}`} className="text-copper editorial-link">
+                      <span className="app-label mr-2">Phone</span>
+                      <a href={`tel:${c.phone}`} className="text-[13px] font-medium text-copper hover:underline">
                         {c.phone}
                       </a>
                     </div>
                     <div>
-                      <span className="eyebrow text-stone-300 mr-2">Preferred</span>
+                      <span className="app-label mr-2">Preferred</span>
                       <span className="text-ink">
                         {c.preferred_date} · {c.preferred_time_window}
                       </span>
                     </div>
                     <div>
-                      <span className="eyebrow text-stone-300 mr-2">Meeting</span>
+                      <span className="app-label mr-2">Meeting</span>
                       <span className="text-ink capitalize">
                         {c.meeting_type.replace(/_/g, " ")}
                       </span>
                     </div>
                     {c.project_type && (
                       <div>
-                        <span className="eyebrow text-stone-300 mr-2">Project</span>
+                        <span className="app-label mr-2">Project</span>
                         <span className="text-ink">
                           {PROJECT_CATEGORY_LABELS[c.project_type]}
                         </span>
@@ -92,14 +93,14 @@ export default async function AdminConsultations() {
                     )}
                     {c.project_location && (
                       <div>
-                        <span className="eyebrow text-stone-300 mr-2">Location</span>
+                        <span className="app-label mr-2">Location</span>
                         <span className="text-ink">{c.project_location}</span>
                       </div>
                     )}
                   </div>
                   {c.notes && (
                     <div className="mt-4 pt-4 border-t border-ink/10">
-                      <div className="eyebrow mb-2">Notes</div>
+                      <div className="app-label mb-2">Notes</div>
                       <p className="text-sm text-ink/80 whitespace-pre-wrap">{c.notes}</p>
                     </div>
                   )}
@@ -118,12 +119,9 @@ export default async function AdminConsultations() {
                         <option key={v} value={v}>{l}</option>
                       ))}
                     </select>
-                    <button
-                      type="submit"
-                      className="w-full app-btn app-btn-primary"
-                    >
+                    <SubmitButton className="w-full app-btn app-btn-primary">
                       Update
-                    </button>
+                    </SubmitButton>
                   </form>
                   <form action={convertConsultationToProject}>
                     <input type="hidden" name="id" value={c.id} />
@@ -135,15 +133,15 @@ export default async function AdminConsultations() {
                   </form>
                 </div>
               </div>
-              <div className="mt-4 pt-4 border-t border-ink/10 text-xs text-stone-300 font-mono">
+              <div className="mt-4 pt-4 border-t border-ink/10 text-xs app-muted">
                 Requested {new Date(c.created_at).toLocaleString()}
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="border border-ink/15 p-16 text-center bg-paper">
-          <p className="text-ink/50 italic">No consultation requests yet.</p>
+        <div className="app-card p-10 text-center">
+          <p className="text-sm italic app-muted">No consultation requests yet.</p>
         </div>
       )}
     </div>

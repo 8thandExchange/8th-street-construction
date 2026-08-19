@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Camera } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import {
   addChecklistItem,
   deleteChecklistItem,
@@ -75,13 +76,13 @@ export function ChecklistItems({
             placeholder="e.g. Corner insulation photographed before drywall"
             className="field-input flex-1 !py-1.5 text-xs"
           />
-          <button type="submit" className="app-btn app-btn-secondary !h-8 !px-3 !text-xs">
+          <SubmitButton className="app-btn app-btn-secondary !h-8 !px-3 !text-xs">
             Add
-          </button>
+          </SubmitButton>
           <button
             type="button"
             onClick={() => setAdding(false)}
-            className="text-[10px] font-mono uppercase text-stone-300 hover:text-copper"
+            className="text-[13px] font-medium text-copper hover:underline"
           >
             Cancel
           </button>
@@ -90,7 +91,7 @@ export function ChecklistItems({
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="mt-1.5 text-[10px] font-mono uppercase tracking-wider text-stone-300 hover:text-copper"
+          className="mt-1.5 text-[13px] font-medium text-copper hover:underline"
         >
           + Step to verify
         </button>
@@ -164,7 +165,7 @@ function ChecklistRow({
 
       <span
         className={`min-w-0 flex-1 text-xs ${
-          item.done ? "text-stone-300 line-through" : "text-ink/75"
+          item.done ? "app-muted line-through" : "text-ink/75"
         }`}
       >
         {item.label}
@@ -175,7 +176,7 @@ function ChecklistRow({
           href={item.photo_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[10px] font-mono uppercase text-copper hover:underline shrink-0"
+          className="text-[13px] font-medium text-copper hover:underline shrink-0"
         >
           Photo
         </a>
@@ -219,7 +220,7 @@ function ChecklistRow({
         <input type="hidden" name="id" value={item.id} />
         <button
           type="submit"
-          className="text-[10px] font-mono uppercase text-stone-300 hover:text-red-600"
+          className="text-xs text-red-700 hover:underline"
           title="Remove step"
         >
           ×

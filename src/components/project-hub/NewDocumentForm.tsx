@@ -36,10 +36,10 @@ export function NewDocumentForm({ projectId }: { projectId: string }) {
         setOpen(false);
         setFile(null);
       }}
-      className="p-8 border border-ink/15 bg-paper space-y-5 mb-10"
+      className="app-card p-8 space-y-5 mb-10"
     >
       <input type="hidden" name="project_id" value={projectId} />
-      <h3 className="eyebrow">Upload Document</h3>
+      <h3 className="app-label">Upload Document</h3>
       <div>
         <label className="field-label">Title *</label>
         <input name="title" required className="field-input" />

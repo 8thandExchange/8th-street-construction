@@ -41,11 +41,11 @@ export function NewContractForm({
         setFile(null);
         setProjectId("");
       }}
-      className="p-8 border border-ink/15 bg-paper space-y-5 mb-10"
+      className="app-card p-8 space-y-5 mb-10"
     >
       <input type="hidden" name="project_id" value={projectId} />
       <input type="hidden" name="category" value="contract" />
-      <h3 className="eyebrow">Add Contract</h3>
+      <h3 className="app-label">Add Contract</h3>
       <div>
         <label className="field-label">Job *</label>
         <select
@@ -89,7 +89,7 @@ export function NewContractForm({
           label={file ? "File uploaded ✓" : "Choose file"}
         />
       ) : (
-        <p className="text-sm text-ink/50 italic">Choose a job to enable the file upload.</p>
+        <p className="text-sm app-muted italic">Choose a job to enable the file upload.</p>
       )}
       <div className="flex gap-3">
         <button

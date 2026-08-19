@@ -67,7 +67,7 @@ export function StorageUpload({
           disabled={uploading}
           onChange={handleChange}
         />
-        <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-ink">
+        <span className="text-[13px] font-medium text-ink">
           {uploading ? "Uploading…" : label}
         </span>
       </label>

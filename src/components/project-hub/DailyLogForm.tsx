@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { StorageUpload } from "./StorageUpload";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import { createDailyLog } from "@/lib/actions/daily-logs";
 import { draftDailyLog } from "@/lib/actions/ai-daily-log";
 
@@ -38,14 +39,14 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
         setSummary("");
         setIssues("");
       }}
-      className="mt-8 p-6 border border-ink/15 bg-paper space-y-5"
+      className="app-card mt-8 p-6 space-y-5"
     >
       <input type="hidden" name="project_id" value={projectId} />
 
       {/* AI quick-capture */}
       <div className="border border-copper/30 bg-copper/5 p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="eyebrow">Quick capture</span>
+          <span className="app-label">Quick capture</span>
           <button
             type="button"
             onClick={handleDraft}
@@ -74,9 +75,9 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
           }
         />
         {imageUrls.length > 0 && (
-          <p className="text-xs font-mono text-stone-300">{imageUrls.length} photo(s) attached</p>
+          <p className="text-xs app-muted">{imageUrls.length} photo(s) attached</p>
         )}
-        <p className="text-xs text-ink/45 leading-relaxed">
+        <p className="text-xs app-muted leading-relaxed">
           Drop in shorthand and photos — AI writes the log below. Review before saving.
         </p>
         {aiError && (
@@ -127,12 +128,7 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
           onChange={(e) => setIssues(e.target.value)}
         />
       </div>
-      <button
-        type="submit"
-        className="app-btn app-btn-primary"
-      >
-        Save Log
-      </button>
+      <SubmitButton>Save Log</SubmitButton>
     </form>
   );
 }

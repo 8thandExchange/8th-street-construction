@@ -57,9 +57,9 @@ export default async function ProjectSchedulePage(props: { params: Promise<{ id:
     <div className="max-w-6xl space-y-10">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper">Build</p>
+          <p className="app-label">Build</p>
           <h2 className="mt-2 app-h1">Schedule</h2>
-          <p className="mt-2 text-sm text-ink/60 max-w-2xl leading-relaxed">
+          <p className="mt-2 text-sm app-muted max-w-2xl leading-relaxed">
             Drag phase bars to reschedule, preview the client view, and share a password-protected
             progress page.
           </p>
@@ -68,14 +68,14 @@ export default async function ProjectSchedulePage(props: { params: Promise<{ id:
           <a
             href={`/api/projects/${id}/schedule/pdf`}
             target="_blank"
-            className="inline-flex h-9 items-center border border-ink/20 px-4 font-mono text-[10px] uppercase tracking-[0.18em] text-ink/70 transition-colors hover:border-ink/40 hover:text-ink"
+            className="app-btn app-btn-secondary"
           >
             Download PDF
           </a>
           <Link
             href={`/print/schedule/${id}`}
             target="_blank"
-            className="inline-flex h-9 items-center border border-ink/20 px-4 font-mono text-[10px] uppercase tracking-[0.18em] text-ink/70 transition-colors hover:border-ink/40 hover:text-ink"
+            className="app-btn app-btn-secondary"
           >
             Checklist view
           </Link>
@@ -83,7 +83,7 @@ export default async function ProjectSchedulePage(props: { params: Promise<{ id:
       </div>
 
       {!milestones.length ? (
-        <p className="text-ink/50 italic p-8 border border-dashed border-ink/20">
+        <p className="app-card p-10 text-center text-sm italic app-muted">
           Apply a build playbook or add milestones to build the schedule.
         </p>
       ) : (

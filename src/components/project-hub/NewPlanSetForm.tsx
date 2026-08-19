@@ -48,11 +48,11 @@ export function NewPlanSetForm({ projectId }: { projectId: string }) {
         setOpen(false);
         setFiles([]);
       }}
-      className="p-8 border border-ink/15 bg-paper space-y-5 mb-10"
+      className="app-card p-8 space-y-5 mb-10"
     >
       <input type="hidden" name="project_id" value={projectId} />
-      <h3 className="eyebrow">New Plan / Rendering Set</h3>
-      <p className="text-sm text-ink/60">
+      <h3 className="app-label">New Plan / Rendering Set</h3>
+      <p className="text-sm app-muted">
         Upload drawings and renderings. Local building regulations for this project&apos;s
         jurisdiction are attached automatically for the client record.
       </p>
@@ -96,7 +96,7 @@ export function NewPlanSetForm({ projectId }: { projectId: string }) {
         {files.length > 0 && (
           <ul className="mt-4 space-y-3">
             {files.map((f, idx) => (
-              <li key={f.path} className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 border border-ink/10">
+              <li key={f.path} className="app-card grid grid-cols-1 md:grid-cols-3 gap-3 p-4">
                 <input
                   className="field-input"
                   value={f.title}
@@ -125,7 +125,7 @@ export function NewPlanSetForm({ projectId }: { projectId: string }) {
                 <button
                   type="button"
                   onClick={() => setFiles(files.filter((_, i) => i !== idx))}
-                  className="text-[10px] font-mono uppercase text-stone-300 hover:text-red-600 text-left"
+                  className="text-xs text-red-700 hover:underline text-left"
                 >
                   Remove
                 </button>

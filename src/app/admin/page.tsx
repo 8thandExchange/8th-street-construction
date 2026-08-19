@@ -4,6 +4,7 @@ import { formatMoney } from "@/lib/billing/constants";
 import { PROJECT_STATUS_LABELS } from "@/lib/project/labels";
 import { StatCard } from "@/components/admin/StatCard";
 import { ProgressRing } from "@/components/hub/HubUI";
+import { appStatusBadge } from "@/lib/project/status-badges";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export default async function AdminDashboard() {
   return (
     <div className="p-4 md:p-8 lg:p-10 max-w-6xl">
       <div className="mb-10">
-        <span className="eyebrow">— Good morning</span>
+        <span className="app-label">— Good morning</span>
         <h1 className="mt-2 app-h1">Company Home</h1>
         <p className="mt-3 app-muted max-w-2xl leading-relaxed">
           Every active job at a glance. Tap a job to open its master board — checklists, money, and
@@ -57,7 +58,7 @@ export default async function AdminDashboard() {
         <div className="hub-panel p-6 mb-10 border-amber-200/80">
           <div className="flex justify-between items-baseline mb-4">
             <h2 className="app-h2">Licenses & insurance</h2>
-            <Link href="/admin/compliance" className="app-label !text-copper">
+            <Link href="/admin/compliance" className="text-[13px] font-medium text-copper hover:underline">
               Manage →
             </Link>
           </div>
@@ -75,8 +76,8 @@ export default async function AdminDashboard() {
       )}
 
       <div className="mb-6 flex justify-between items-baseline">
-        <h2 className="app-h1 !text-[18px]">Active jobs</h2>
-        <Link href="/admin/projects" className="app-label !text-copper">
+        <h2 className="app-h2">Active jobs</h2>
+        <Link href="/admin/projects" className="text-[13px] font-medium text-copper hover:underline">
           All projects →
         </Link>
       </div>
@@ -103,7 +104,7 @@ export default async function AdminDashboard() {
                     <h3 className="app-h2 !text-[16px] group-hover:text-copper transition-colors">
                       {job.title}
                     </h3>
-                    <span className="app-label">
+                    <span className={appStatusBadge("project", job.status)}>
                       {PROJECT_STATUS_LABELS[job.status] || job.status}
                     </span>
                     {job.alertCount > 0 && (
@@ -142,7 +143,7 @@ export default async function AdminDashboard() {
                     </div>
                   </div>
                 </div>
-                <span className="app-label !text-copper shrink-0 self-center">
+                <span className="text-[13px] font-medium text-copper shrink-0 self-center">
                   Open master board →
                 </span>
               </div>
@@ -152,7 +153,7 @@ export default async function AdminDashboard() {
       )}
 
       <div className="mt-12 pt-8 border-t border-navy/[0.08]">
-        <Link href="/admin/leads" className="app-label !text-copper">
+        <Link href="/admin/leads" className="text-[13px] font-medium text-copper hover:underline">
           Sales: leads & consultations →
         </Link>
       </div>

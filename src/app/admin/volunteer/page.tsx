@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
 
@@ -10,11 +11,11 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  scheduled: "border-emerald-500/50 text-emerald-600 bg-emerald-50",
-  full: "border-copper/50 text-copper bg-copper/5",
-  completed: "border-blue-500/50 text-blue-600",
-  cancelled: "border-stone-300 text-stone-300",
+const STATUS_BADGES: Record<string, string> = {
+  scheduled: "app-badge-blue",
+  full: "app-badge-accent",
+  completed: "app-badge-green",
+  cancelled: "app-badge-red",
 };
 
 function revalidateVolunteer() {
@@ -93,9 +94,9 @@ export default async function AdminVolunteer() {
   return (
     <div className="p-4 md:p-8 lg:p-10 max-w-5xl">
       <div className="mb-10">
-        <span className="eyebrow">— Community Program</span>
+        <span className="app-label">— Community Program</span>
         <h1 className="mt-2 app-h1">Volunteer Build Days</h1>
-        <p className="mt-3 text-sm text-ink/60 max-w-2xl">
+        <p className="mt-3 text-sm app-muted max-w-2xl">
           Registration is <strong>Habitat-controlled</strong>: publish each build day at least four
           weeks out, then paste Habitat&apos;s registration link (VolunteerHub or similar) into the
           event. The public page routes every volunteer to that link — waivers, rosters, and
@@ -106,9 +107,9 @@ export default async function AdminVolunteer() {
       {/* Create */}
       <form
         action={createEvent}
-        className="bg-paper border border-ink/15 p-8 mb-10 flex flex-col gap-5"
+        className="app-card p-8 mb-10 flex flex-col gap-5"
       >
-        <h2 className="eyebrow">Schedule a Build Day</h2>
+        <h2 className="app-label">Schedule a Build Day</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="md:col-span-2">
             <label className="field-label">Title *</label>
@@ -165,12 +166,7 @@ export default async function AdminVolunteer() {
             <input type="checkbox" name="published" defaultChecked className="w-5 h-5 accent-copper" />
             <span className="text-sm text-ink">Publish to the site immediately</span>
           </label>
-          <button
-            type="submit"
-            className="inline-flex h-11 px-8 items-center justify-center bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
-          >
-            Schedule Build Day
-          </button>
+          <SubmitButton>Schedule Build Day</SubmitButton>
         </div>
       </form>
 
@@ -178,20 +174,18 @@ export default async function AdminVolunteer() {
       {events && events.length > 0 ? (
         <div className="space-y-6">
           {events.map((e) => (
-            <div key={e.id} className="bg-paper border border-ink/15 p-6 md:p-8">
+            <div key={e.id} className="app-card p-6 md:p-8">
               <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-3 mb-2">
                     <h3 className="font-display text-2xl text-ink">{e.title}</h3>
                     <span
-                      className={`inline-block text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border ${STATUS_COLORS[e.status]}`}
+                      className={`app-badge ${STATUS_BADGES[e.status] ?? "app-badge-neutral"}`}
                     >
                       {STATUS_LABELS[e.status]}
                     </span>
                     {!e.published && (
-                      <span className="inline-block text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border border-stone-300 text-stone-300">
-                        Draft
-                      </span>
+                      <span className="app-badge app-badge-neutral">Draft</span>
                     )}
                   </div>
                   <div className="text-sm text-ink/70">
@@ -199,13 +193,13 @@ export default async function AdminVolunteer() {
                     {String(e.end_time).slice(0, 5)}
                     {e.location ? ` · ${e.location}` : ""} · crew of {e.capacity}
                   </div>
-                  <div className="mt-2 font-mono text-xs text-ink/50 break-all">
+                  <div className="mt-2 text-xs app-muted break-all">
                     {e.external_signup_url ? (
                       <a
                         href={e.external_signup_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-copper editorial-link"
+                        className="text-copper hover:underline"
                       >
                         {e.external_signup_url}
                       </a>
@@ -260,12 +254,7 @@ export default async function AdminVolunteer() {
                       />
                       Published
                     </label>
-                    <button
-                      type="submit"
-                      className="inline-flex h-9 px-5 items-center justify-center bg-ink text-bone hover:bg-copper font-mono text-[10px] tracking-[0.2em] uppercase transition-colors"
-                    >
-                      Save
-                    </button>
+                    <SubmitButton>Save</SubmitButton>
                   </div>
                 </form>
               </div>
@@ -275,7 +264,7 @@ export default async function AdminVolunteer() {
                   <input type="hidden" name="id" value={e.id} />
                   <button
                     type="submit"
-                    className="text-xs font-mono tracking-[0.15em] uppercase text-stone-300 hover:text-red-600 transition-colors"
+                    className="text-xs text-red-700 hover:underline"
                   >
                     Delete event
                   </button>
@@ -285,13 +274,13 @@ export default async function AdminVolunteer() {
           ))}
         </div>
       ) : (
-        <div className="border border-ink/15 p-16 text-center bg-paper">
-          <p className="text-ink/50 italic">No build days scheduled yet.</p>
+        <div className="app-card p-10 text-center text-sm italic app-muted">
+          No build days scheduled yet.
         </div>
       )}
 
       {upcoming.length > 0 && (
-        <p className="mt-8 text-xs text-ink/50 max-w-2xl">
+        <p className="mt-8 text-xs app-muted max-w-2xl">
           Coordinator rhythm: publish ≥4 weeks out → confirm the Habitat registration link is
           attached → Habitat emails registrants details one week out and reminders 48 hours
           before. Mark a day <em>Full</em> when Habitat says so; the public page then points

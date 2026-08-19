@@ -36,9 +36,9 @@ export default async function AdminUsersPage() {
 
   return (
     <div className="p-4 md:p-8 lg:p-10 max-w-4xl">
-      <span className="eyebrow">— Access Control</span>
+      <span className="app-label">— Access Control</span>
       <h1 className="mt-2 app-h1">Portal Users</h1>
-      <p className="mt-4 text-ink/65 max-w-2xl leading-relaxed">
+      <p className="mt-4 app-muted max-w-2xl leading-relaxed">
         Grant access with a temporary password — users sign in at{" "}
         <code className="text-xs">/login</code>, then set their own password on first login.
         Cofounders and team members use the <strong>Admin</strong> role.
@@ -52,7 +52,7 @@ export default async function AdminUsersPage() {
 
       {(requests ?? []).some((r) => r.status === "pending") && (
         <section className="mt-10">
-          <h2 className="eyebrow mb-4">Pending Access Requests</h2>
+          <h2 className="app-label mb-4">Pending Access Requests</h2>
           <ul className="space-y-4">
             {(requests ?? [])
               .filter((r) => r.status === "pending")
@@ -86,7 +86,7 @@ export default async function AdminUsersPage() {
                         <input type="hidden" name="id" value={r.id} />
                         <button
                           type="submit"
-                          className="app-btn app-btn-ghost !h-8 w-full !text-[12.5px] hover:!text-red-600"
+                          className="text-xs text-red-700 hover:underline"
                         >
                           Deny
                         </button>
@@ -103,7 +103,7 @@ export default async function AdminUsersPage() {
 
       {(requests ?? []).some((r) => r.status !== "pending") && (
         <section className="mt-12">
-          <h2 className="eyebrow mb-4">Recent Request History</h2>
+          <h2 className="app-label mb-4">Recent Request History</h2>
           <ul className="space-y-2 text-sm">
             {(requests ?? [])
               .filter((r) => r.status !== "pending")
@@ -154,17 +154,15 @@ export default async function AdminUsersPage() {
                   {u.role === "client" ? (
                     <div className="space-y-2">
                       <span
-                        className={`text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 border ${
-                          u.portal_active
-                            ? "border-emerald-200 text-emerald-700 bg-emerald-50"
-                            : "border-stone-200 text-stone-500 bg-stone-50"
+                        className={`app-badge ${
+                          u.portal_active ? "app-badge-green" : "app-badge-neutral"
                         }`}
                       >
                         {u.portal_active ? "Active" : "Suspended"}
                       </span>
                       <Link
                         href={`/admin/users/${u.id}/access`}
-                        className="block text-[10px] font-mono uppercase text-copper hover:underline"
+                        className="block text-[13px] font-medium text-copper hover:underline"
                       >
                         Project access →
                       </Link>
@@ -185,7 +183,7 @@ export default async function AdminUsersPage() {
                     <input type="hidden" name="id" value={u.id} />
                     <button
                       type="submit"
-                      className="app-btn app-btn-ghost !h-7 !px-2 !text-[12px] hover:!text-red-600"
+                      className="text-xs text-red-700 hover:underline"
                     >
                       Remove
                     </button>

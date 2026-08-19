@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createSubcontractor } from "@/lib/actions/bids";
 import { SubcontractorRow, type SubRow } from "@/components/admin/SubcontractorRow";
+import { SubmitButton } from "@/components/admin/SubmitButton";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -20,9 +21,9 @@ export default async function SubcontractorsPage() {
   return (
     <div className="p-4 md:p-8 lg:p-10 max-w-4xl">
       <div className="mb-10">
-        <span className="eyebrow">— Vendors</span>
+        <span className="app-label">— Vendors</span>
         <h1 className="mt-2 app-h1">Subcontractors</h1>
-        <p className="mt-3 text-ink/65">
+        <p className="mt-3 app-muted">
           Directory for RFQ invitations. Link a portal user profile to enable bid submission.
         </p>
       </div>
@@ -32,9 +33,9 @@ export default async function SubcontractorsPage() {
           "use server";
           await createSubcontractor(fd);
         }}
-        className="p-6 border border-ink/15 bg-paper space-y-4 mb-10"
+        className="app-card p-6 space-y-4 mb-10"
       >
-        <h3 className="eyebrow">Add subcontractor</h3>
+        <h3 className="app-label">Add subcontractor</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="field-label">Company *</label>
@@ -68,9 +69,7 @@ export default async function SubcontractorsPage() {
             Preferred vendor
           </label>
         </div>
-        <button type="submit" className="app-btn app-btn-primary">
-          Add
-        </button>
+        <SubmitButton>Add</SubmitButton>
       </form>
 
       <div className="space-y-3">
@@ -78,13 +77,13 @@ export default async function SubcontractorsPage() {
           <SubcontractorRow key={s.id} sub={s as SubRow} profiles={profiles ?? []} />
         ))}
         {!subs?.length && (
-          <p className="text-ink/50 italic py-12 text-center border border-dashed border-ink/20">
+          <p className="app-card p-10 text-center text-sm italic app-muted">
             No subcontractors yet — add your first vendor above.
           </p>
         )}
       </div>
 
-      <p className="mt-8 text-sm text-ink/50">
+      <p className="mt-8 text-sm app-muted">
         Invite sub users at{" "}
         <Link href="/admin/users" className="text-copper hover:underline">
           Portal Users
