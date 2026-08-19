@@ -15,6 +15,13 @@ import {
   executeMeetingTool,
   meetingToolRequiresConfirmation,
 } from "@/lib/assistant/meeting-tools";
+import {
+  CONTRACT_TOOLS,
+  CONTRACT_TOOL_NAMES,
+  contractToolRequiresConfirmation,
+  describeContractConfirmation,
+  executeContractTool,
+} from "@/lib/assistant/contract-tools";
 
 /**
  * Admin assistant tool surface. Read tools run directly against the admin
@@ -544,6 +551,8 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
   },
   // Meetings, minutes, and action items live in their own module.
   ...MEETING_TOOLS,
+  // Contracts (standard agreements per job) live in their own module.
+  ...CONTRACT_TOOLS,
 ];
 
 /**
@@ -553,6 +562,7 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
  */
 export function requiresConfirmation(name: string, input: unknown): boolean {
   if (MEETING_TOOL_NAMES.has(name)) return meetingToolRequiresConfirmation(name);
+  if (CONTRACT_TOOL_NAMES.has(name)) return contractToolRequiresConfirmation(name);
   if (name === "send_invoice" || name === "mark_invoice_paid") return true;
   if (name === "send_client_message") return true;
   if (name === "create_portal_user") return true;
@@ -626,6 +636,10 @@ export async function describeConfirmation(name: string, input: unknown): Promis
   const i = input as Record<string, unknown>;
   if (MEETING_TOOL_NAMES.has(name)) {
     const described = await describeMeetingConfirmation(name, input);
+    if (described) return described;
+  }
+  if (CONTRACT_TOOL_NAMES.has(name)) {
+    const described = await describeContractConfirmation(name, input);
     if (described) return described;
   }
   if (name === "create_invoice") {
@@ -717,6 +731,7 @@ export async function executeAssistantTool(
   const i = input as Record<string, unknown>;
 
   if (MEETING_TOOL_NAMES.has(name)) return executeMeetingTool(name, input);
+  if (CONTRACT_TOOL_NAMES.has(name)) return executeContractTool(name, input);
 
   switch (name as AssistantToolName) {
     case "list_projects": {
