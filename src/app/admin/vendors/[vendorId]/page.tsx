@@ -62,7 +62,7 @@ export default async function VendorDetailPage(props: {
     admin
       .from("vendors")
       .select(
-        "id, name, logo_path, contact_email, phone, notes, legal_name, tax_id_last4, tax_classification, w9_path, onboarded_at, address, remit_account_number, remit_account_last4, remit_routing_number, remit_account_type"
+        "id, name, logo_path, contact_email, phone, notes, legal_name, tax_id_last4, tax_classification, w9_path, onboarded_at, address, remit_account_number, remit_account_last4, remit_routing_number, remit_account_type, mercury_recipient_id"
       )
       .eq("id", vendorId)
       .single(),
@@ -176,6 +176,8 @@ export default async function VendorDetailPage(props: {
           <h3 className="app-h2 !text-[16px]">Payment &amp; tax details</h3>
           {vendor.remit_account_number ? (
             <span className="app-badge app-badge-green">Ready to pay by ACH</span>
+          ) : vendor.mercury_recipient_id ? (
+            <span className="app-badge app-badge-green">Ready to pay by ACH · via Mercury</span>
           ) : openInvite ? (
             <span className="app-badge app-badge-amber">Waiting on {openInvite.email}</span>
           ) : (

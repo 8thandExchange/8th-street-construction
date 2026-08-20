@@ -321,13 +321,14 @@ export function PayAchButton({
   billId,
   amountLabel,
   vendorName,
-  remitReady,
+  payable,
 }: {
   vendorId: string;
   billId: string;
   amountLabel: string;
   vendorName: string;
-  remitReady: boolean;
+  /** Banking details on file here, or a Mercury recipient already linked. */
+  payable: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -353,10 +354,11 @@ export function PayAchButton({
     }
   }
 
-  if (!remitReady) {
+  if (!payable) {
     return (
       <p className="text-sm app-muted">
-        Add the vendor&apos;s account and routing numbers below to enable ACH payment.
+        Add the vendor&apos;s account and routing numbers below to enable ACH payment, or set them
+        up as a Mercury recipient and link it.
       </p>
     );
   }

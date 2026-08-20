@@ -24,7 +24,13 @@ export default async function VendorBillPage(props: {
   ]);
   if (!bill || !vendor) notFound();
 
-  const remitReady = Boolean(vendor.remit_account_number && vendor.remit_routing_number);
+  // Two independent ways a vendor can be payable. Either we hold their banking
+  // details, or Mercury already has them behind a recipient we've linked —
+  // ensureVendorRecipient short-circuits on a stored recipient id and never
+  // reads the account number, so a linked vendor needs nothing from us.
+  const remitOnFile = Boolean(vendor.remit_account_number && vendor.remit_routing_number);
+  const recipientLinked = Boolean(vendor.mercury_recipient_id);
+  const payable = remitOnFile || recipientLinked;
   const isPaid = bill.status === "paid";
   const lineItems: { description: string; amount: number }[] = Array.isArray(bill.line_items)
     ? bill.line_items
@@ -95,14 +101,19 @@ export default async function VendorBillPage(props: {
           <h3 className="app-h2 !text-[15px]">Pay this invoice</h3>
           <p className="mt-1 mb-4 text-sm app-muted max-w-lg">
             Sends a Mercury ACH from the 8th Street operating account to {vendor.name}
-            {remitReady ? "'s account on file" : ""}. The bill is marked paid automatically.
+            {remitOnFile
+              ? "'s account on file"
+              : recipientLinked
+                ? "'s Mercury recipient"
+                : ""}
+            . The bill is marked paid automatically.
           </p>
           <PayAchButton
             vendorId={vendorId}
             billId={billId}
             amountLabel={formatMoney(Number(bill.amount))}
             vendorName={vendor.name}
-            remitReady={remitReady}
+            payable={payable}
           />
         </div>
       )}
@@ -119,13 +130,19 @@ export default async function VendorBillPage(props: {
         </div>
       )}
 
-      <details className="app-card p-6" open={!remitReady}>
+      <details className="app-card p-6" open={!payable}>
         <summary className="cursor-pointer text-[15px] font-semibold text-navy">
-          {vendor.name} payment details {remitReady ? "· on file ✓" : "· needed for ACH"}
+          {vendor.name} payment details{" "}
+          {remitOnFile
+            ? "· on file ✓"
+            : recipientLinked
+              ? "· held by Mercury ✓"
+              : "· needed for ACH"}
         </summary>
         <p className="mt-1 mb-4 text-sm app-muted max-w-lg">
-          Stored securely in the database and used only for ACH payments. Changing them resets the
-          Mercury recipient.
+          {recipientLinked && !remitOnFile
+            ? "This vendor is already set up as a Mercury recipient, so we do not need their bank details here. Filling this in would store them a second time and reset the Mercury link."
+            : "Stored securely in the database and used only for ACH payments. Changing them resets the Mercury recipient."}
         </p>
         <RemitForm
           vendorId={vendorId}
