@@ -20,6 +20,7 @@ import type { MinutesBundle } from "./minutes-format";
 // The generated Database types don't include these tables until `npm run
 // db:types` is re-run against the new migration, so reads go through a loose
 // client here rather than fighting the type generation in every call site.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Client = SupabaseClient<any, any, any>;
 
 export async function getMeetingSeries(supabase: Client) {

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "type-check": "tsc --noEmit",
     "db:types": "supabase gen types typescript --project-id rqmrqndjbkpkewfpyegv --schema public,graphql_public > src/types/database.generated.ts.tmp && mv src/types/database.generated.ts.tmp src/types/database.generated.ts || (rm -f src/types/database.generated.ts.tmp; exit 1)",
@@ -49,12 +49,13 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.6",
     "@types/node": "^22.7.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/web-push": "^3.6.4",
     "autoprefixer": "^10.4.20",
-    "eslint": "^8.57.1",
+    "eslint": "^9.39.5",
     "eslint-config-next": "^15.5.18",
     "jszip": "^3.10.1",
     "postcss": "^8.4.47",
