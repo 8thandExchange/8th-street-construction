@@ -1,5 +1,7 @@
+import { PHASE_PRODUCTION_BUILD, PHASE_PRODUCTION_SERVER } from "next/constants.js";
+
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+const baseConfig = {
   reactStrictMode: true,
   images: {
     remotePatterns: [
@@ -45,4 +47,13 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default function config(phase) {
+  // Local `next build` writes to .next-build so it can never collide with
+  // the dev server's .next. A build run beside `next dev` corrupted dev's
+  // persistent cache in 8th-exchange-media (2026-08-19, stale CSS until
+  // .next was deleted). Vercel sets VERCEL=1 and keeps the default .next.
+  const isLocalProd =
+    !process.env.VERCEL &&
+    (phase === PHASE_PRODUCTION_BUILD || phase === PHASE_PRODUCTION_SERVER);
+  return { ...baseConfig, distDir: isLocalProd ? ".next-build" : ".next" };
+}
