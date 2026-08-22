@@ -4,6 +4,7 @@ import { Suspense, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
+  requestMagicLink,
   requestPortalAccess,
   signInWithPassword,
 } from "@/lib/actions/auth-login";
