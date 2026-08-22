@@ -1,6 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { HubPageHeader } from "@/components/hub/HubUI";
-import { deleteScopeTemplate, saveScopeTemplate } from "@/lib/actions/scope-templates";
+import {
+  deleteScopeTemplate,
+  recordScopeVarianceNote,
+  saveScopeTemplate,
+} from "@/lib/actions/scope-templates";
+import { scopeVariances } from "@/lib/procurement/scope-variance";
+import { formatMoney } from "@/lib/billing/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +15,8 @@ type ScopeRow = {
   trade: string;
   title: string;
   body_md: string;
+  last_variance_note: string | null;
+  last_variance_at: string | null;
 };
 
 async function saveAction(formData: FormData) {
@@ -28,12 +36,40 @@ async function deleteAction(formData: FormData) {
  */
 export default async function ScopeTemplatesPage() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("scope_templates")
-    .select("id, trade, title, body_md")
-    .order("trade")
-    .order("title");
+  const [{ data }, { data: awarded }] = await Promise.all([
+    supabase
+      .from("scope_templates")
+      .select("id, trade, title, body_md, last_variance_note, last_variance_at")
+      .order("trade")
+      .order("title"),
+    supabase
+      .from("bids")
+      .select(
+        "amount, bid_request:bid_requests!inner(scope_template_id, title, estimate_line:project_estimate_lines(estimated_amount, awarded_amount, trade_label))"
+      )
+      .eq("status", "awarded")
+      .not("bid_requests.scope_template_id", "is", null),
+  ]);
   const scopes = (data ?? []) as ScopeRow[];
+  const varianceInputs = (awarded ?? []).flatMap((bid) => {
+    const request = Array.isArray(bid.bid_request) ? bid.bid_request[0] : bid.bid_request;
+    if (!request?.scope_template_id) return [];
+    const line = Array.isArray(request.estimate_line)
+      ? request.estimate_line[0]
+      : request.estimate_line;
+    const template = scopes.find((s) => s.id === request.scope_template_id);
+    if (!template) return [];
+    return [
+      {
+        templateId: template.id,
+        trade: template.trade,
+        title: template.title,
+        budget: line?.estimated_amount == null ? null : Number(line.estimated_amount),
+        awarded: Number(bid.amount),
+      },
+    ];
+  });
+  const variances = scopeVariances(varianceInputs);
 
   return (
     <div className="max-w-3xl">
@@ -41,6 +77,47 @@ export default async function ScopeTemplatesPage() {
         title="Scope library"
         description="How we build, written down per trade. New bid requests can start from one of these, so the standard is what subs actually price — not a hope."
       />
+
+      {variances.length > 0 && (
+        <section className="app-card mb-8 p-6">
+          <h3 className="app-h2 !text-[16px]">Awarded prices off the library</h3>
+          <p className="mt-1 text-xs app-muted">
+            Jobs where the awarded bid missed the estimate by 10% or more. Write what should
+            change in the standard before the next takeoff.
+          </p>
+          <ul className="mt-4 space-y-3">
+            {variances.map((row) => (
+              <li key={`${row.templateId}-${row.awarded}`} className="border-t border-ink/8 pt-3">
+                <p className="text-sm text-navy">
+                  {row.trade} — {row.title}
+                </p>
+                <p className="text-xs app-muted">
+                  Estimate {formatMoney(row.budget)} · awarded {formatMoney(row.awarded)} ·{" "}
+                  <span className="app-num">
+                    {row.variancePct > 0 ? "+" : ""}
+                    {row.variancePct}%
+                  </span>
+                </p>
+                <form action={recordScopeVarianceNote} className="mt-2 flex flex-wrap gap-2">
+                  <input type="hidden" name="id" value={row.templateId} />
+                  <input
+                    name="last_variance_note"
+                    required
+                    placeholder="What the next estimate should assume…"
+                    className="field-input !h-8 min-w-[240px] flex-1 !text-xs"
+                    defaultValue={
+                      scopes.find((s) => s.id === row.templateId)?.last_variance_note ?? ""
+                    }
+                  />
+                  <button type="submit" className="app-btn app-btn-secondary !h-8 !text-xs">
+                    Save to library
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <form action={saveAction} className="app-card grid gap-4 p-6 mb-10">
         <h3 className="app-h2 !text-[16px]">Add a standard scope</h3>
@@ -90,6 +167,9 @@ export default async function ScopeTemplatesPage() {
               <summary className="flex cursor-pointer list-none flex-wrap items-center gap-3">
                 <span className="app-badge app-badge-neutral">{s.trade}</span>
                 <span className="text-[15px] text-navy">{s.title}</span>
+                {s.last_variance_note && (
+                  <span className="text-xs app-muted">Last job note: {s.last_variance_note}</span>
+                )}
               </summary>
               <form action={saveAction} className="mt-4 grid gap-4">
                 <input type="hidden" name="id" value={s.id} />

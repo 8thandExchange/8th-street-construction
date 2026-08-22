@@ -10,8 +10,34 @@ const FLAG_STYLES: Record<string, string> = {
   normal: "bg-emerald-50 text-emerald-700 border-emerald-200",
 };
 
-export function BidLeveling({ bidRequestId, bidCount }: { bidRequestId: string; bidCount: number }) {
-  const [analysis, setAnalysis] = useState<BidLevelingResult | null>(null);
+export function BidLeveling({
+  bidRequestId,
+  bidCount,
+  lastReview,
+}: {
+  bidRequestId: string;
+  bidCount: number;
+  lastReview?: {
+    summary: string;
+    recommendation: string;
+    analysis_json: BidLevelingResult | Record<string, unknown> | null;
+    created_at: string;
+  } | null;
+}) {
+  const stored =
+    lastReview?.analysis_json &&
+    typeof lastReview.analysis_json === "object" &&
+    "stats" in lastReview.analysis_json
+      ? (lastReview.analysis_json as BidLevelingResult)
+      : lastReview
+        ? {
+            stats: { count: bidCount, low: 0, high: 0, average: 0, spreadPct: 0 },
+            summary: lastReview.summary,
+            recommendation: lastReview.recommendation,
+            bids: [],
+          }
+        : null;
+  const [analysis, setAnalysis] = useState<BidLevelingResult | null>(stored);
   const [error, setError] = useState<string | null>(null);
   const [working, start] = useTransition();
 
@@ -39,7 +65,7 @@ export function BidLeveling({ bidRequestId, bidCount }: { bidRequestId: string; 
           className="inline-flex items-center gap-2 h-9 px-4 border border-copper/40 bg-paper text-copper font-mono text-[10px] tracking-[0.16em] uppercase hover:bg-copper hover:text-bone transition-colors disabled:opacity-50"
         >
           <span aria-hidden>✦</span>
-          {working ? "Analyzing…" : analysis ? "Re-run" : "Level with AI"}
+          {working ? "Analyzing…" : analysis ? "Re-run and save" : "Level with AI"}
         </button>
       </div>
 
@@ -105,7 +131,14 @@ export function BidLeveling({ bidRequestId, bidCount }: { bidRequestId: string; 
           </div>
 
           <p className="text-[11px] text-ink/40">
-            AI guidance for review — confirm scope with subs before awarding.
+            Saved to the RFQ record
+            {lastReview?.created_at
+              ? ` · last reviewed ${new Date(lastReview.created_at).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                })}`
+              : ""}
+            . Confirm scope with subs before awarding.
           </p>
         </div>
       )}

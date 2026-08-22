@@ -254,11 +254,14 @@ re-entry; client punch communication stays inside the record.
 
 ### P2 — pre-construction and procurement
 
-- Move accepted proposals into a guided contract/e-sign workflow.
+- Move accepted proposals into a guided contract/e-sign workflow. **Done** (draft from
+  accepted proposal; client typed-name signature; no third-party e-sign vendor).
 - Add bid comparison with normalized scope, alternates, qualifications, and recommendation history.
+  **Done** (structured bid fields + persisted AI review).
 - Create/issue purchase orders from awarded bids and track acknowledgement, bill coverage, and lien
-  documents.
-- Add scope-template governance and variance feedback into future estimates.
+  documents. **Done except lien waivers**, which stay on the vendor compliance record.
+- Add scope-template governance and variance feedback into future estimates. **Done** (award vs
+  estimate variance on the scope library).
 
 **Success measures:** proposal-to-contract and award-to-PO are closed digital loops with no duplicate
 typing.

@@ -1,7 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createBidRequest, awardBid, closeBidRequest } from "@/lib/actions/bids";
+import {
+  createBidRequest,
+  awardBid,
+  awardBidAndCreatePurchaseOrder,
+  closeBidRequest,
+} from "@/lib/actions/bids";
 import { ManualSubQuoteForm } from "@/components/costs/ManualSubQuoteForm";
 import { BidLeveling } from "@/components/costs/BidLeveling";
 import { SubmitButton } from "@/components/admin/SubmitButton";
@@ -27,11 +32,12 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
   const { data: project } = await supabase.from("projects").select("id, title").eq("id", id).single();
   if (!project) notFound();
 
-  const [{ data: rfqs }, { data: subs }, { data: estimateLines }, { data: scopeTemplates }] = await Promise.all([
+  const [{ data: rfqs }, { data: subs }, { data: estimateLines }, { data: scopeTemplates }, { data: reviews }] =
+    await Promise.all([
     supabase
       .from("bid_requests")
       .select(
-        "id, title, trade, scope_of_work, bid_deadline, status, created_at, bids(id, amount, status, submitted_at, document_id, subcontractors(id, company_name, trade))"
+        "id, title, trade, scope_of_work, bid_deadline, status, estimate_line_id, created_at, bids(id, amount, status, submitted_at, document_id, notes, alternates, exclusions, qualifications, subcontractors(id, company_name, trade))"
       )
       .eq("project_id", id)
       .order("created_at", { ascending: false }),
@@ -46,7 +52,19 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
       .eq("project_id", id)
       .order("display_order"),
     supabase.from("scope_templates").select("id, trade, title").order("trade").order("title"),
+    supabase
+      .from("bid_request_reviews")
+      .select("id, bid_request_id, summary, recommendation, analysis_json, created_at")
+      .order("created_at", { ascending: false }),
   ]);
+
+  const reviewRows = reviews ?? [];
+  const latestReviewByRfq = new Map<string, (typeof reviewRows)[number]>();
+  for (const review of reviewRows) {
+    if (!latestReviewByRfq.has(review.bid_request_id)) {
+      latestReviewByRfq.set(review.bid_request_id, review);
+    }
+  }
 
   return (
     <div className="max-w-4xl">
@@ -92,6 +110,22 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
             <input type="datetime-local" name="bid_deadline" className="field-input" />
           </div>
         </div>
+        {(estimateLines ?? []).length > 0 && (
+          <div>
+            <label className="field-label">Cost plan line</label>
+            <select name="estimate_line_id" className="field-input" defaultValue="">
+              <option value="">— none yet —</option>
+              {(estimateLines ?? []).map((line) => (
+                <option key={line.id} value={line.id}>
+                  {[line.division_code, line.trade_label].filter(Boolean).join(" — ")}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs app-muted">
+              Awarding will write the winning amount onto this line and into the PO.
+            </p>
+          </div>
+        )}
         {(scopeTemplates ?? []).length > 0 && (
           <div>
             <label className="field-label">Start from the scope library</label>
@@ -181,6 +215,7 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
                 <tr className="text-left app-label border-b border-ink/10">
                   <th className="pb-2">Subcontractor</th>
                   <th className="pb-2">Bid</th>
+                  <th className="pb-2">Qualifications</th>
                   <th className="pb-2">Status</th>
                   <th className="pb-2" />
                 </tr>
@@ -209,6 +244,11 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
                         </a>
                       )}
                     </td>
+                    <td className="py-3 text-xs app-muted max-w-[220px]">
+                      {[b.qualifications, b.exclusions && `Excl: ${b.exclusions}`, b.alternates && `Alt: ${b.alternates}`, b.notes]
+                        .filter(Boolean)
+                        .join(" · ") || "—"}
+                    </td>
                     <td className="py-3">
                       <span className={`app-badge ${BID_STATUS_BADGES[b.status] ?? "app-badge-neutral"}`}>
                         {b.status}
@@ -216,22 +256,46 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
                     </td>
                     <td className="py-3 text-right">
                       {rfq.status === "open" && b.status === "submitted" && (
-                        <form
-                          action={async (fd) => {
-                            "use server";
-                            await awardBid(fd);
-                          }}
-                        >
-                          <input type="hidden" name="project_id" value={id} />
-                          <input type="hidden" name="bid_id" value={b.id} />
-                          <input type="hidden" name="bid_request_id" value={rfq.id} />
-                          <button
-                            type="submit"
-                            className="text-[13px] font-medium text-copper hover:underline"
+                        <div className="flex flex-col items-end gap-1">
+                          <form
+                            action={async (fd) => {
+                              "use server";
+                              await awardBid(fd);
+                            }}
                           >
-                            Award
-                          </button>
-                        </form>
+                            <input type="hidden" name="project_id" value={id} />
+                            <input type="hidden" name="bid_id" value={b.id} />
+                            <input type="hidden" name="bid_request_id" value={rfq.id} />
+                            {rfq.estimate_line_id && (
+                              <input type="hidden" name="estimate_line_id" value={rfq.estimate_line_id} />
+                            )}
+                            <button
+                              type="submit"
+                              className="text-[13px] font-medium text-copper hover:underline"
+                            >
+                              Award
+                            </button>
+                          </form>
+                          <form
+                            action={async (fd) => {
+                              "use server";
+                              await awardBidAndCreatePurchaseOrder(fd);
+                            }}
+                          >
+                            <input type="hidden" name="project_id" value={id} />
+                            <input type="hidden" name="bid_id" value={b.id} />
+                            <input type="hidden" name="bid_request_id" value={rfq.id} />
+                            {rfq.estimate_line_id && (
+                              <input type="hidden" name="estimate_line_id" value={rfq.estimate_line_id} />
+                            )}
+                            <button
+                              type="submit"
+                              className="text-[12px] font-medium text-navy hover:underline"
+                            >
+                              Award and create PO
+                            </button>
+                          </form>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -244,6 +308,7 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
               bidCount={
                 (Array.isArray(rfq.bids) ? rfq.bids : []).filter((b) => b.amount != null).length
               }
+              lastReview={latestReviewByRfq.get(rfq.id) ?? null}
             />
           </section>
         ))}

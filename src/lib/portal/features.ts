@@ -14,6 +14,7 @@ export const PORTAL_FEATURES = [
   { key: "documents", label: "Documents", href: "/documents" },
   { key: "billing", label: "Billing", href: "/billing" },
   { key: "proposals", label: "Proposals", href: "/proposals" },
+  { key: "contracts", label: "Agreements", href: "/contracts" },
   { key: "punch_list", label: "Punch List", href: "/punch-list" },
   { key: "messages", label: "Messages", href: "/messages" },
   { key: "change_orders", label: "Change Orders", href: "/change-orders" },

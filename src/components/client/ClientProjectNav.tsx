@@ -14,6 +14,7 @@ const TABS = [
   { href: "/documents", label: "Documents" },
   { href: "/billing", label: "Billing" },
   { href: "/proposals", label: "Proposals" },
+  { href: "/contracts", label: "Agreements" },
   { href: "/punch-list", label: "Punch List" },
   { href: "/messages", label: "Messages" },
   { href: "/change-orders", label: "Change Orders" },
