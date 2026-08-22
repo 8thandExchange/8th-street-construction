@@ -8,6 +8,7 @@ import {
 import { formatMoneyExact } from "@/lib/billing/constants";
 import { ATTACHMENT_BUCKET, STAGING_PREFIX } from "@/lib/assistant/attachments";
 import { INVOICE_BACKUP_PREFIX } from "@/lib/billing/backup-attachments";
+import { buildCompanyBriefing } from "@/lib/operations/company-briefing";
 import {
   MEETING_TOOLS,
   MEETING_TOOL_NAMES,
@@ -145,7 +146,7 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
   {
     name: "company_snapshot",
     description:
-      "Company-wide money snapshot: active job count, open invoice count, and total outstanding accounts receivable.",
+      "Company operating brief from the live books: active jobs, open and overdue client receivables, vendor payables, meeting commitments, and overdue job tasks. Use for 'what needs attention', 'give me today's brief', or company-wide cash and risk questions.",
     input_schema: {
       type: "object",
       properties: {},
@@ -565,6 +566,7 @@ export function requiresConfirmation(name: string, input: unknown): boolean {
   if (CONTRACT_TOOL_NAMES.has(name)) return contractToolRequiresConfirmation(name);
   if (name === "send_invoice" || name === "mark_invoice_paid") return true;
   if (name === "send_client_message") return true;
+  if (name === "update_milestone") return true;
   if (name === "create_portal_user") return true;
   if (name === "grant_project_access") return true;
   if (name === "file_document") return true;
@@ -671,6 +673,30 @@ export async function describeConfirmation(name: string, input: unknown): Promis
     const body = String(i.body ?? "");
     const preview = body.length > 280 ? `${body.slice(0, 280)}…` : body;
     return `Send this message to the client (they'll be notified by email, SMS, and push):\n\n"${preview}"`;
+  }
+  if (name === "update_milestone") {
+    const admin = createAdminClient();
+    const { data: milestone } = await admin
+      .from("project_milestones")
+      .select("title, project:projects(title)")
+      .eq("id", String(i.milestone_id ?? ""))
+      .maybeSingle();
+    const project = Array.isArray(milestone?.project)
+      ? milestone?.project[0]
+      : milestone?.project;
+    const changes = [
+      i.status ? `status → ${String(i.status)}` : null,
+      i.target_date ? `client date → ${String(i.target_date)}` : null,
+      i.scheduled_start ? `start → ${String(i.scheduled_start)}` : null,
+      i.scheduled_end ? `finish → ${String(i.scheduled_end)}` : null,
+      i.volunteer_friendly !== undefined
+        ? `volunteer stage → ${i.volunteer_friendly ? "yes" : "no"}`
+        : null,
+      i.description ? "client-facing description updated" : null,
+    ].filter(Boolean);
+    return `Update ${milestone?.title ?? "this schedule phase"}${
+      project?.title ? ` on ${project.title}` : ""
+    }:\n${changes.map((change) => `• ${change}`).join("\n")}\n\nThis changes the schedule clients can see.`;
   }
   if (name === "create_portal_user") {
     const role = String(i.role ?? "client").toUpperCase();
@@ -870,26 +896,78 @@ export async function executeAssistantTool(
     }
 
     case "company_snapshot": {
-      const [{ data: projects }, { data: invoices }] = await Promise.all([
-        admin.from("projects").select("id, status"),
-        admin.from("invoices").select("status, total, amount_paid"),
+      const today = new Date().toISOString().slice(0, 10);
+      const [
+        { data: projects },
+        { data: invoices },
+        { data: vendorBills },
+        { data: commitments },
+        { data: tasks },
+      ] = await Promise.all([
+        admin.from("projects").select("id, title, status"),
+        admin
+          .from("invoices")
+          .select("id, project_id, invoice_number, status, total, amount_paid, due_date"),
+        admin.from("vendor_bills").select("id, title, status, amount, due_date"),
+        admin
+          .from("meeting_action_items")
+          .select("id, title, status, priority, due_date, owner_name"),
+        admin
+          .from("project_tasks")
+          .select("id, project_id, title, status, due_date"),
       ]);
       const active = (projects ?? []).filter(
         (p) => p.status !== "completed" && p.status !== "archived"
-      ).length;
-      const open = (invoices ?? []).filter(
-        (inv) => inv.status !== "paid" && inv.status !== "void" && inv.status !== "draft"
       );
-      const outstanding = open.reduce(
-        (sum, inv) => sum + Math.max(0, Number(inv.total) - Number(inv.amount_paid ?? 0)),
-        0
-      );
+      const activeIds = new Set(active.map((project) => project.id));
+      const activeTasks = (tasks ?? []).filter((task) => activeIds.has(task.project_id));
+      const briefing = buildCompanyBriefing({
+        today,
+        invoices: invoices ?? [],
+        vendorBills: vendorBills ?? [],
+        commitments: commitments ?? [],
+        tasks: activeTasks,
+      });
+      const projectNames = new Map((projects ?? []).map((project) => [project.id, project.title]));
       return {
-        active_projects: active,
+        as_of: today,
+        active_projects: active.map((project) => ({
+          id: project.id,
+          title: project.title,
+          status: project.status,
+        })),
         total_projects: (projects ?? []).length,
-        open_invoices: open.length,
-        outstanding_receivables: outstanding,
-        outstanding_formatted: formatMoneyExact(outstanding),
+        ...briefing,
+        overdue_invoices: (invoices ?? [])
+          .filter(
+            (invoice) =>
+              !["draft", "paid", "void"].includes(invoice.status) &&
+              (invoice.status === "overdue" ||
+                Boolean(invoice.due_date && invoice.due_date < today))
+          )
+          .map((invoice) => ({
+            invoice_number: invoice.invoice_number,
+            project: projectNames.get(invoice.project_id) ?? null,
+            due_date: invoice.due_date,
+            balance: Math.max(
+              0,
+              Number(invoice.total) - Number(invoice.amount_paid ?? 0)
+            ),
+            admin_page: `/admin/projects/${invoice.project_id}/billing/invoices/${invoice.id}`,
+          })),
+        overdue_commitments: (commitments ?? [])
+          .filter(
+            (item) =>
+              ["open", "in_progress", "blocked"].includes(item.status) &&
+              (item.status === "blocked" || Boolean(item.due_date && item.due_date < today))
+          )
+          .map((item) => ({
+            title: item.title,
+            status: item.status,
+            owner: item.owner_name,
+            due_date: item.due_date,
+            admin_page: "/admin/meetings/action-items",
+          })),
       };
     }
 

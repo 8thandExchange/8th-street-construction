@@ -124,5 +124,9 @@ export async function POST(request: Request) {
     describeConfirmation: describeClientConfirmation,
     declinedNote:
       "The client declined sending this message in the approval card. Do not retry unless they ask again.",
+    confirmationSecret:
+      process.env.ASSISTANT_CONFIRMATION_SECRET?.trim() ||
+      process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
+      apiKey,
   });
 }

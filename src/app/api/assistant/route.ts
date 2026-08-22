@@ -52,12 +52,16 @@ Operating rules:
 type RequestBody = {
   messages: Anthropic.MessageParam[];
   confirm?: ConfirmPayload;
+  context?: { project_id?: string };
 };
 
 export async function POST(request: Request) {
   let userId: string;
+  let adminSupabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"];
   try {
-    userId = (await requireAdmin()).user.id;
+    const auth = await requireAdmin();
+    userId = auth.user.id;
+    adminSupabase = auth.supabase;
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -98,10 +102,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
+  let system = SYSTEM_PROMPT;
+  const projectId = body.context?.project_id?.trim();
+  if (projectId) {
+    const { data: project } = await adminSupabase
+      .from("projects")
+      .select("id, title, status, funding_type")
+      .eq("id", projectId)
+      .maybeSingle();
+    if (project) {
+      system += `\n\nCurrent job context:
+- The admin opened the assistant from "${project.title}" (id ${project.id}, status ${project.status}, funding ${project.funding_type ?? "not set"}).
+- Prefer this job when the request says "this job" or does not name a different project.
+- Still resolve and verify live records with tools before reading or changing anything.`;
+    }
+  }
+
   return assistantStreamResponse({
     apiKey,
     model: assistantModel(),
-    system: SYSTEM_PROMPT,
+    system,
     tools: ASSISTANT_TOOLS,
     messages,
     confirm: body.confirm,
@@ -110,5 +130,9 @@ export async function POST(request: Request) {
     describeConfirmation,
     declinedNote:
       "The admin declined this action in the approval card. Do not retry it unless they ask again.",
+    confirmationSecret:
+      process.env.ASSISTANT_CONFIRMATION_SECRET?.trim() ||
+      process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
+      apiKey,
   });
 }

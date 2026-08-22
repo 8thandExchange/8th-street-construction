@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ArrowUp,
+  ArrowUpRight,
   Banknote,
   CircleCheck,
   CircleX,
@@ -26,6 +28,7 @@ type PendingConfirmation = {
   name: string;
   input: Record<string, unknown>;
   summary: string;
+  token: string;
 };
 
 /** A file staged in storage by /api/assistant/upload, awaiting send. */
@@ -41,6 +44,7 @@ type DisplayItem =
   | { kind: "assistant"; text: string }
   | { kind: "tool"; name: string; status: "running" | "done" | "error" }
   | { kind: "download"; url: string; fileName: string }
+  | { kind: "action"; url: string; label: string; document?: boolean }
   | { kind: "confirm"; confirmation: PendingConfirmation; resolved?: "approved" | "declined" }
   | { kind: "error"; text: string };
 
@@ -51,7 +55,8 @@ const TOOL_LABELS: Record<string, string> = {
   list_invoices: "Looking up invoices",
   list_purchase_orders: "Looking up purchase orders",
   list_recent_leads: "Fetching leads",
-  company_snapshot: "Running the numbers",
+  company_snapshot: "Building the operating brief",
+  create_project: "Creating the project",
   create_invoice: "Creating invoice",
   send_invoice: "Sending invoice",
   mark_invoice_paid: "Marking invoice paid",
@@ -59,8 +64,14 @@ const TOOL_LABELS: Record<string, string> = {
   update_milestone: "Updating the schedule",
   send_client_message: "Drafting client message",
   create_portal_user: "Setting up portal login",
+  grant_project_access: "Updating portal access",
   file_document: "Filing document",
+  attach_document_to_invoice: "Attaching document",
+  attach_invoice_backup: "Attaching backup invoice",
   get_schedule_pdf: "Preparing schedule PDF",
+  list_vendors: "Looking up vendors",
+  record_vendor_bill: "Recording vendor bill",
+  get_city_budget: "Reading the city budget",
   // Meetings, minutes, action items
   list_meetings: "Looking up meetings",
   get_meeting: "Reading the minutes",
@@ -72,6 +83,11 @@ const TOOL_LABELS: Record<string, string> = {
   schedule_next_meeting: "Drafting the next agenda",
   request_action_updates: "Asking everyone for an update",
   email_minutes: "Sending the minutes",
+  list_contracts: "Looking up agreements",
+  get_contract: "Reading the agreement",
+  draft_contract: "Drafting the agreement",
+  fill_contract_placeholders: "Updating agreement details",
+  set_contract_status: "Updating agreement status",
   // Client concierge tools
   get_schedule: "Reading your schedule",
   get_recent_updates: "Checking recent updates",
@@ -98,6 +114,7 @@ export type AssistantChatConfig = {
   emptyBody?: string;
   placeholder?: string;
   footnote?: string;
+  context?: { projectId: string; title: string };
   /** Allow attaching PDFs/images (requires an `${endpoint}/upload` route). */
   allowAttachments?: boolean;
 };
@@ -158,6 +175,7 @@ export function AssistantChat({
   const dictationBase = useRef("");
   historyRef.current = history;
   const allowAttachments = Boolean(config?.allowAttachments);
+  const projectContext = config?.context;
 
   const uploadFiles = useCallback(
     async (files: File[]) => {
@@ -234,7 +252,12 @@ export function AssistantChat({
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          body: JSON.stringify({
+            ...body,
+            ...(projectContext
+              ? { context: { project_id: projectContext.projectId } }
+              : {}),
+          }),
         });
 
         if (!res.ok || !res.body) {
@@ -278,6 +301,9 @@ export function AssistantChat({
               const name = String(event.name ?? "");
               const isError = Boolean(event.is_error);
               const download = event.download as { url?: string; file_name?: string } | undefined;
+              const actions = event.actions as
+                | { url?: string; label?: string; kind?: "page" | "document" }[]
+                | undefined;
               setItems((prev) => {
                 const next = [...prev];
                 for (let idx = next.length - 1; idx >= 0; idx--) {
@@ -294,6 +320,17 @@ export function AssistantChat({
                     fileName: download.file_name ?? "download.pdf",
                   });
                 }
+                if (!isError) {
+                  for (const action of actions ?? []) {
+                    if (!action.url || !action.label) continue;
+                    next.push({
+                      kind: "action",
+                      url: action.url,
+                      label: action.label,
+                      document: action.kind === "document",
+                    });
+                  }
+                }
                 return next;
               });
               break;
@@ -309,6 +346,7 @@ export function AssistantChat({
                 name: String(event.name),
                 input: (event.input ?? {}) as Record<string, unknown>,
                 summary: String(event.summary ?? ""),
+                token: String(event.token ?? ""),
               };
               setPending(confirmation);
               setItems((prev) => [...prev, { kind: "confirm", confirmation }]);
@@ -346,7 +384,7 @@ export function AssistantChat({
         setBusy(false);
       }
     },
-    [endpoint]
+    [endpoint, projectContext]
   );
 
   const sendMessage = useCallback(
@@ -404,7 +442,11 @@ export function AssistantChat({
       );
       await streamTurn({
         messages: historyRef.current,
-        confirm: { tool_use_id: confirmation.tool_use_id, approved },
+        confirm: {
+          tool_use_id: confirmation.tool_use_id,
+          approved,
+          token: confirmation.token,
+        },
       });
     },
     [pending, busy, streamTurn]
@@ -418,9 +460,14 @@ export function AssistantChat({
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-navy text-copper">
               <Sparkles size={20} strokeWidth={1.75} />
             </div>
+            {projectContext && (
+              <div className="mx-auto mb-3 w-fit rounded-full border border-copper/20 bg-copper/[0.06] px-3 py-1 text-xs font-medium text-copper">
+                Working on {projectContext.title}
+              </div>
+            )}
             <h2 className="font-display text-2xl text-navy">{emptyTitle}</h2>
             <p className="mt-2 text-sm app-muted">{emptyBody}</p>
-            <div className="mt-6 grid gap-2">
+            <div className="mt-6 grid gap-2 sm:grid-cols-2">
               {suggestions.map((s) => (
                 <button
                   key={s}
@@ -497,6 +544,19 @@ export function AssistantChat({
                     </a>
                   </div>
                 </div>
+              );
+            }
+            if (item.kind === "action") {
+              return (
+                <Link
+                  key={idx}
+                  href={item.url}
+                  target={item.document ? "_blank" : undefined}
+                  className="flex max-w-[92%] items-center justify-between gap-4 rounded-xl border border-navy/10 bg-white px-4 py-3 text-[13px] font-medium text-navy transition-colors hover:border-copper/40 hover:text-copper"
+                >
+                  <span>{item.label}</span>
+                  <ArrowUpRight size={15} strokeWidth={1.75} />
+                </Link>
               );
             }
             if (item.kind === "confirm") {
