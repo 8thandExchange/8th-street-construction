@@ -3,7 +3,7 @@ import { useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { Input, Textarea, Select } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
-import { leadSchema, type LeadInput } from "@/lib/validations";
+import { leadSchema } from "@/lib/validations";
 import { PROJECT_CATEGORY_LABELS } from "@/lib/utils";
 
 const projectOptions = Object.entries(PROJECT_CATEGORY_LABELS).map(([value, label]) => ({

@@ -108,7 +108,7 @@ export function InteractiveScheduleGantt({
     if (!drag) {
       setLocalDates(new Map());
     }
-  }, [milestones]);
+  }, [milestones, drag]);
 
   const effectiveMilestones = useMemo(() => {
     return milestones.map((milestone) => {

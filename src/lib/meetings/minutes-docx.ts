@@ -22,7 +22,6 @@ import { renderMinutesMarkdown, type MinutesBundle } from "./minutes-format";
 const INK = "1A1A18";
 const NAVY = "101C2A";
 const PENCIL = "6B645A";
-const RUST = "B5451B";
 const BORDER = "D9CDB8";
 
 const NUMBERING_REF = "minutes-decisions";

@@ -44,7 +44,6 @@ function lineTotal(item: LineItemDraft) {
 
 export function CustomInvoiceForm({
   projectId,
-  projectTitle,
   clientName,
   compact = false,
   budgetLines = [],

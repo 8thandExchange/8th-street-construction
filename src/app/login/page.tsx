@@ -4,7 +4,6 @@ import { Suspense, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  requestMagicLink,
   requestPortalAccess,
   signInWithPassword,
 } from "@/lib/actions/auth-login";
@@ -57,21 +56,6 @@ function LoginForm() {
       setSuccess(
         "Request submitted. If approved, you'll receive an email with your login credentials."
       );
-    });
-  }
-
-  function handleMagicLink(formData: FormData) {
-    setError(null);
-    setSuccess(null);
-    formData.set("redirect", redirect);
-
-    startTransition(async () => {
-      const result = await requestMagicLink(formData);
-      if ("error" in result && result.error) {
-        setError(result.error);
-        return;
-      }
-      setSuccess("Sign-in link sent. Check your email — link expires in one hour.");
     });
   }
 
