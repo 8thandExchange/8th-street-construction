@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ClientPunchListPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
-  const { supabase, project } = await requireClientProjectFeature(id, "punch_list");
+  const { supabase } = await requireClientProjectFeature(id, "punch_list");
   const { data: items } = await supabase
     .from("punch_list_items")
     .select(
