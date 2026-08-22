@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { SkipLink } from "@/components/a11y/SkipLink";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +23,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="app-shell min-h-screen lg:flex">
+      <SkipLink />
       <AdminSidebar userEmail={profile.email} />
-      <main className="min-w-0 flex-1">{children}</main>
+      <main id="main-content" className="min-w-0 flex-1" tabIndex={-1}>
+        {children}
+      </main>
     </div>
   );
 }

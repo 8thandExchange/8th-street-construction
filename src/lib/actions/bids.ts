@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
+import { trackWorkflowEvent } from "@/lib/analytics/track";
 
 const FROM = process.env.EMAIL_FROM || "8th Street Construction <hello@8thstreetconstruction.com>";
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://www.8thstreetconstruction.com";
@@ -371,6 +372,12 @@ export async function submitBid(formData: FormData) {
     }
   }
 
+  await trackWorkflowEvent({
+    workflow: "bid",
+    event: "complete",
+    entityId: bidId,
+    projectId: request.project_id,
+  });
   revalidatePath("/subs");
   revalidatePath(`/subs/bids/${bidId}`);
   revalidatePath(`/admin/projects/${request.project_id}/bid-requests`);

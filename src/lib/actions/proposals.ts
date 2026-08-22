@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { proposalEmail } from "@/lib/email/templates/proposal";
 import { sendAdminSms } from "@/lib/sms/ghl";
 import { sendPushToAdmins } from "@/lib/notify/push";
+import { trackWorkflowEvent } from "@/lib/analytics/track";
 
 /**
  * Customer-facing proposals built from the estimate. The record is the
@@ -121,6 +122,12 @@ export async function sendProposal(formData: FormData) {
     .eq("id", id);
   if (error) throw new Error(error.message);
 
+  await trackWorkflowEvent({
+    workflow: "proposal",
+    event: "start",
+    entityId: id,
+    projectId,
+  });
   revalidate(projectId);
   return { sent_to: client.email };
 }
@@ -160,6 +167,12 @@ export async function setProposalStatus(formData: FormData) {
       .eq("id", projectId);
   }
 
+  await trackWorkflowEvent({
+    workflow: "proposal",
+    event: status === "withdrawn" || status === "declined" ? "abandon" : "complete",
+    entityId: id,
+    projectId,
+  });
   revalidate(projectId);
 }
 
@@ -231,6 +244,12 @@ export async function clientRespondProposal(formData: FormData) {
     }),
   ]);
 
+  await trackWorkflowEvent({
+    workflow: "proposal",
+    event: decision === "accepted" ? "complete" : "abandon",
+    entityId: proposalId,
+    projectId,
+  });
   revalidate(projectId);
   return { ok: true };
 }

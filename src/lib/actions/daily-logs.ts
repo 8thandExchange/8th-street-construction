@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
+import { trackWorkflowEvent } from "@/lib/analytics/track";
 
 function revalidate(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/daily-logs`);
@@ -72,6 +73,12 @@ export async function createDailyLog(formData: FormData) {
     }
   }
 
+  await trackWorkflowEvent({
+    workflow: "field_log",
+    event: "complete",
+    entityId: log.id,
+    projectId,
+  });
   revalidate(projectId);
   return { ok: true };
 }

@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendAdminSms } from "@/lib/sms/ghl";
 import { sendPushToAdmins } from "@/lib/notify/push";
+import { trackWorkflowEvent } from "@/lib/analytics/track";
 
 function revalidate(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/punch-list`);
@@ -30,6 +31,7 @@ export async function createPunchItem(formData: FormData) {
   });
 
   if (error) throw new Error(error.message);
+  await trackWorkflowEvent({ workflow: "punch", event: "complete", projectId });
   revalidate(projectId);
 }
 
@@ -177,6 +179,12 @@ export async function clientCreatePunchItem(formData: FormData) {
       url: `/admin/projects/${projectId}/punch-list`,
     }),
   ]);
+  await trackWorkflowEvent({
+    workflow: "punch",
+    event: "complete",
+    entityId: item.id,
+    projectId,
+  });
   revalidate(projectId);
   return { ok: true };
 }

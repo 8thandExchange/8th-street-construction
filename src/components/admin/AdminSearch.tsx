@@ -197,14 +197,26 @@ export function AdminSearch() {
             if (e.target === e.currentTarget) setOpen(false);
           }}
         >
-          <div className="w-full max-w-xl overflow-hidden rounded-xl border border-navy/15 bg-bone shadow-2xl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="command-palette-title"
+            className="w-full max-w-xl overflow-hidden rounded-xl border border-navy/15 bg-bone shadow-2xl"
+          >
             <div className="flex items-center gap-3 border-b border-navy/10 px-4">
               <Search size={16} className="shrink-0 text-navy/40" />
+              <div id="command-palette-title" className="sr-only">
+                Command palette
+              </div>
               <input
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onKeyDown}
+                role="combobox"
+                aria-expanded="true"
+                aria-controls="command-palette-list"
+                aria-activedescendant={items[active] ? `command-item-${active}` : undefined}
                 placeholder="Type a page, job, lead — or anything for the Assistant…"
                 className="w-full bg-transparent py-3.5 text-[15px] text-ink outline-none placeholder:text-navy/35"
               />
@@ -213,7 +225,12 @@ export function AdminSearch() {
               </kbd>
             </div>
 
-            <div ref={listRef} className="max-h-[50vh] overflow-y-auto py-2">
+            <div
+              ref={listRef}
+              id="command-palette-list"
+              role="listbox"
+              className="max-h-[50vh] overflow-y-auto py-2"
+            >
               {loading && results.length === 0 && query.trim().length >= 2 && (
                 <div className="px-4 py-2 text-xs font-mono text-ink/40">Searching records…</div>
               )}
@@ -226,8 +243,11 @@ export function AdminSearch() {
                   return (
                     <button
                       key={`r-${item.result.type}-${item.result.id}`}
+                      id={`command-item-${i}`}
                       data-idx={i}
                       type="button"
+                      role="option"
+                      aria-selected={isActive}
                       onMouseEnter={() => setActive(i)}
                       onClick={() => run(item)}
                       className={rowClass}
@@ -247,8 +267,11 @@ export function AdminSearch() {
                   return (
                     <button
                       key={`c-${item.command.id}`}
+                      id={`command-item-${i}`}
                       data-idx={i}
                       type="button"
+                      role="option"
+                      aria-selected={isActive}
                       onMouseEnter={() => setActive(i)}
                       onClick={() => run(item)}
                       className={rowClass}
@@ -266,8 +289,11 @@ export function AdminSearch() {
                 return (
                   <button
                     key="assistant"
+                    id={`command-item-${i}`}
                     data-idx={i}
                     type="button"
+                    role="option"
+                    aria-selected={isActive}
                     onMouseEnter={() => setActive(i)}
                     onClick={() => run(item)}
                     className={`${rowClass} border-t border-navy/10 mt-1 pt-3`}

@@ -76,6 +76,7 @@ const NAV_GROUPS: {
       { href: "/admin/users", label: "Portal Users", icon: UserRound },
       { href: "/admin/testimonials", label: "Testimonials", icon: MessageSquareQuote },
       { href: "/admin/settings", label: "Settings", icon: Settings },
+      { href: "/admin/settings/usage", label: "Workflow usage", icon: BarChart3 },
     ],
   },
 ];

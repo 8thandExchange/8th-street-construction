@@ -207,19 +207,35 @@ palette dialog pattern.
 - every approved, declined, or failed gated action writes actor, summary, tool, result, and record
   link to a company approval history only admins can read.
 
+### Trust, measurement, and field capture
+
+- SECURITY DEFINER helpers are no longer executable by anonymous Data API callers; `set_updated_at`
+  has a fixed search_path; rate-limit RLS is an explicit deny; `citext` lives in `extensions`;
+- CI regenerates database types when `SUPABASE_ACCESS_TOKEN` is present and fails on drift;
+- first-party workflow events record start/complete/abandon for proposals, bids, punch, inspections,
+  field logs, change orders, and assistant approvals, with completion rate and median decision time
+  on `/admin/settings/usage`;
+- admin and portal shells have a skip link; the command palette is a labelled dialog/listbox; focus
+  rings cover operational links and buttons;
+- every admin project page has a mobile field-capture sheet for a note, photo, inspection, or issue.
+
+Leaked-password protection remains an Auth dashboard toggle (HaveIBeenPwned) — it is not a SQL
+migration.
+
 ## Prioritized roadmap
 
 ### P0 — trust, clarity, and measurement
 
 - Persist assistant approval/audit events with actor, reviewed summary, tool, result, and record
-  link. **Done in this release.**
-- Add chat persistence by user and project, with explicit retention and deletion controls. **Done
-  in this release.**
+  link. **Done.**
+- Add chat persistence by user and project, with explicit retention and deletion controls. **Done.**
 - Resolve Supabase advisor findings deliberately: leaked-password protection, function grants,
-  mutable search paths, and public extension placement.
-- Regenerate database types on every migration in CI and fail on drift.
+  mutable search paths, and public extension placement. **Done except Auth leaked-password toggle.**
+- Regenerate database types on every migration in CI and fail on drift. **Done when the access
+  token secret is configured.**
 - Add product analytics for workflow starts, completions, abandonments, and time-to-decision.
-- Add a skip link, command-palette dialog semantics, and contrast/focus regression checks.
+  **Done.**
+- Add a skip link, command-palette dialog semantics, and contrast/focus regression checks. **Done.**
 
 **Success measures:** no approval-input tampering path; zero schema/type drift; workflow completion
 and abandonment visible by role.
@@ -231,7 +247,7 @@ and abandonment visible by role.
 - Complete subcontractor bid detail: scope, plans, attachments, acknowledgement, bid upload,
   alternates, exclusions, and deadline state.
 - Show message attachments and read state.
-- Add mobile quick capture for field note, photo, inspection, and issue.
+- Add mobile quick capture for field note, photo, inspection, and issue. **Done.**
 
 **Success measures:** field evidence is entered once; subcontractor bids no longer require manual
 re-entry; client punch communication stays inside the record.

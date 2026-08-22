@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
+import { trackWorkflowEvent } from "@/lib/analytics/track";
 
 /**
  * Inspections with real state. A failed inspection never gets edited
@@ -38,6 +39,7 @@ export async function createInspection(formData: FormData) {
     reinspection_of: optional(formData, "reinspection_of"),
   });
   if (error) throw new Error(error.message);
+  await trackWorkflowEvent({ workflow: "inspection", event: "start", projectId });
   revalidate(projectId);
 }
 
@@ -60,6 +62,12 @@ export async function resultInspection(formData: FormData) {
     .eq("project_id", projectId)
     .eq("status", "scheduled"); // results are written once, not edited
   if (error) throw new Error(error.message);
+  await trackWorkflowEvent({
+    workflow: "inspection",
+    event: "complete",
+    entityId: id,
+    projectId,
+  });
   revalidate(projectId);
 }
 

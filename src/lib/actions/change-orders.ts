@@ -9,6 +9,7 @@ import {
 } from "@/lib/email/project-notify";
 import { sendAdminSms, sendSms } from "@/lib/sms/ghl";
 import { sendPushToAdmins, sendPushToProfile } from "@/lib/notify/push";
+import { trackWorkflowEvent } from "@/lib/analytics/track";
 
 function revalidateProject(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}/change-orders`);
@@ -202,6 +203,12 @@ export async function clientRespondChangeOrder(formData: FormData) {
     url: `/admin/projects/${projectId}/change-orders`,
   });
 
+  await trackWorkflowEvent({
+    workflow: "change_order",
+    event: decision === "approved" ? "complete" : "abandon",
+    entityId: id,
+    projectId,
+  });
   revalidateProject(projectId);
   return { ok: true };
 }
