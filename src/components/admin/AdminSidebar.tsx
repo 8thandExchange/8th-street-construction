@@ -10,6 +10,7 @@ import {
   Landmark,
   Building2,
   CalendarClock,
+  CalendarDays,
   FileSignature,
   FileStack,
   HardHat,
@@ -54,6 +55,7 @@ const NAV_GROUPS: {
     label: "Build",
     items: [
       { href: "/admin/projects", label: "Projects", icon: Building2 },
+      { href: "/admin/planning", label: "This week", icon: CalendarDays },
       { href: "/admin/base-plans", label: "Base Plans", icon: FileStack },
       { href: "/admin/contracts", label: "Contracts", icon: FileSignature },
       { href: "/admin/subcontractors", label: "Subcontractors", icon: HardHat },

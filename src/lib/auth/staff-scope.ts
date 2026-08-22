@@ -71,6 +71,7 @@ export function staffCanOpenPath(scope: StaffScope, pathname: string): boolean {
     return staffHas(scope, "company.settings") || staffHas(scope, "users.write");
   }
   if (
+    path.startsWith("/admin/planning") ||
     path.startsWith("/admin/meetings") ||
     path.startsWith("/admin/compliance") ||
     path.startsWith("/admin/volunteer") ||
