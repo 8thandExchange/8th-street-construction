@@ -23,6 +23,12 @@ import {
   describeContractConfirmation,
   executeContractTool,
 } from "@/lib/assistant/contract-tools";
+import {
+  CONSTRUCTION_TOOLS,
+  CONSTRUCTION_TOOL_NAMES,
+  constructionToolRequiresConfirmation,
+  executeConstructionTool,
+} from "@/lib/assistant/construction-tools";
 
 /**
  * Admin assistant tool surface. Read tools run directly against the admin
@@ -554,6 +560,8 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
   ...MEETING_TOOLS,
   // Contracts (standard agreements per job) live in their own module.
   ...CONTRACT_TOOLS,
+  // RFIs and submittals — read only; writes stay on the job page.
+  ...CONSTRUCTION_TOOLS,
 ];
 
 /**
@@ -564,6 +572,7 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
 export function requiresConfirmation(name: string, input: unknown): boolean {
   if (MEETING_TOOL_NAMES.has(name)) return meetingToolRequiresConfirmation(name);
   if (CONTRACT_TOOL_NAMES.has(name)) return contractToolRequiresConfirmation(name);
+  if (CONSTRUCTION_TOOL_NAMES.has(name)) return constructionToolRequiresConfirmation(name);
   if (name === "send_invoice" || name === "mark_invoice_paid") return true;
   if (name === "send_client_message") return true;
   if (name === "update_milestone") return true;
@@ -758,6 +767,7 @@ export async function executeAssistantTool(
 
   if (MEETING_TOOL_NAMES.has(name)) return executeMeetingTool(name, input);
   if (CONTRACT_TOOL_NAMES.has(name)) return executeContractTool(name, input);
+  if (CONSTRUCTION_TOOL_NAMES.has(name)) return executeConstructionTool(name, input);
 
   switch (name as AssistantToolName) {
     case "list_projects": {

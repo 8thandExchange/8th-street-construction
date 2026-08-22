@@ -32,6 +32,7 @@ export type ClientAssistantToolName =
   | "get_billing_summary"
   | "get_documents"
   | "get_messages"
+  | "get_open_questions"
   | "send_message_to_team";
 
 const PROJECT_ID_PROP = {
@@ -96,6 +97,16 @@ export const CLIENT_ASSISTANT_TOOLS: Anthropic.Tool[] = [
         ...PROJECT_ID_PROP,
         limit: { type: "integer", description: "Max messages to return (default 10, max 30)" },
       },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "get_open_questions",
+    description:
+      "RFIs the project team has sent the client: title, question, status, and any recorded answer. Use when the client asks what they still need to answer, or what was already decided on a written question. Answers are submitted on the portal Questions page — you cannot record an answer here.",
+    input_schema: {
+      type: "object",
+      properties: { ...PROJECT_ID_PROP },
       additionalProperties: false,
     },
   },
@@ -285,6 +296,21 @@ export async function executeClientAssistantTool(
           body: m.body,
           created_at: m.created_at,
         })),
+      };
+    }
+
+    case "get_open_questions": {
+      const { data } = await supabase
+        .from("project_rfis")
+        .select("number, title, question, trade, status, schedule_impact, answer, answered_at")
+        .eq("project_id", project.id)
+        .in("status", ["open", "answered", "closed"])
+        .order("number", { ascending: false });
+      return {
+        project: project.title,
+        questions: data ?? [],
+        waiting_on_you: (data ?? []).filter((row) => row.status === "open").length,
+        questions_page: `/client/projects/${project.id}/rfis`,
       };
     }
 

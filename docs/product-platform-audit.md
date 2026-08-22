@@ -70,7 +70,7 @@ are differentiators when they appear contextually rather than dominating generic
 
 ### Missing or intentionally deferred
 
-- RFIs and submittals
+- RFIs and submittals. **Done** on `/admin/projects/[id]/rfis` and the client Questions tab.
 - warranty/service requests after closeout
 - timecards, crew allocation, and offline field capture
 - live accounting synchronization
@@ -282,6 +282,7 @@ exceptions are explicit rather than discovered during month close.
 ### P4 — construction depth and scale
 
 - Add RFI/submittal records linked to plans, trades, schedule impact, and decisions.
+  **Done.** Clients answer open RFIs; admins decide submittals.
 - Add warranty/service requests with owner, SLA, vendor assignment, photos, and closeout proof.
 - Introduce project-manager, superintendent, and accounting permission scopes.
 - Add crew/capacity planning only after project ownership is modeled.

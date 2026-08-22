@@ -302,6 +302,7 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
           { label: "Selections", href: `${base}/selections`, description: "Finishes" },
           { label: "Change orders", href: `${base}/change-orders`, description: "Scope changes" },
           { label: "Punch list", href: `${base}/punch-list`, description: "Closeout items" },
+          { label: "RFIs", href: `${base}/rfis`, description: "Questions & submittals" },
           { label: "Job details", href: `${base}/overview`, description: "Settings" },
         ]}
       />

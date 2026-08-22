@@ -20,6 +20,7 @@ const GROUPS = [
       { href: "/schedule", label: "Schedule" },
       { href: "/daily-logs", label: "Field Notes" },
       { href: "/inspections", label: "Inspections" },
+      { href: "/rfis", label: "RFIs & Submittals" },
     ],
   },
   {

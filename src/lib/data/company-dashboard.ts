@@ -80,6 +80,8 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
     { data: estimateLines },
     { data: vendorBills },
     { data: commitments },
+    { data: rfis },
+    { data: submittals },
   ] = await Promise.all([
     projectIds.length
       ? supabase
@@ -124,6 +126,20 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
     supabase
       .from("meeting_action_items")
       .select("id, title, status, priority, due_date, owner_name"),
+    projectIds.length
+      ? supabase
+          .from("project_rfis")
+          .select("id, project_id, title, status, schedule_impact")
+          .in("project_id", projectIds)
+          .in("status", ["open", "answered"])
+      : Promise.resolve({ data: [] }),
+    projectIds.length
+      ? supabase
+          .from("project_submittals")
+          .select("id, project_id, title, status")
+          .in("project_id", projectIds)
+          .in("status", ["submitted", "in_review"])
+      : Promise.resolve({ data: [] }),
   ]);
 
   const briefing = buildCompanyBriefing({
@@ -179,6 +195,8 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
     if (projectEstimateLines.length === 0) alertCount++;
     if (unpaidInvoices) alertCount++;
     if (selectionsOverdue) alertCount++;
+    if ((rfis ?? []).some((r) => r.project_id === p.id)) alertCount++;
+    if ((submittals ?? []).some((s) => s.project_id === p.id)) alertCount++;
 
     jobs.push({
       id: p.id,
@@ -243,6 +261,26 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
         briefing.schedule.overdueTaskCount === 1 ? "" : "s"
       } past due`,
       detail: "Open a job to update the build plan",
+      href: "/admin/projects",
+    });
+  }
+  const openRfis = (rfis ?? []).filter((r) => r.status === "open");
+  const pendingSubs = submittals ?? [];
+  if (openRfis.length > 0) {
+    attention.push({
+      id: "open-rfis",
+      severity: openRfis.some((r) => r.schedule_impact === "likely") ? "critical" : "warning",
+      title: `${openRfis.length} open RFI${openRfis.length === 1 ? "" : "s"}`,
+      detail: "A written answer is still outstanding",
+      href: "/admin/projects",
+    });
+  }
+  if (pendingSubs.length > 0) {
+    attention.push({
+      id: "pending-submittals",
+      severity: "warning",
+      title: `${pendingSubs.length} submittal${pendingSubs.length === 1 ? "" : "s"} awaiting a decision`,
+      detail: "Approve, note, or reject before the field proceeds",
       href: "/admin/projects",
     });
   }

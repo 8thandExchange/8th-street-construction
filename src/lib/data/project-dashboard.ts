@@ -12,7 +12,9 @@ export type ActivityKind =
   | "invoice"
   | "change_order"
   | "selection"
-  | "document";
+  | "document"
+  | "rfi"
+  | "submittal";
 
 export type DashboardActivity = {
   id: string;
@@ -76,6 +78,8 @@ const KIND_LABELS: Record<ActivityKind, string> = {
   change_order: "Change order",
   selection: "Selection",
   document: "Document",
+  rfi: "RFI",
+  submittal: "Submittal",
 };
 
 export function activityKindLabel(kind: ActivityKind): string {
@@ -109,6 +113,8 @@ export async function loadAdminCommandCenter(
     documentsRes,
     drawsRes,
     changeOrdersSumRes,
+    rfisRes,
+    submittalsRes,
   ] = await Promise.all([
     supabase
       .from("project_updates")
@@ -168,6 +174,20 @@ export async function loadAdminCommandCenter(
       .select("cost_impact, status")
       .eq("project_id", projectId)
       .eq("status", "approved"),
+    supabase
+      .from("project_rfis")
+      .select("id, title, status, updated_at, created_at")
+      .eq("project_id", projectId)
+      .in("status", ["open", "answered", "closed"])
+      .order("updated_at", { ascending: false })
+      .limit(6),
+    supabase
+      .from("project_submittals")
+      .select("id, title, status, updated_at, created_at")
+      .eq("project_id", projectId)
+      .in("status", ["submitted", "in_review", "approved", "approved_as_noted", "rejected"])
+      .order("updated_at", { ascending: false })
+      .limit(4),
   ]);
 
   const activities: DashboardActivity[] = [];
@@ -260,6 +280,28 @@ export async function loadAdminCommandCenter(
     });
   }
 
+  for (const rfi of rfisRes.data ?? []) {
+    activities.push({
+      id: `rfi-${rfi.id}`,
+      kind: "rfi",
+      title: rfi.title,
+      detail: rfi.status.replace("_", " "),
+      at: rfi.updated_at ?? rfi.created_at,
+      href: `${base}/rfis`,
+    });
+  }
+
+  for (const sub of submittalsRes.data ?? []) {
+    activities.push({
+      id: `sub-${sub.id}`,
+      kind: "submittal",
+      title: sub.title,
+      detail: sub.status.replaceAll("_", " "),
+      at: sub.updated_at ?? sub.created_at,
+      href: `${base}/rfis`,
+    });
+  }
+
   const changeOrderTotal = (changeOrdersSumRes.data ?? []).reduce(
     (s, c) => s + Number(c.cost_impact ?? 0),
     0
@@ -313,6 +355,7 @@ export async function loadClientCommandCenter(projectId: string): Promise<Client
     messagesRes,
     drawsRes,
     changeOrdersSumRes,
+    rfisRes,
   ] = await Promise.all([
     supabase
       .from("project_milestones")
@@ -376,6 +419,11 @@ export async function loadClientCommandCenter(projectId: string): Promise<Client
       .select("cost_impact")
       .eq("project_id", projectId)
       .eq("status", "approved"),
+    supabase
+      .from("project_rfis")
+      .select("id, title, status, schedule_impact")
+      .eq("project_id", projectId)
+      .eq("status", "open"),
   ]);
 
   const milestones = milestonesRes.data ?? [];
@@ -448,6 +496,16 @@ export async function loadClientCommandCenter(projectId: string): Promise<Client
         ? `$${Number(contract.contract_price).toLocaleString()}`
         : `Agreement #${contract.number}`,
       href: `${base}/contracts`,
+    });
+  }
+
+  for (const rfi of rfisRes.data ?? []) {
+    actions.push({
+      id: `rfi-${rfi.id}`,
+      severity: rfi.schedule_impact === "likely" ? "critical" : "warning",
+      label: `Answer question: ${rfi.title}`,
+      hint: rfi.schedule_impact === "likely" ? "Likely schedule impact" : undefined,
+      href: `${base}/rfis`,
     });
   }
 
