@@ -50,6 +50,31 @@ export const CONSTRUCTION_TOOLS: Anthropic.Tool[] = [
       additionalProperties: false,
     },
   },
+  {
+    name: "list_service_requests",
+    description:
+      "Warranty and service requests after (or near) closeout: number, title, category (warranty / service), status, owner, vendor, SLA due date, and whether closeout notes exist. Use for 'what's past SLA', 'did we close the faucet leak', or 'who owns warranty items'.",
+    input_schema: {
+      type: "object",
+      properties: {
+        project_id: { type: "string", description: "Limit to one job (optional)" },
+        status: {
+          type: "string",
+          enum: [
+            "draft",
+            "open",
+            "assigned",
+            "in_progress",
+            "waiting_client",
+            "resolved",
+            "closed",
+            "void",
+          ],
+        },
+      },
+      additionalProperties: false,
+    },
+  },
 ];
 
 export const CONSTRUCTION_TOOL_NAMES = new Set(CONSTRUCTION_TOOLS.map((t) => t.name));
@@ -118,6 +143,36 @@ export async function executeConstructionTool(name: string, input: unknown): Pro
             due_date: row.due_date,
             reviewer_notes: row.reviewer_notes,
             admin_url: `/admin/projects/${row.project_id}/rfis`,
+          };
+        }),
+      };
+    }
+    case "list_service_requests": {
+      let query = admin
+        .from("project_service_requests")
+        .select(
+          "id, project_id, number, title, category, status, sla_due, closeout_note, owner_id, vendor_id, created_at, project:projects(title)"
+        )
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (i.project_id) query = query.eq("project_id", String(i.project_id));
+      if (i.status) query = query.eq("status", String(i.status));
+      const { data, error } = await query;
+      if (error) return { error: error.message };
+      return {
+        requests: (data ?? []).map((row) => {
+          const project = Array.isArray(row.project) ? row.project[0] : row.project;
+          return {
+            id: row.id,
+            project_id: row.project_id,
+            project: project?.title ?? null,
+            number: row.number,
+            title: row.title,
+            category: row.category,
+            status: row.status,
+            sla_due: row.sla_due,
+            has_closeout_note: Boolean(row.closeout_note),
+            admin_url: `/admin/projects/${row.project_id}/service`,
           };
         }),
       };

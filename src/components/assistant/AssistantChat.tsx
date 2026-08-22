@@ -94,6 +94,7 @@ const TOOL_LABELS: Record<string, string> = {
   set_contract_status: "Updating agreement status",
   list_rfis: "Checking RFIs",
   list_submittals: "Checking submittals",
+  list_service_requests: "Checking service requests",
   // Client concierge tools
   get_schedule: "Reading your schedule",
   get_recent_updates: "Checking recent updates",
@@ -101,6 +102,7 @@ const TOOL_LABELS: Record<string, string> = {
   get_documents: "Listing your documents",
   get_messages: "Reading the message thread",
   get_open_questions: "Checking questions for you",
+  get_service_requests: "Checking service requests",
   send_message_to_team: "Drafting a message to the team",
 };
 
