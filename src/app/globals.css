@@ -1081,7 +1081,8 @@ a:has(.hub-metric):hover .hub-metric {
    and scoped to .app-shell only. The public site keeps its editorial
    square-edged language.
    ===================================================================== */
-.app-shell {
+.app-shell,
+.portal-shell {
   /* The admin's own type. Inter for everything, including figures
      (tabular, via .app-num) — the public site keeps its brand faces. */
   --font-sans: "Inter Variable";
@@ -1117,6 +1118,14 @@ a:has(.hub-metric):hover .hub-metric {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+.app-btn:focus-visible,
+.app-nav-item:focus-visible,
+.hub-nav-pill:focus-visible,
+.client-nav-pill:focus-visible {
+  outline: 2px solid rgb(var(--app-accent));
+  outline-offset: 2px;
 }
 
 /* --- Surfaces ------------------------------------------------------- */

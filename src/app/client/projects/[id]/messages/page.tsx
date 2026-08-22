@@ -13,7 +13,7 @@ export default async function ClientMessagesPage(props: { params: Promise<{ id: 
 
   const { data: messages } = await supabase
     .from("project_messages")
-    .select("id, body, created_at, author_id")
+    .select("id, body, created_at, author_id, attachments, read_by")
     .eq("project_id", id)
     .order("created_at", { ascending: true });
 
@@ -45,6 +45,10 @@ export default async function ClientMessagesPage(props: { params: Promise<{ id: 
         [p?.first_name, p?.last_name].filter(Boolean).join(" ") ||
         (isClient ? "You" : "Project Team"),
       own_side: Boolean(isClient),
+      attachments: Array.isArray(m.attachments)
+        ? (m.attachments as ThreadMessage["attachments"])
+        : [],
+      read_by: Array.isArray(m.read_by) ? m.read_by.map(String) : [],
     };
   });
 

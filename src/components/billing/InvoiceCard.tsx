@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { formatMoneyExact } from "@/lib/billing/constants";
 import { mercuryPayUrl } from "@/lib/mercury/invoices";
-import { INVOICE_STATUS_LABELS, INVOICE_STATUS_STYLES } from "@/lib/project/labels";
+import { INVOICE_STATUS_LABELS } from "@/lib/project/labels";
 import { PayInvoiceButton } from "./PayInvoiceButton";
 import { InvoiceActions } from "./InvoiceActions";
 
@@ -43,7 +43,6 @@ export function InvoiceCard({
   detailHref,
 }: InvoiceCardProps) {
   const statusLabel = INVOICE_STATUS_LABELS[invoice.status] ?? invoice.status;
-  const statusStyle = INVOICE_STATUS_STYLES[invoice.status] ?? INVOICE_STATUS_STYLES.sent;
   const isPaid = invoice.status === "paid";
   const mercuryUrl = invoice.mercury_pay_slug ? mercuryPayUrl(invoice.mercury_pay_slug) : null;
   const pdfUrl = invoice.mercury_pay_slug ? `/api/invoices/${invoice.id}/mercury-pdf` : null;

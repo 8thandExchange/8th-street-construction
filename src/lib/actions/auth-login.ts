@@ -54,21 +54,17 @@ export async function signInWithPassword(formData: FormData): Promise<LoginResul
     .ilike("email", email)
     .maybeSingle();
 
-  if (!profile) {
-    return {
-      error:
-        "No account found for this email. Use Request Access below or contact hello@8thstreetconstruction.com.",
-    };
-  }
-
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email: profile.email, password });
+  const { error } = await supabase.auth.signInWithPassword({
+    email: profile?.email ?? email,
+    password,
+  });
 
-  if (error) {
-    if (error.message.toLowerCase().includes("invalid login")) {
-      return { error: "Incorrect email or password." };
-    }
-    return { error: error.message };
+  if (error || !profile) {
+    // Keep unknown accounts and wrong passwords indistinguishable. If Auth has
+    // a user without an approved profile, immediately discard that session.
+    if (!error) await supabase.auth.signOut();
+    return { error: "Incorrect email or password." };
   }
 
   if (profile.must_change_password) {

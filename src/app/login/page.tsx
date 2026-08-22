@@ -60,21 +60,6 @@ function LoginForm() {
     });
   }
 
-  function handleMagicLink(formData: FormData) {
-    setError(null);
-    setSuccess(null);
-    formData.set("redirect", redirect);
-
-    startTransition(async () => {
-      const result = await requestMagicLink(formData);
-      if ("error" in result && result.error) {
-        setError(result.error);
-        return;
-      }
-      setSuccess("Sign-in link sent. Check your email — link expires in one hour.");
-    });
-  }
-
   return (
     <main className="min-h-screen bg-navy text-bone grain-overlay flex flex-col">
       <header className="px-6 md:px-10 lg:px-14 py-8">

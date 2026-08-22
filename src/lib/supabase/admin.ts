@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { getSupabaseAnonKey, getSupabaseProjectUrl } from "@/lib/supabase/project-env";
+import { getSupabaseProjectUrl } from "@/lib/supabase/project-env";
 
 /**
  * Service-role client — BYPASSES RLS. Use ONLY in trusted server contexts

@@ -2,13 +2,14 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { formatMoneyExact } from "@/lib/billing/constants";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Client concierge tool surface. Every read runs on the signed-in client's
  * OWN Supabase session, so row-level security scopes results to projects
  * they can access — the assistant is structurally unable to read another
  * client's data. The only write (send_message_to_team) is approval-gated
- * in the chat UI and also constrained by the message-insert RLS policy.
+ * in the chat UI; the route-authenticated context is then written server-side.
  */
 
 export type ClientProjectRef = {
@@ -291,8 +292,8 @@ export async function executeClientAssistantTool(
       const body = String(i.body ?? "").trim();
       if (!body) return { error: "Message cannot be empty" };
 
-      // RLS also enforces author_id = auth.uid() + portal access on insert.
-      const { error } = await supabase.from("project_messages").insert({
+      const admin = createAdminClient();
+      const { error } = await admin.from("project_messages").insert({
         project_id: project.id,
         author_id: ctx.userId,
         body,

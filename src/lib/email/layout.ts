@@ -1,7 +1,7 @@
 import { BRAND, brandLogoUrl, brandPhoneTel, getSiteUrl } from "@/lib/brand/assets";
 import { EMAIL_BRAND, EMAIL_FONT } from "./brand";
 
-const { parchment, paper, ink, inkMuted, navy, rust, pencil, border } = EMAIL_BRAND;
+const { parchment, paper, ink, navy, rust, pencil, border } = EMAIL_BRAND;
 
 function escapeHtml(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

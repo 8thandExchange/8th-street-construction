@@ -23,6 +23,10 @@ describe("requiresConfirmation", () => {
     expect(requiresConfirmation("grant_project_access", {})).toBe(true);
   });
 
+  it("gates schedule changes that clients can see", () => {
+    expect(requiresConfirmation("update_milestone", {})).toBe(true);
+  });
+
   it("gates create_invoice only when it sends immediately", () => {
     expect(requiresConfirmation("create_invoice", { send_now: true })).toBe(true);
     expect(requiresConfirmation("create_invoice", { send_now: false })).toBe(false);

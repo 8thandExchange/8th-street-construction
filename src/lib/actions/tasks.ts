@@ -29,7 +29,6 @@ export async function updateTaskStatus(
 }
 
 export async function toggleTaskDone(formData: FormData) {
-  const { supabase } = await requireAdmin();
   const id = String(formData.get("id"));
   const projectId = String(formData.get("project_id"));
   const current = String(formData.get("current_status"));

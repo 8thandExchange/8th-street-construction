@@ -1,6 +1,6 @@
 # 8th Street Construction
 
-A complete construction company platform: marketing website, lead capture, consultation booking, content management, client project portal, and subcontractor portal — built on Next.js, Supabase, and Vercel.
+A complete single-company construction operations platform: marketing, lead intake, estimating, project execution, client and subcontractor portals, billing, payables, job costing, meetings, compliance, and AI-assisted workflows — built on Next.js, Supabase, and Vercel.
 
 A division of 8th and Exchange Capital.
 
@@ -8,14 +8,20 @@ A division of 8th and Exchange Capital.
 
 ## Stack
 
-- **Next.js 14** (App Router, React Server Components, ISR)
+- **Next.js 15** (App Router, React Server Components, ISR)
 - **Supabase** (Postgres + Auth + Storage + Row-Level Security)
 - **Resend** (transactional email)
 - **Tailwind CSS 3** (custom editorial design system — no shadcn, no template look)
 - **TypeScript** end-to-end
 - **Vercel** for hosting
 
-## What's in this build (Phase 1)
+## Product status
+
+The platform has advanced well beyond the original phase notes below. For the current capability
+assessment, live-usage findings, implementation priorities, and full roadmap, read
+[`docs/product-platform-audit.md`](./docs/product-platform-audit.md).
+
+## Original foundation scope
 
 ### Public marketing site
 - **Homepage** — editorial-luxury hero, stats, services, process, selected work, testimonials, CTA

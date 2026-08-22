@@ -137,6 +137,8 @@ export function vendorBillPdf(data: VendorBillPdfData) {
       <Page size="LETTER" style={styles.page}>
         <View style={styles.headerRow}>
           <View style={{ flexDirection: "row", gap: 14 }}>
+            {/* react-pdf Image is not a DOM image and has no alt-text API. */}
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
             {data.logo ? <Image src={data.logo} style={styles.logo} /> : null}
             <View style={{ justifyContent: "center" }}>
               <Text style={styles.vendorName}>{data.vendorName}</Text>

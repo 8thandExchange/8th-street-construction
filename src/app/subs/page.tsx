@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { BidSubmitForm } from "@/components/subs/BidSubmitForm";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +14,13 @@ const BID_STATUS_LABELS: Record<string, string> = {
 };
 
 const BID_STATUS_COLORS: Record<string, string> = {
-  invited: "border-copper/50 text-copper bg-copper/5",
-  viewed: "border-blue-500/50 text-blue-600",
-  submitted: "border-violet-500/50 text-violet-600",
-  shortlisted: "border-amber-500/50 text-amber-600",
-  awarded: "border-emerald-500/50 text-emerald-600 bg-emerald-50",
-  declined: "border-stone-300 text-stone-300",
-  withdrawn: "border-stone-300 text-stone-300",
+  invited: "app-badge-blue",
+  viewed: "app-badge-blue",
+  submitted: "app-badge-amber",
+  shortlisted: "app-badge-amber",
+  awarded: "app-badge-green",
+  declined: "app-badge-red",
+  withdrawn: "app-badge-neutral",
 };
 
 export default async function SubsHome() {
@@ -46,17 +46,20 @@ export default async function SubsHome() {
     : { data: null };
 
   return (
-    <div className="px-6 md:px-10 lg:px-14 py-12 md:py-16 mx-auto max-w-7xl">
-      <span className="eyebrow">— Welcome</span>
-      <h1 className="mt-2 font-display text-display-md text-ink">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 md:px-10 md:py-12">
+      <span className="app-label">Trade partner portal</span>
+      <h1 className="mt-2 app-h1 !text-[26px]">
         {sub?.company_name || "Subcontractor Portal"}
       </h1>
       {sub?.trade && (
-        <p className="mt-2 text-sm text-stone-300 font-mono tracking-wider uppercase">{sub.trade}</p>
+        <p className="mt-2 text-sm app-muted">{sub.trade}</p>
       )}
 
-      <div className="mt-12">
-        <h2 className="font-display text-2xl text-ink mb-6">Bid Requests</h2>
+      <div className="mt-8">
+        <div className="mb-4 flex items-baseline justify-between gap-4">
+          <h2 className="app-h2 !text-[17px]">Bid requests</h2>
+          <span className="text-xs app-muted">{bids?.length ?? 0} total</span>
+        </div>
 
         {bids && bids.length > 0 ? (
           <div className="space-y-4">
@@ -76,18 +79,18 @@ export default async function SubsHome() {
                   ? rfq.projects[0]
                   : rfq.projects
                 : null;
-              const canSubmit =
-                rfq?.status === "open" &&
-                (b.status === "invited" || b.status === "viewed" || b.status === "submitted");
-
               return (
-                <div key={b.id} className="bg-paper border border-ink/15 p-6">
+                <Link
+                  key={b.id}
+                  href={`/subs/bids/${b.id}`}
+                  className="app-card app-card-hover block p-5 md:p-6"
+                >
                   <div className="flex items-start justify-between gap-6">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-display text-xl text-ink">{rfq?.title}</h3>
+                        <h3 className="app-h2 !text-[16px]">{rfq?.title}</h3>
                         <span
-                          className={`text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-1 border ${BID_STATUS_COLORS[b.status]}`}
+                          className={`app-badge ${BID_STATUS_COLORS[b.status]}`}
                         >
                           {BID_STATUS_LABELS[b.status]}
                         </span>
@@ -96,29 +99,28 @@ export default async function SubsHome() {
                         Project: <strong>{project?.title || "—"}</strong>
                         {project?.location && <span> · {project.location}</span>}
                       </div>
-                      <p className="mt-3 text-sm text-ink/80 leading-relaxed">{rfq?.scope_of_work}</p>
+                      <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-ink/70">
+                        {rfq?.scope_of_work}
+                      </p>
                       {rfq?.bid_deadline && (
                         <div className="mt-3 text-xs text-stone-300 font-mono">
                           Deadline: {new Date(rfq.bid_deadline).toLocaleDateString()}
                         </div>
                       )}
-                      {b.notes && (
-                        <p className="mt-3 text-xs text-ink/55 border-t border-ink/10 pt-3">
-                          Your notes: {b.notes}
-                        </p>
-                      )}
-                      <BidSubmitForm bidId={b.id} canSubmit={Boolean(canSubmit)} />
+                      <p className="mt-4 text-[13px] font-medium text-copper">
+                        Review and respond →
+                      </p>
                     </div>
                     {b.amount != null && (
                       <div className="text-right shrink-0">
-                        <div className="eyebrow text-stone-300 mb-1">Your Bid</div>
-                        <div className="font-display text-2xl text-ink">
+                        <div className="app-label mb-1">Your bid</div>
+                        <div className="app-num text-xl font-semibold text-ink">
                           ${Number(b.amount).toLocaleString()}
                         </div>
                       </div>
                     )}
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

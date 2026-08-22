@@ -1,5 +1,9 @@
 # Build Phases
 
+> Historical plan: most Phase 2–4.5 capabilities described here now exist in the application.
+> Use [`docs/product-platform-audit.md`](./docs/product-platform-audit.md) as the current product
+> assessment and roadmap.
+
 Phase 1 is shipped. This document maps out the work ahead and gives you Cursor-ready prompts to drive each phase. Hand these to Cursor in your local IDE; the database schema already supports everything below, so it's all UI + server-action work.
 
 ---

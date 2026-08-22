@@ -1,24 +1,33 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import { StorageUpload } from "./StorageUpload";
 import { SubmitButton } from "@/components/admin/SubmitButton";
 import { createDailyLog } from "@/lib/actions/daily-logs";
 import { draftDailyLog } from "@/lib/actions/ai-daily-log";
+import { createClient } from "@/lib/supabase/client";
 
 export function DailyLogForm({ projectId, today }: { projectId: string; today: string }) {
   const [notes, setNotes] = useState("");
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [images, setImages] = useState<
+    { path: string; publicUrl?: string; caption: string }[]
+  >([]);
   const [weather, setWeather] = useState("");
   const [summary, setSummary] = useState("");
   const [issues, setIssues] = useState("");
   const [aiError, setAiError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [drafting, startDrafting] = useTransition();
 
   function handleDraft() {
     setAiError(null);
     startDrafting(async () => {
-      const result = await draftDailyLog({ projectId, notes, imageUrls });
+      const result = await draftDailyLog({
+        projectId,
+        notes,
+        imageUrls: images.map((image) => image.publicUrl).filter(Boolean) as string[],
+      });
       if (result.ok) {
         setSummary(result.draft.summary);
         setIssues(result.draft.issues || "");
@@ -29,12 +38,23 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
     });
   }
 
+  async function removeImage(path: string) {
+    setImages((current) => current.filter((image) => image.path !== path));
+    const supabase = createClient();
+    await supabase.storage.from("project-updates").remove([path]);
+  }
+
   return (
     <form
       action={async (fd) => {
-        await createDailyLog(fd);
+        setSaveError(null);
+        const result = await createDailyLog(fd);
+        if (result?.error) {
+          setSaveError(result.error);
+          return;
+        }
         setNotes("");
-        setImageUrls([]);
+        setImages([]);
         setWeather("");
         setSummary("");
         setIssues("");
@@ -42,6 +62,13 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
       className="app-card mt-8 p-6 space-y-5"
     >
       <input type="hidden" name="project_id" value={projectId} />
+      <input
+        type="hidden"
+        name="images"
+        value={JSON.stringify(
+          images.map((image) => ({ path: image.path, caption: image.caption }))
+        )}
+      />
 
       {/* AI quick-capture */}
       <div className="border border-copper/30 bg-copper/5 p-4 space-y-3">
@@ -71,11 +98,54 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
           accept="image/*"
           label="Add jobsite photos"
           onComplete={(files) =>
-            setImageUrls((prev) => [...prev, ...files.map((f) => f.publicUrl!).filter(Boolean)])
+            setImages((prev) => [
+              ...prev,
+              ...files.map((file) => ({ ...file, caption: "" })),
+            ])
           }
         />
-        {imageUrls.length > 0 && (
-          <p className="text-xs app-muted">{imageUrls.length} photo(s) attached</p>
+        {images.length > 0 && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {images.map((image, index) => (
+              <div key={image.path} className="overflow-hidden rounded-lg border border-navy/10 bg-white">
+                {image.publicUrl && (
+                  <div className="relative aspect-[4/3] bg-navy/[0.04]">
+                    <Image
+                      src={image.publicUrl}
+                      alt={image.caption || `Daily log photo ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, 320px"
+                    />
+                  </div>
+                )}
+                <div className="flex items-start gap-2 p-2">
+                  <input
+                    type="text"
+                    value={image.caption}
+                    onChange={(event) =>
+                      setImages((current) =>
+                        current.map((item) =>
+                          item.path === image.path
+                            ? { ...item, caption: event.target.value }
+                            : item
+                        )
+                      )
+                    }
+                    placeholder="Photo caption (optional)"
+                    className="min-w-0 flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(image.path)}
+                    className="app-btn app-btn-ghost !h-9 !px-2 text-xs"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
         <p className="text-xs app-muted leading-relaxed">
           Drop in shorthand and photos — AI writes the log below. Review before saving.
@@ -129,6 +199,11 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
         />
       </div>
       <SubmitButton>Save Log</SubmitButton>
+      {saveError && (
+        <p role="alert" className="text-sm text-red-700">
+          {saveError}
+        </p>
+      )}
     </form>
   );
 }

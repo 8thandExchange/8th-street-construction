@@ -1,5 +1,4 @@
 import { mercuryConfigured } from "@/lib/mercury/config";
-import { stripeConfigured } from "@/lib/stripe/config";
 
 type BillingStatusBannerProps = {
   stripeReady: boolean;

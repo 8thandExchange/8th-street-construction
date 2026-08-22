@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
 import { MilestoneBoard, type MilestoneRow } from "@/components/project-hub/MilestoneBoard";
 
 export const dynamic = "force-dynamic";

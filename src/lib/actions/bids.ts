@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "node:crypto";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
@@ -16,7 +17,13 @@ function revalidate(projectId: string) {
   revalidatePath("/subs");
 }
 
-async function sendBidInviteEmail(to: string, company: string, rfqTitle: string, projectTitle: string) {
+async function sendBidInviteEmail(
+  to: string,
+  company: string,
+  rfqTitle: string,
+  projectTitle: string,
+  bidId: string
+) {
   const key = process.env.RESEND_API_KEY;
   if (!key) return;
   const resend = new Resend(key);
@@ -24,8 +31,8 @@ async function sendBidInviteEmail(to: string, company: string, rfqTitle: string,
     from: FROM,
     to,
     subject: `Bid invitation — ${rfqTitle}`,
-    html: `<p>${company},</p><p>You are invited to bid on <strong>${rfqTitle}</strong> for <strong>${projectTitle}</strong>.</p><p><a href="${SITE}/subs">Open subcontractor portal →</a></p>`,
-    text: `Bid invitation: ${rfqTitle} on ${projectTitle}. ${SITE}/subs`,
+    html: `<p>${company},</p><p>You are invited to bid on <strong>${rfqTitle}</strong> for <strong>${projectTitle}</strong>.</p><p><a href="${SITE}/subs/bids/${bidId}">Review scope and submit bid →</a></p>`,
+    text: `Bid invitation: ${rfqTitle} on ${projectTitle}. ${SITE}/subs/bids/${bidId}`,
   });
 }
 
@@ -76,8 +83,14 @@ export async function createBidRequest(formData: FormData) {
     status: "invited" as const,
   }));
 
-  const { error: bErr } = await supabase.from("bids").insert(bidRows);
-  if (bErr) throw new Error(bErr.message);
+  const { data: createdBids, error: bErr } = await supabase
+    .from("bids")
+    .insert(bidRows)
+    .select("id, subcontractor_id");
+  if (bErr || !createdBids) throw new Error(bErr?.message ?? "Could not create bid invitations");
+  const bidBySubcontractor = new Map(
+    createdBids.map((bid) => [bid.subcontractor_id, bid.id])
+  );
 
   const admin = createAdminClient();
   const { data: project } = await admin.from("projects").select("title").eq("id", projectId).single();
@@ -95,11 +108,14 @@ export async function createBidRequest(formData: FormData) {
         .eq("id", sub.profile_id)
         .single();
       if (profile?.email) {
+        const bidId = bidBySubcontractor.get(subId);
+        if (!bidId) continue;
         await sendBidInviteEmail(
           profile.email,
           sub.company_name,
           rfq.title,
-          project?.title ?? "Project"
+          project?.title ?? "Project",
+          bidId
         );
       }
     }
@@ -240,11 +256,11 @@ export async function submitBid(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
+  if (!user) return { error: "Not authenticated" };
 
   const bidId = String(formData.get("bid_id"));
   const amount = Number(formData.get("amount"));
-  if (!amount || amount <= 0) throw new Error("Enter a valid bid amount");
+  if (!amount || amount <= 0) return { error: "Enter a valid bid amount" };
 
   const { data: sub } = await supabase
     .from("subcontractors")
@@ -252,30 +268,113 @@ export async function submitBid(formData: FormData) {
     .eq("profile_id", user.id)
     .single();
 
-  if (!sub) throw new Error("Subcontractor profile not found");
+  if (!sub) return { error: "Subcontractor profile not found" };
 
   const { data: bid } = await supabase
     .from("bids")
-    .select("id, subcontractor_id, status")
+    .select(
+      "id, subcontractor_id, status, document_id, bid_requests(id, title, status, bid_deadline, project_id)"
+    )
     .eq("id", bidId)
     .single();
 
-  if (!bid || bid.subcontractor_id !== sub.id) throw new Error("Unauthorized");
+  if (!bid || bid.subcontractor_id !== sub.id) return { error: "Unauthorized" };
   if (bid.status === "awarded" || bid.status === "declined") {
-    throw new Error("This bid is closed");
+    return { error: "This bid is closed" };
   }
 
-  await supabase
+  const rawRequest = bid.bid_requests;
+  const request = Array.isArray(rawRequest) ? rawRequest[0] : rawRequest;
+  if (!request || request.status !== "open") return { error: "This bid request is closed" };
+  if (request.bid_deadline && new Date(request.bid_deadline).getTime() < Date.now()) {
+    return { error: "The bid deadline has passed. Contact the project manager for access." };
+  }
+
+  const admin = createAdminClient();
+  const upload = formData.get("document");
+  let documentId = bid.document_id;
+  let newStoragePath: string | null = null;
+
+  if (upload instanceof File && upload.size > 0) {
+    if (upload.size > 10 * 1024 * 1024) {
+      return { error: "Bid documents must be 10 MB or smaller." };
+    }
+    const allowedTypes = new Set([
+      "application/pdf",
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+    ]);
+    if (!allowedTypes.has(upload.type)) {
+      return { error: "Upload a PDF, PNG, JPEG, or WebP bid document." };
+    }
+
+    const safeName =
+      upload.name.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-") || "bid-document";
+    newStoragePath = `${request.project_id}/sub-bids/${bidId}/${randomUUID()}-${safeName}`;
+    const { error: uploadError } = await admin.storage
+      .from("project-documents")
+      .upload(newStoragePath, Buffer.from(await upload.arrayBuffer()), {
+        contentType: upload.type,
+        upsert: false,
+      });
+    if (uploadError) return { error: `Could not upload the bid document: ${uploadError.message}` };
+
+    const { data: document, error: documentError } = await admin
+      .from("project_documents")
+      .insert({
+        project_id: request.project_id,
+        uploaded_by: user.id,
+        title: `${request.title} — subcontractor bid`,
+        storage_path: newStoragePath,
+        file_type: upload.type,
+        category: "other",
+        visibility: "internal",
+      })
+      .select("id")
+      .single();
+    if (documentError || !document) {
+      await admin.storage.from("project-documents").remove([newStoragePath]);
+      return { error: documentError?.message ?? "Could not file the bid document" };
+    }
+    documentId = document.id;
+  }
+
+  const { error: updateError } = await admin
     .from("bids")
     .update({
       amount,
       notes: String(formData.get("notes") || "").trim() || null,
       status: "submitted",
       submitted_at: new Date().toISOString(),
+      document_id: documentId,
     })
-    .eq("id", bidId);
+    .eq("id", bidId)
+    .eq("subcontractor_id", sub.id);
+  if (updateError) {
+    if (newStoragePath && documentId) {
+      await admin.from("project_documents").delete().eq("id", documentId);
+      await admin.storage.from("project-documents").remove([newStoragePath]);
+    }
+    return { error: updateError.message };
+  }
+
+  if (newStoragePath && bid.document_id && bid.document_id !== documentId) {
+    const { data: oldDocument } = await admin
+      .from("project_documents")
+      .select("storage_path")
+      .eq("id", bid.document_id)
+      .maybeSingle();
+    await admin.from("project_documents").delete().eq("id", bid.document_id);
+    if (oldDocument?.storage_path) {
+      await admin.storage.from("project-documents").remove([oldDocument.storage_path]);
+    }
+  }
 
   revalidatePath("/subs");
+  revalidatePath(`/subs/bids/${bidId}`);
+  revalidatePath(`/admin/projects/${request.project_id}/bid-requests`);
+  return { ok: true };
 }
 
 export async function createSubcontractor(formData: FormData) {

@@ -32,11 +32,15 @@ export function generateShareToken(): string {
 }
 
 function signingKey(): string {
-  return (
+  const key =
     process.env.SHARE_LINK_SECRET?.trim() ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
-    "8th-street-share-fallback"
-  );
+    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!key) {
+    throw new Error(
+      "Share-link signing is not configured. Set SHARE_LINK_SECRET or SUPABASE_SERVICE_ROLE_KEY."
+    );
+  }
+  return key;
 }
 
 /**

@@ -101,6 +101,10 @@ export default async function JobMasterBoardPage(props: { params: Promise<{ id: 
   const heroActions = [
     { label: "Post update", href: `${base}/updates`, primary: true },
     { label: "Field notes", href: `${base}/daily-logs` },
+    {
+      label: "Ask Assistant",
+      href: `/admin/assistant?project_id=${encodeURIComponent(id)}`,
+    },
     ...(board.client
       ? [{ label: "Preview portal ↗", href: `/client/projects/${id}`, primary: false }]
       : []),
