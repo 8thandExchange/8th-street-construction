@@ -1,5 +1,6 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { trackWorkflowEvent } from "@/lib/analytics/track";
 import {
   canAccessConversation,
   conversationTitleFromUserContent,
@@ -123,6 +124,13 @@ export async function writeAssistantAuditEvent(input: {
     record_url: input.recordUrl ?? null,
   });
   if (error) throw new Error(error.message);
+  await trackWorkflowEvent({
+    workflow: "assistant_approval",
+    event: input.decision === "declined" ? "abandon" : "complete",
+    entityId: input.conversationId,
+    projectId: input.projectId,
+    metadata: { tool: input.toolName, decision: input.decision },
+  });
 }
 
 export async function loadAssistantConversation(

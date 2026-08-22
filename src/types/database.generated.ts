@@ -3657,6 +3657,57 @@ export type Database = {
           },
         ]
       }
+      workflow_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          entity_id: string | null
+          event: string
+          id: string
+          metadata: Json
+          project_id: string | null
+          role: string | null
+          workflow: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          event: string
+          id?: string
+          metadata?: Json
+          project_id?: string | null
+          role?: string | null
+          workflow: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          event?: string
+          id?: string
+          metadata?: Json
+          project_id?: string | null
+          role?: string | null
+          workflow?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
