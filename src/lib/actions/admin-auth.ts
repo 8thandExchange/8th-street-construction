@@ -6,7 +6,6 @@ import {
   staffCanSeeProject,
   staffHas,
   type StaffCapability,
-  type StaffScope,
 } from "@/lib/auth/staff-scope";
 
 export async function requireAdmin() {
@@ -47,8 +46,4 @@ export async function requireProjectStaff(projectId: string) {
     throw new Error("This job is not assigned to you.");
   }
   return { ...ctx, project };
-}
-
-export function staffScopeOf(profile: { staff_scope?: string | null }): StaffScope {
-  return parseStaffScope(profile.staff_scope);
 }
