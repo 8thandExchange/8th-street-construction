@@ -174,6 +174,15 @@ palette dialog pattern.
 - the proposal response is surfaced in the client action queue and notifies admins;
 - production RLS allows authenticated clients to read only non-draft proposals on accessible jobs.
 
+### Platform trust hardening
+
+- share-link cookies no longer fall back to a public hardcoded signing value;
+- client change-order responses authorize primary and secondary portal members consistently;
+- contract totals are updated through the server path instead of silently failing under client RLS;
+- direct client Data API updates on change orders are removed so commercial fields cannot be altered
+  alongside a decision;
+- the vendor field-encryption key is now part of the deployment environment template.
+
 ## Prioritized roadmap
 
 ### P0 — trust, clarity, and measurement
