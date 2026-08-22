@@ -31,7 +31,7 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
     supabase
       .from("bid_requests")
       .select(
-        "id, title, trade, scope_of_work, bid_deadline, status, created_at, bids(id, amount, status, submitted_at, subcontractors(id, company_name, trade))"
+        "id, title, trade, scope_of_work, bid_deadline, status, created_at, bids(id, amount, status, submitted_at, document_id, subcontractors(id, company_name, trade))"
       )
       .eq("project_id", id)
       .order("created_at", { ascending: false }),
@@ -198,6 +198,16 @@ export default async function ProjectBidRequestsPage(props: { params: Promise<{ 
                     </td>
                     <td className="py-3 font-mono">
                       {b.amount != null ? `$${Number(b.amount).toLocaleString()}` : "—"}
+                      {b.document_id && (
+                        <a
+                          href={`/api/documents/${b.document_id}/download`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-1 block font-sans text-xs font-medium text-copper hover:underline"
+                        >
+                          Open document
+                        </a>
+                      )}
                     </td>
                     <td className="py-3">
                       <span className={`app-badge ${BID_STATUS_BADGES[b.status] ?? "app-badge-neutral"}`}>
