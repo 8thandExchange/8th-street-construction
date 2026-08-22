@@ -51,8 +51,11 @@ export function ProjectHubNav({ projectId }: { projectId: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const base = `/admin/projects/${projectId}`;
+  const allItems: { href: string; label: string }[] = GROUPS.flatMap((group) =>
+    group.items.map((item) => ({ href: item.href, label: item.label }))
+  );
   const currentHref =
-    GROUPS.flatMap((group) => group.items)
+    allItems
       .map((tab) => `${base}${tab.href}`)
       .find((href) =>
         href === base ? pathname === base || pathname === `${base}/` : pathname.startsWith(href)
