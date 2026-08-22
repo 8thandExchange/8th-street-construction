@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/actions/admin-auth";
 import {
   APPROVAL_THRESHOLDS_KEY,
   MONTH_CLOSE_KEY,
@@ -17,7 +16,8 @@ function revalidateFinance() {
 }
 
 export async function saveApprovalThresholds(formData: FormData) {
-  const { supabase } = await requireAdmin();
+  const { requireCapability } = await import("@/lib/actions/admin-auth");
+  const { supabase } = await requireCapability("money.write");
   const thresholds = parseApprovalThresholds({
     invoice: Number(formData.get("invoice")),
     bill: Number(formData.get("bill")),
@@ -36,7 +36,8 @@ export async function saveApprovalThresholds(formData: FormData) {
 }
 
 export async function closeAccountingMonth(formData: FormData) {
-  const { supabase } = await requireAdmin();
+  const { requireCapability } = await import("@/lib/actions/admin-auth");
+  const { supabase } = await requireCapability("money.write");
   const month = String(formData.get("month") || monthKey(new Date().toISOString()));
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const existing = await loadMonthCloseMap();
@@ -57,7 +58,8 @@ export async function closeAccountingMonth(formData: FormData) {
 }
 
 export async function reopenAccountingMonth(formData: FormData) {
-  const { supabase } = await requireAdmin();
+  const { requireCapability } = await import("@/lib/actions/admin-auth");
+  const { supabase } = await requireCapability("money.write");
   const month = String(formData.get("month"));
   const existing = await loadMonthCloseMap();
   const next = { ...existing, [month]: { status: "open" as const, notes: existing[month]?.notes ?? null } };
