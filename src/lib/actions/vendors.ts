@@ -93,6 +93,14 @@ export async function updateVendorLogo(formData: FormData) {
 
 export async function recordVendorBill(formData: FormData) {
   const { user } = await requireAdmin();
+  const { requireCapability, requireProjectStaff } = await import("@/lib/actions/admin-auth");
+  const { staffHas } = await import("@/lib/auth/staff-scope");
+  const money = await requireCapability("money.write");
+  const assignedProjectId = String(formData.get("project_id") ?? "").trim();
+  if (assignedProjectId) await requireProjectStaff(assignedProjectId);
+  else if (!staffHas(money.profile.staff_scope, "all_projects")) {
+    return { error: "Assign this bill to one of your jobs." };
+  }
   const vendorId = String(formData.get("vendor_id") ?? "");
   const title = String(formData.get("title") ?? "").trim();
   const amount = Number(formData.get("amount"));

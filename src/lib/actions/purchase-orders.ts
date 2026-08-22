@@ -190,8 +190,11 @@ export async function createPurchaseOrderFromBid(formData: FormData) {
 /** Draft → issued. Optionally emails the PO to the sub's portal email. */
 export async function issuePurchaseOrder(formData: FormData) {
   const { supabase } = await requireAdmin();
+  const { requireCapability, requireProjectStaff } = await import("@/lib/actions/admin-auth");
+  await requireCapability("money.write");
   const id = String(formData.get("id"));
   const projectId = String(formData.get("project_id"));
+  await requireProjectStaff(projectId);
   const sendEmail = formData.get("send_email") === "on";
 
   const { data: po } = await supabase

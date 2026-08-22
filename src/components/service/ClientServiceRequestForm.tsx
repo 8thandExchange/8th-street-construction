@@ -25,7 +25,7 @@ export function ClientServiceRequestForm({ projectId }: { projectId: string }) {
         setError(null);
         const result = await clientCreateServiceRequest(formData);
         setSaving(false);
-        if (result?.error) {
+        if (result && "error" in result && result.error) {
           setError(result.error);
           return;
         }

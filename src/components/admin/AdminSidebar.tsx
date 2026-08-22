@@ -30,6 +30,7 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { AdminSearch } from "@/components/admin/AdminSearch";
 import { EnableNotificationsButton } from "@/components/pwa/EnableNotificationsButton";
+import { staffCanOpenPath, type StaffScope } from "@/lib/auth/staff-scope";
 
 const NAV_GROUPS: {
   label: string | null;
@@ -82,14 +83,25 @@ const NAV_GROUPS: {
   },
 ];
 
-function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+function NavList({
+  pathname,
+  onNavigate,
+  staffScope,
+}: {
+  pathname: string;
+  onNavigate?: () => void;
+  staffScope: StaffScope;
+}) {
   return (
     <nav className="flex-1 overflow-y-auto px-3 pb-6">
-      {NAV_GROUPS.map((group, gi) => (
+      {NAV_GROUPS.map((group, gi) => {
+        const items = group.items.filter((item) => staffCanOpenPath(staffScope, item.href));
+        if (!items.length) return null;
+        return (
         <div key={group.label ?? gi}>
           {group.label && <div className="app-nav-group">{group.label}</div>}
           {!group.label && gi === 0 && <div className="h-2" />}
-          {group.items.map((item) => {
+          {items.map((item) => {
             const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
             const Icon = item.icon;
             return (
@@ -105,7 +117,8 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
             );
           })}
         </div>
-      ))}
+        );
+      })}
     </nav>
   );
 }
@@ -157,7 +170,13 @@ function BrandMark() {
   );
 }
 
-export function AdminSidebar({ userEmail }: { userEmail: string }) {
+export function AdminSidebar({
+  userEmail,
+  staffScope = "full",
+}: {
+  userEmail: string;
+  staffScope?: StaffScope;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -202,7 +221,7 @@ export function AdminSidebar({ userEmail }: { userEmail: string }) {
             <div className="px-3 pb-2 pt-4">
               <AdminSearch />
             </div>
-            <NavList pathname={pathname} onNavigate={() => setOpen(false)} />
+            <NavList pathname={pathname} onNavigate={() => setOpen(false)} staffScope={staffScope} />
             <SidebarFooter userEmail={userEmail} />
           </aside>
         </div>
@@ -216,7 +235,7 @@ export function AdminSidebar({ userEmail }: { userEmail: string }) {
         <div className="px-3 pb-2 pt-4">
           <AdminSearch />
         </div>
-        <NavList pathname={pathname} />
+        <NavList pathname={pathname} staffScope={staffScope} />
         <SidebarFooter userEmail={userEmail} />
       </aside>
     </>

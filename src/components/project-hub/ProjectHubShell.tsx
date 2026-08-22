@@ -16,9 +16,16 @@ type ProjectHubShellProps = {
     hud_grant_year?: number | null;
   };
   children: React.ReactNode;
+  allowedHrefs?: string[] | null;
+  showFieldCapture?: boolean;
 };
 
-export function ProjectHubShell({ project, children }: ProjectHubShellProps) {
+export function ProjectHubShell({
+  project,
+  children,
+  allowedHrefs,
+  showFieldCapture = true,
+}: ProjectHubShellProps) {
   return (
     <div className="min-h-full">
       {/* Title block scrolls away; only the slim nav bar below stays pinned.
@@ -66,11 +73,11 @@ export function ProjectHubShell({ project, children }: ProjectHubShellProps) {
       </header>
       <div className="no-print sticky top-14 lg:top-0 z-40 border-b border-navy/[0.08] bg-white">
         <div className="px-4 md:px-8 lg:px-10 py-2.5">
-          <ProjectHubNav projectId={project.id} />
+          <ProjectHubNav projectId={project.id} allowedHrefs={allowedHrefs} />
         </div>
       </div>
       <div className="px-4 md:px-8 lg:px-10 py-6 md:py-8">{children}</div>
-      <FieldQuickCapture projectId={project.id} />
+      {showFieldCapture ? <FieldQuickCapture projectId={project.id} /> : null}
     </div>
   );
 }

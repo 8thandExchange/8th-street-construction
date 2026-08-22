@@ -49,11 +49,22 @@ const GROUPS = [
   },
 ] as const;
 
-export function ProjectHubNav({ projectId }: { projectId: string }) {
+export function ProjectHubNav({
+  projectId,
+  allowedHrefs,
+}: {
+  projectId: string;
+  allowedHrefs?: string[] | null;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const base = `/admin/projects/${projectId}`;
-  const allItems: { href: string; label: string }[] = GROUPS.flatMap((group) =>
+  const allowed = allowedHrefs ? new Set(allowedHrefs) : null;
+  const groups = GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !allowed || allowed.has(item.href)),
+  })).filter((group) => group.items.length > 0);
+  const allItems: { href: string; label: string }[] = groups.flatMap((group) =>
     group.items.map((item) => ({ href: item.href, label: item.label }))
   );
   const currentHref =
@@ -75,7 +86,7 @@ export function ProjectHubNav({ projectId }: { projectId: string }) {
           onChange={(event) => router.push(event.target.value)}
           className="w-full"
         >
-          {GROUPS.map((group) => (
+          {groups.map((group) => (
             <optgroup key={group.label} label={group.label}>
               {group.items.map((tab) => (
                 <option key={tab.href} value={`${base}${tab.href}`}>
@@ -87,7 +98,7 @@ export function ProjectHubNav({ projectId }: { projectId: string }) {
         </select>
       </div>
       <div className="-mx-1 hidden gap-5 overflow-x-auto px-1 pb-1 scrollbar-none sm:flex md:gap-8">
-        {GROUPS.map((group) => (
+        {groups.map((group) => (
           <div key={group.label} className="shrink-0">
             <div className="app-nav-group !m-0 !mb-1.5 !px-1">{group.label}</div>
             <div className="flex gap-1">

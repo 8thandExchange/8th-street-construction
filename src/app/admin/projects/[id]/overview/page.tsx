@@ -11,6 +11,7 @@ import { ClientAssignmentPanel } from "@/components/project/ClientAssignmentPane
 import { updateProjectPortalFeatures } from "@/lib/actions/portal-access-control";
 import { PORTAL_FEATURES, isFeatureEnabled } from "@/lib/portal/features";
 import { SubmitButton } from "@/components/admin/SubmitButton";
+import { assignJobOwners } from "@/lib/actions/staff-access";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,17 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
     .select("id, email, first_name, last_name, organization_name, organization_slug")
     .eq("role", "client")
     .order("email");
+
+  const { data: staff } = await supabase
+    .from("profiles")
+    .select("id, first_name, last_name, email, staff_scope")
+    .eq("role", "admin")
+    .order("first_name");
+  const {
+    data: { user: viewer },
+  } = await supabase.auth.getUser();
+  const viewerRow = (staff ?? []).find((person) => person.id === viewer?.id);
+  const canAssignOwners = (viewerRow?.staff_scope ?? "full") === "full";
 
   const { data: images } = await supabase
     .from("project_images")
@@ -67,6 +79,56 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
 
   return (
     <div className="max-w-4xl">
+      {canAssignOwners && (
+      <form action={assignJobOwners} className="app-card p-6 md:p-8 mb-10">
+        <input type="hidden" name="project_id" value={project.id} />
+        <h3 className="app-label mb-1">Job owners</h3>
+        <p className="text-sm app-muted mb-4">
+          A project manager sees this job in their list. A superintendent sees the
+          field tabs only.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="field-label" htmlFor="project_manager_id">
+              Project manager
+            </label>
+            <select
+              id="project_manager_id"
+              name="project_manager_id"
+              className="field-input"
+              defaultValue={project.project_manager_id ?? ""}
+            >
+              <option value="">— unassigned —</option>
+              {(staff ?? []).map((person) => (
+                <option key={person.id} value={person.id}>
+                  {[person.first_name, person.last_name].filter(Boolean).join(" ") || person.email}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="field-label" htmlFor="superintendent_id">
+              Superintendent
+            </label>
+            <select
+              id="superintendent_id"
+              name="superintendent_id"
+              className="field-input"
+              defaultValue={project.superintendent_id ?? ""}
+            >
+              <option value="">— unassigned —</option>
+              {(staff ?? []).map((person) => (
+                <option key={person.id} value={person.id}>
+                  {[person.first_name, person.last_name].filter(Boolean).join(" ") || person.email}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <SubmitButton className="mt-5 app-btn app-btn-secondary">Save owners</SubmitButton>
+      </form>
+      )}
+
       <ClientAssignmentPanel
         projectId={project.id}
         clientId={project.client_id}

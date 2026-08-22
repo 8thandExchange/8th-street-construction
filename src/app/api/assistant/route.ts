@@ -64,6 +64,10 @@ export async function POST(request: Request) {
   let adminSupabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"];
   try {
     const auth = await requireAdmin();
+    const { staffHas } = await import("@/lib/auth/staff-scope");
+    if (!staffHas(auth.profile.staff_scope, "assistant")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     userId = auth.user.id;
     adminSupabase = auth.supabase;
   } catch {

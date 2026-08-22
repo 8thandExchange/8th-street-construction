@@ -66,7 +66,7 @@ are differentiators when they appear contextually rather than dominating generic
 - Messaging: real-time text exists; attachments and visible read state do not
 - Accounting: accurate exports exist; QuickBooks synchronization is manual
 - E-sign: contract generation exists; signing is handled outside the product
-- Permissions: admin/client/subcontractor roles exist; project-manager and accounting scopes do not
+- Permissions: admin/client/subcontractor roles exist; project-manager, superintendent, and accounting scopes are added in this release
 
 ### Missing or intentionally deferred
 
@@ -286,6 +286,7 @@ exceptions are explicit rather than discovered during month close.
 - Add warranty/service requests with owner, SLA, vendor assignment, photos, and closeout proof.
   **Done.** Clients can file and confirm; closeout requires a written note.
 - Introduce project-manager, superintendent, and accounting permission scopes.
+  **Done.** Admin login stays; `staff_scope` narrows nav, job lists, and money writes.
 - Add crew/capacity planning only after project ownership is modeled.
 - Add offline-first field capture if jobsite connectivity proves it necessary.
 

@@ -15,7 +15,8 @@ function revalidateAll(projectId?: string, userId?: string) {
 
 /** Master portal switch for a user account */
 export async function setProfilePortalActive(formData: FormData) {
-  const { supabase } = await requireAdmin();
+  const { requireCapability } = await import("@/lib/actions/admin-auth");
+  const { supabase } = await requireCapability("users.write");
   const profileId = String(formData.get("profile_id"));
   const active = formData.getAll("portal_active").includes("true");
 
@@ -140,8 +141,12 @@ export async function removeProjectPortalMember(formData: FormData) {
 
 /** Save which portal features (tabs) this project's clients can see. */
 export async function updateProjectPortalFeatures(formData: FormData) {
-  const { supabase } = await requireAdmin();
+  const { requireProjectStaff } = await import("@/lib/actions/admin-auth");
   const projectId = String(formData.get("project_id"));
+  const { supabase, profile } = await requireProjectStaff(projectId);
+  if (profile.staff_scope === "superintendent" || profile.staff_scope === "accounting") {
+    throw new Error("This login cannot change portal features.");
+  }
 
   const { PORTAL_FEATURES } = await import("@/lib/portal/features");
   const features: Record<string, boolean> = {};

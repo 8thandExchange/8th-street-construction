@@ -57,7 +57,7 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
     supabase
       .from("projects")
       .select(
-        "id, slug, title, status, location, contract_value, estimated_cost, client_id, playbook_applied_at, playbook_id"
+        "id, slug, title, status, location, contract_value, estimated_cost, client_id, playbook_applied_at, playbook_id, project_manager_id, superintendent_id"
       )
       .in("status", ["pre_construction", "in_progress"])
       .order("updated_at", { ascending: false }),
@@ -69,7 +69,18 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
       .eq("status", "requested"),
   ]);
 
-  const projectIds = (projects ?? []).map((project) => project.id);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("staff_scope").eq("id", user.id).single()
+    : { data: null };
+  const { parseStaffScope, staffCanSeeProject } = await import("@/lib/auth/staff-scope");
+  const staffScope = parseStaffScope(profile?.staff_scope);
+  const visibleProjects = (projects ?? []).filter((project) =>
+    user ? staffCanSeeProject(staffScope, user.id, project) : false
+  );
+  const projectIds = visibleProjects.map((project) => project.id);
   const [
     { data: tasks },
     { data: milestones },
@@ -160,7 +171,7 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
 
   const jobs: CompanyJobCard[] = [];
 
-  for (const p of projects ?? []) {
+  for (const p of visibleProjects) {
     const projectTasks = (tasks ?? []).filter((item) => item.project_id === p.id);
     const projectMilestones = (milestones ?? []).filter((item) => item.project_id === p.id);
     const projectDraws = (draws ?? []).filter((item) => item.project_id === p.id);

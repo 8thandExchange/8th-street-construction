@@ -838,7 +838,10 @@ export async function removeInvoiceAttachment(formData: FormData) {
 
 export async function sendCustomInvoice(formData: FormData) {
   const { supabase } = await requireAdmin();
+  const { requireCapability, requireProjectStaff } = await import("@/lib/actions/admin-auth");
+  await requireCapability("money.write");
   const projectId = String(formData.get("project_id"));
+  await requireProjectStaff(projectId);
   const invoiceId = String(formData.get("invoice_id"));
 
   const { data: invoice } = await supabase
