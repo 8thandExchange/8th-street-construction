@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { LogOut, Menu, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { SkipLink } from "@/components/a11y/SkipLink";
 
 interface PortalShellProps {
   email: string;
@@ -43,6 +44,7 @@ export function PortalShell({ email, role, children }: PortalShellProps) {
 
   return (
     <div className="portal-shell flex min-h-screen flex-col">
+      <SkipLink />
       <header className="sticky top-0 z-30 border-b border-navy/[0.08] bg-white">
         <div className="mx-auto flex h-14 max-w-8xl items-center justify-between px-4 sm:h-16 sm:px-6 md:px-10 lg:px-14">
           <Link href="/" className="flex flex-col leading-none">
@@ -150,7 +152,9 @@ export function PortalShell({ email, role, children }: PortalShellProps) {
           </aside>
         </div>
       )}
-      <main className="flex-1">{children}</main>
+      <main id="main-content" className="flex-1" tabIndex={-1}>
+        {children}
+      </main>
     </div>
   );
 }

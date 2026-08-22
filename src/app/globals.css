@@ -1123,8 +1123,11 @@ a:has(.hub-metric):hover .hub-metric {
 .app-btn:focus-visible,
 .app-nav-item:focus-visible,
 .hub-nav-pill:focus-visible,
-.client-nav-pill:focus-visible {
-  outline: 2px solid rgb(var(--app-accent));
+.client-nav-pill:focus-visible,
+.app-shell a:focus-visible,
+.portal-shell a:focus-visible,
+.portal-shell button:focus-visible {
+  outline: 2px solid rgb(var(--app-accent, var(--color-copper)));
   outline-offset: 2px;
 }
 
