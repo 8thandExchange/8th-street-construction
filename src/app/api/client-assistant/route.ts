@@ -12,6 +12,7 @@ import {
   executeClientAssistantTool,
   type ClientAssistantContext,
 } from "@/lib/assistant/client-tools";
+import { prepareAssistantPersistence } from "@/lib/assistant/stream-persist";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -53,6 +54,7 @@ Operating rules:
 type RequestBody = {
   messages: Anthropic.MessageParam[];
   confirm?: ConfirmPayload;
+  conversation_id?: string;
 };
 
 export async function POST(request: Request) {
@@ -112,6 +114,14 @@ export async function POST(request: Request) {
     })),
   };
 
+  const persistence = await prepareAssistantPersistence({
+    userId: user.id,
+    surface: "client",
+    conversationId: body.conversation_id,
+    incomingMessages: body.messages,
+    confirm: body.confirm,
+  });
+
   return assistantStreamResponse({
     apiKey,
     model: assistantModel(),
@@ -128,5 +138,6 @@ export async function POST(request: Request) {
       process.env.ASSISTANT_CONFIRMATION_SECRET?.trim() ||
       process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
       apiKey,
+    ...persistence,
   });
 }

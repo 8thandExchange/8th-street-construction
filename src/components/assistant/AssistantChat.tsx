@@ -10,6 +10,7 @@ import {
   CircleX,
   Download,
   FileText,
+  History,
   Loader2,
   Mic,
   Paperclip,
@@ -19,9 +20,19 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  deleteMyAssistantConversation,
+  getMyAssistantConversation,
+} from "@/lib/actions/assistant-history";
+import type {
+  AssistantConversationSummary,
+  AssistantDisplayItem,
+  AssistantSurface,
+} from "@/lib/assistant/history";
+import { ConversationRail } from "@/components/assistant/ConversationRail";
 
 /** Raw Anthropic message param, kept opaque — we round-trip it to the API verbatim. */
-type HistoryMessage = { role: "user" | "assistant"; content: unknown };
+type HistoryMessage = { role: "user" | "assistant" | "system"; content: unknown };
 
 type PendingConfirmation = {
   tool_use_id: string;
@@ -39,14 +50,7 @@ type StagedAttachment = {
   file_size: number;
 };
 
-type DisplayItem =
-  | { kind: "user"; text: string; files?: string[] }
-  | { kind: "assistant"; text: string }
-  | { kind: "tool"; name: string; status: "running" | "done" | "error" }
-  | { kind: "download"; url: string; fileName: string }
-  | { kind: "action"; url: string; label: string; document?: boolean }
-  | { kind: "confirm"; confirmation: PendingConfirmation; resolved?: "approved" | "declined" }
-  | { kind: "error"; text: string };
+type DisplayItem = AssistantDisplayItem;
 
 const TOOL_LABELS: Record<string, string> = {
   list_projects: "Looking up projects",
@@ -117,9 +121,32 @@ export type AssistantChatConfig = {
   context?: { projectId: string; title: string };
   /** Allow attaching PDFs/images (requires an `${endpoint}/upload` route). */
   allowAttachments?: boolean;
+  surface?: AssistantSurface;
+  conversations?: AssistantConversationSummary[];
+  initialConversation?: {
+    id: string;
+    title: string;
+    model_messages: HistoryMessage[];
+    display_items: AssistantDisplayItem[];
+  };
+  auditHref?: string;
 };
 
 const ACCEPTED_FILE_TYPES = ".pdf,image/png,image/jpeg,image/webp,image/gif";
+
+function rememberConversationInUrl(id: string) {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  url.searchParams.set("conversation", id);
+  window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+}
+
+function clearConversationFromUrl() {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  url.searchParams.delete("conversation");
+  window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+}
 
 /** Minimal Web Speech API surface (Chrome/Edge/Safari; absent elsewhere). */
 type SpeechRecognitionLike = {
@@ -153,12 +180,16 @@ export function AssistantChat({
   const emptyTitle = config?.emptyTitle ?? "What needs doing?";
   const emptyBody =
     config?.emptyBody ??
-    "Invoicing, schedules, client messages, leads — type it or tap the mic and say it. Attach an invoice or document (paperclip) and I'll read it and file it to the right job. Anything that moves money or reaches a client waits for your approval first.";
+    "Invoicing, schedules, client messages, leads — type it or tap the mic and say it. Attach an invoice or document (paperclip) and I'll read it and file it to the right job. Conversations stay on this account until you delete them. Anything that moves money or reaches a client waits for your approval first.";
   const placeholder = config?.placeholder ?? 'Try: "send an invoice to Habitat for $12,500"';
   const footnote =
     config?.footnote ?? "Money actions and client messages require your approval before anything sends.";
-  const [items, setItems] = useState<DisplayItem[]>([]);
-  const [history, setHistory] = useState<HistoryMessage[]>([]);
+  const [items, setItems] = useState<DisplayItem[]>(
+    config?.initialConversation?.display_items ?? []
+  );
+  const [history, setHistory] = useState<HistoryMessage[]>(
+    config?.initialConversation?.model_messages ?? []
+  );
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<PendingConfirmation | null>(null);
@@ -176,6 +207,15 @@ export function AssistantChat({
   historyRef.current = history;
   const allowAttachments = Boolean(config?.allowAttachments);
   const projectContext = config?.context;
+  const surface: AssistantSurface =
+    config?.surface ?? (endpoint.includes("client-assistant") ? "client" : "admin");
+  const [conversationId, setConversationId] = useState<string | null>(
+    config?.initialConversation?.id ?? null
+  );
+  const [conversations, setConversations] = useState<AssistantConversationSummary[]>(
+    config?.conversations ?? []
+  );
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const uploadFiles = useCallback(
     async (files: File[]) => {
@@ -254,6 +294,7 @@ export function AssistantChat({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             ...body,
+            ...(conversationId ? { conversation_id: conversationId } : {}),
             ...(projectContext
               ? { context: { project_id: projectContext.projectId } }
               : {}),
@@ -339,6 +380,32 @@ export function AssistantChat({
               setHistory((prev) => [...prev, event.message as HistoryMessage]);
               break;
             }
+            case "conversation": {
+              const id = String(event.id ?? "");
+              const title = String(event.title ?? "New conversation");
+              if (!id) break;
+              setConversationId(id);
+              rememberConversationInUrl(id);
+              setConversations((prev) => {
+                const next = prev.filter((item) => item.id !== id);
+                return [
+                  { id, title, last_message_at: new Date().toISOString(), project_id: projectContext?.projectId ?? null },
+                  ...next,
+                ];
+              });
+              break;
+            }
+            case "confirm_resolved": {
+              setItems((prev) =>
+                prev.map((item) =>
+                  item.kind === "confirm" &&
+                  item.confirmation.tool_use_id === String(event.tool_use_id ?? "")
+                    ? { ...item, resolved: event.approved ? "approved" : "declined" }
+                    : item
+                )
+              );
+              break;
+            }
             case "confirm_required": {
               assistantOpen = false;
               const confirmation: PendingConfirmation = {
@@ -384,7 +451,40 @@ export function AssistantChat({
         setBusy(false);
       }
     },
-    [endpoint, projectContext]
+    [endpoint, projectContext, conversationId]
+  );
+
+  const startNewConversation = useCallback(() => {
+    setConversationId(null);
+    setHistory([]);
+    setItems([]);
+    setPending(null);
+    setHistoryOpen(false);
+    clearConversationFromUrl();
+  }, []);
+
+  const loadConversation = useCallback(
+    async (id: string) => {
+      const record = await getMyAssistantConversation(id, surface);
+      if (!record) return;
+      setConversationId(record.id);
+      setHistory(record.model_messages);
+      setItems(record.display_items);
+      setPending(null);
+      setHistoryOpen(false);
+      rememberConversationInUrl(record.id);
+    },
+    [surface]
+  );
+
+  const deleteConversation = useCallback(
+    async (id: string) => {
+      const result = await deleteMyAssistantConversation(id, surface);
+      if ("error" in result) return;
+      setConversations((prev) => prev.filter((item) => item.id !== id));
+      if (conversationId === id) startNewConversation();
+    },
+    [surface, conversationId, startNewConversation]
   );
 
   const sendMessage = useCallback(
@@ -452,8 +552,40 @@ export function AssistantChat({
     [pending, busy, streamTurn]
   );
 
+  const rail = (
+    <ConversationRail
+      conversations={conversations}
+      currentId={conversationId}
+      onSelect={loadConversation}
+      onCreate={startNewConversation}
+      onDelete={deleteConversation}
+    />
+  );
+
   return (
     <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-2 flex items-center justify-between gap-3 px-1">
+        <button
+          type="button"
+          onClick={() => setHistoryOpen((open) => !open)}
+          className="inline-flex items-center gap-1.5 text-[12px] font-medium text-navy/60 hover:text-navy lg:hidden"
+        >
+          <History size={14} strokeWidth={1.75} />
+          {historyOpen ? "Hide history" : "History"}
+        </button>
+        {config?.auditHref && (
+          <Link
+            href={config.auditHref}
+            className="ml-auto text-[12px] font-medium text-navy/60 hover:text-copper"
+          >
+            Approval history
+          </Link>
+        )}
+      </div>
+      {historyOpen && <div className="mb-3 lg:hidden">{rail}</div>}
+      <div className="flex min-h-0 flex-1 gap-6">
+        <div className="hidden min-h-0 lg:flex">{rail}</div>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-1 py-4">
         {items.length === 0 && (
           <div className="mx-auto max-w-xl pt-10 text-center">
@@ -586,7 +718,7 @@ export function AssistantChat({
                         </>
                       )}
                     </div>
-                  ) : (
+                  ) : item.confirmation.token ? (
                     <div className="mt-3 flex gap-2">
                       <button
                         onClick={() => resolveConfirmation(true)}
@@ -603,6 +735,11 @@ export function AssistantChat({
                         Cancel
                       </button>
                     </div>
+                  ) : (
+                    <p className="mt-3 text-xs app-muted">
+                      This approval is no longer active. Continue the conversation to prepare it
+                      again.
+                    </p>
                   )}
                 </div>
               );
@@ -749,6 +886,8 @@ export function AssistantChat({
         </div>
         <p className="mt-2 text-center text-[11px] app-muted">{footnote}</p>
       </form>
+        </div>
+      </div>
     </div>
   );
 }

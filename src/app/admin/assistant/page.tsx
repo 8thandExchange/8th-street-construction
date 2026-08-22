@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import { AssistantChat } from "@/components/assistant/AssistantChat";
 import { anthropicConfigured } from "@/lib/ai/config";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/actions/admin-auth";
+import {
+  listAssistantConversations,
+  loadAssistantConversation,
+} from "@/lib/assistant/persist";
 
 export const dynamic = "force-dynamic";
 
@@ -10,11 +15,22 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminAssistantPage(props: {
-  searchParams: Promise<{ q?: string; project_id?: string }>;
+  searchParams: Promise<{ q?: string; project_id?: string; conversation?: string }>;
 }) {
-  const { q, project_id: projectId } = await props.searchParams;
+  const { q, project_id: projectId, conversation: conversationId } = await props.searchParams;
   const configured = anthropicConfigured();
+  const { user } = await requireAdmin();
   const supabase = await createClient();
+  const [conversations, initialConversation] = await Promise.all([
+    listAssistantConversations({
+      userId: user.id,
+      surface: "admin",
+      projectId: projectId || null,
+    }),
+    conversationId
+      ? loadAssistantConversation(conversationId, user.id, "admin")
+      : Promise.resolve(null),
+  ]);
   const { data: contextProject } = projectId
     ? await supabase
         .from("projects")
@@ -38,7 +54,7 @@ export default async function AdminAssistantPage(props: {
 
   return (
     <div className="flex min-h-[calc(100dvh-3.5rem)] flex-col p-4 md:p-8 lg:min-h-screen lg:p-10">
-      <div className="mx-auto flex w-full max-w-3xl items-baseline justify-between">
+      <div className="mx-auto flex w-full max-w-5xl items-baseline justify-between">
         <div>
           <span className="app-label !text-copper">AI operations partner</span>
           <h1 className="mt-1 app-h1 !text-[24px]">
@@ -53,11 +69,24 @@ export default async function AdminAssistantPage(props: {
       </div>
 
       {configured ? (
-        <div className="mx-auto mt-2 flex w-full min-h-0 max-w-3xl flex-1 flex-col">
+        <div className="mx-auto mt-2 flex w-full min-h-0 max-w-5xl flex-1 flex-col">
           <AssistantChat
             initialPrompt={q?.trim() || undefined}
             config={{
               allowAttachments: true,
+              surface: "admin",
+              conversations,
+              auditHref: "/admin/assistant/audit",
+              ...(initialConversation
+                ? {
+                    initialConversation: {
+                      id: initialConversation.id,
+                      title: initialConversation.title,
+                      model_messages: initialConversation.model_messages,
+                      display_items: initialConversation.display_items,
+                    },
+                  }
+                : {}),
               suggestions,
               ...(contextProject
                 ? {

@@ -138,7 +138,7 @@ palette dialog pattern.
 3. Client-visible schedule changes ran without approval.
 4. Approval execution trusted tool input round-tripped through browser-controlled message history.
 5. The company snapshot omitted payables, commitments, and schedule risk.
-6. Chat history is still ephemeral and disappears on refresh.
+6. Chat history now persists per user and job, with deletion controls; approval events are audited.
 7. Construction coverage is uneven: daily logs, inspections, punch, selections, compliance, and
    purchase-order creation are not complete assistant workflows.
 
@@ -198,12 +198,23 @@ palette dialog pattern.
 - pull requests and `main` now run tests, type checking, and lint automatically; production build
   also runs when the public Supabase repository variables are configured.
 
+### Persistent assistant history
+
+- admin and client chats now resume after refresh, scoped to the signed-in user and optional job;
+- stored model history keeps attachment refs and drops thinking/file bytes;
+- approval tokens are not retained with the transcript;
+- users can start a new conversation or delete one; deletion is soft so the company audit remains;
+- every approved, declined, or failed gated action writes actor, summary, tool, result, and record
+  link to a company approval history only admins can read.
+
 ## Prioritized roadmap
 
 ### P0 — trust, clarity, and measurement
 
-- Persist assistant approval/audit events with actor, reviewed summary, tool, result, and record link.
-- Add chat persistence by user and project, with explicit retention and deletion controls.
+- Persist assistant approval/audit events with actor, reviewed summary, tool, result, and record
+  link. **Done in this release.**
+- Add chat persistence by user and project, with explicit retention and deletion controls. **Done
+  in this release.**
 - Resolve Supabase advisor findings deliberately: leaked-password protection, function grants,
   mutable search paths, and public extension placement.
 - Regenerate database types on every migration in CI and fail on drift.

@@ -3,6 +3,12 @@ import {
   signAssistantAction,
   verifyAssistantAction,
 } from "@/lib/assistant/confirmation-token";
+import {
+  applyAssistantStreamEvent,
+  recordUrlFromToolResult,
+  resultExcerptFromToolResult,
+  type AssistantDisplayItem,
+} from "@/lib/assistant/history";
 
 /**
  * Shared agentic streaming loop for the assistant surfaces (admin ops
@@ -35,6 +41,21 @@ export type AssistantStreamConfig = {
   declinedNote: string;
   /** Server-only HMAC secret that binds approval to the exact reviewed action. */
   confirmationSecret: string;
+  /** Unresolved incoming history used for persistence (attachment refs, not bytes). */
+  persistableMessages?: Anthropic.MessageParam[];
+  conversation?: { id: string; title: string };
+  initialDisplayItems?: AssistantDisplayItem[];
+  persistSnapshot?: (snapshot: {
+    messages: Anthropic.MessageParam[];
+    displayItems: AssistantDisplayItem[];
+  }) => Promise<void>;
+  persistAudit?: (event: {
+    toolName: string;
+    summary: string;
+    decision: "approved" | "declined" | "failed";
+    resultExcerpt: string | null;
+    recordUrl: string | null;
+  }) => Promise<void>;
 };
 
 export type AssistantActionLink = {
@@ -63,9 +84,22 @@ function findToolUse(
   return null;
 }
 
+async function safePersist(work?: () => Promise<void>) {
+  if (!work) return;
+  try {
+    await work();
+  } catch (error) {
+    console.error("[assistant-stream] persist failed", error);
+  }
+}
+
 export function assistantStreamResponse(config: AssistantStreamConfig): Response {
   const client = new Anthropic({ apiKey: config.apiKey });
   const messages: Anthropic.MessageParam[] = [...config.messages];
+  const persistedMessages: Anthropic.MessageParam[] = [
+    ...(config.persistableMessages ?? config.messages),
+  ];
+  let displayItems: AssistantDisplayItem[] = [...(config.initialDisplayItems ?? [])];
 
   async function runTool(
     name: string,
@@ -99,9 +133,31 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
     }
   }
 
+  const emit = (controller: ReadableStreamDefaultController, event: Record<string, unknown>) => {
+    ndjson(controller, event);
+    displayItems = applyAssistantStreamEvent(displayItems, event);
+  };
+
+  const flushSnapshot = () =>
+    safePersist(async () => {
+      if (!config.persistSnapshot) return;
+      await config.persistSnapshot({
+        messages: persistedMessages,
+        displayItems,
+      });
+    });
+
   const stream = new ReadableStream({
     async start(controller) {
       try {
+        if (config.conversation) {
+          ndjson(controller, {
+            type: "conversation",
+            id: config.conversation.id,
+            title: config.conversation.title,
+          });
+        }
+
         // Resume path: the human approved or declined a gated tool call.
         if (config.confirm) {
           let signedAction;
@@ -111,23 +167,26 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
               config.confirmationSecret
             );
           } catch (error) {
-            ndjson(controller, {
+            emit(controller, {
               type: "error",
               message: error instanceof Error ? error.message : "Approval could not be verified.",
             });
+            await flushSnapshot();
             ndjson(controller, { type: "done" });
             controller.close();
             return;
           }
           if (signedAction.toolUseId !== config.confirm.tool_use_id) {
-            ndjson(controller, { type: "error", message: "Approval does not match this action." });
+            emit(controller, { type: "error", message: "Approval does not match this action." });
+            await flushSnapshot();
             ndjson(controller, { type: "done" });
             controller.close();
             return;
           }
           const toolUse = findToolUse(messages, signedAction.toolUseId);
           if (!toolUse) {
-            ndjson(controller, { type: "error", message: "Pending action not found." });
+            emit(controller, { type: "error", message: "Pending action not found." });
+            await flushSnapshot();
             ndjson(controller, { type: "done" });
             controller.close();
             return;
@@ -139,10 +198,20 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
             download?: { url: string; file_name: string };
             actions?: AssistantActionLink[];
           };
+          const confirmSummary = await config.describeConfirmation(
+            signedAction.name,
+            signedAction.input
+          );
+          emit(controller, {
+            type: "confirm_resolved",
+            tool_use_id: signedAction.toolUseId,
+            approved: config.confirm.approved,
+          });
+
           if (config.confirm.approved) {
-            ndjson(controller, { type: "tool_start", name: signedAction.name });
+            emit(controller, { type: "tool_start", name: signedAction.name });
             result = await runTool(signedAction.name, signedAction.input);
-            ndjson(controller, {
+            emit(controller, {
               type: "tool_end",
               name: signedAction.name,
               is_error: result.isError,
@@ -156,6 +225,24 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
             };
           }
 
+          let parsedResult: unknown = null;
+          try {
+            parsedResult = JSON.parse(result.content);
+          } catch {
+            parsedResult = result.content;
+          }
+          const approved = Boolean(config.confirm?.approved);
+          await safePersist(async () => {
+            if (!config.persistAudit) return;
+            await config.persistAudit({
+              toolName: signedAction.name,
+              summary: confirmSummary,
+              decision: !approved ? "declined" : result.isError ? "failed" : "approved",
+              resultExcerpt: resultExcerptFromToolResult(parsedResult, result.isError),
+              recordUrl: result.isError ? null : recordUrlFromToolResult(parsedResult),
+            });
+          });
+
           const toolResultMessage: Anthropic.MessageParam = {
             role: "user",
             content: [
@@ -168,7 +255,9 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
             ],
           };
           messages.push(toolResultMessage);
+          persistedMessages.push(toolResultMessage);
           ndjson(controller, { type: "history", message: toolResultMessage });
+          await flushSnapshot();
         }
 
         // Agentic loop: stream text, execute read tools inline, pause on gated ones.
@@ -184,7 +273,7 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
           });
 
           responseStream.on("text", (delta) => {
-            ndjson(controller, { type: "text", text: delta });
+            emit(controller, { type: "text", text: delta });
           });
           responseStream.on("contentBlock", (block) => {
             if (block.type === "thinking") {
@@ -199,6 +288,7 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
             content: response.content,
           };
           messages.push(assistantMessage);
+          persistedMessages.push(assistantMessage);
           ndjson(controller, { type: "history", message: assistantMessage });
 
           const toolUse = response.content.find(
@@ -206,6 +296,7 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
           );
 
           if (response.stop_reason !== "tool_use" || !toolUse) {
+            await flushSnapshot();
             ndjson(controller, { type: "done" });
             controller.close();
             return;
@@ -220,7 +311,7 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
               },
               config.confirmationSecret
             );
-            ndjson(controller, {
+            emit(controller, {
               type: "confirm_required",
               tool_use_id: toolUse.id,
               name: toolUse.name,
@@ -228,14 +319,15 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
               summary: await config.describeConfirmation(toolUse.name, toolUse.input),
               token,
             });
+            await flushSnapshot();
             ndjson(controller, { type: "done" });
             controller.close();
             return;
           }
 
-          ndjson(controller, { type: "tool_start", name: toolUse.name });
+          emit(controller, { type: "tool_start", name: toolUse.name });
           const result = await runTool(toolUse.name, toolUse.input);
-          ndjson(controller, {
+          emit(controller, {
             type: "tool_end",
             name: toolUse.name,
             is_error: result.isError,
@@ -255,13 +347,15 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
             ],
           };
           messages.push(toolResultMessage);
+          persistedMessages.push(toolResultMessage);
           ndjson(controller, { type: "history", message: toolResultMessage });
         }
 
-        ndjson(controller, {
+        emit(controller, {
           type: "error",
           message: "Stopped after too many steps. Ask me to continue if the task isn't finished.",
         });
+        await flushSnapshot();
         ndjson(controller, { type: "done" });
         controller.close();
       } catch (err) {
@@ -272,7 +366,8 @@ export function assistantStreamResponse(config: AssistantStreamConfig): Response
               ? err.message
               : "Assistant failed";
         try {
-          ndjson(controller, { type: "error", message });
+          emit(controller, { type: "error", message });
+          await flushSnapshot();
           ndjson(controller, { type: "done" });
           controller.close();
         } catch {

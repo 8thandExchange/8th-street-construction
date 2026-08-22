@@ -39,6 +39,127 @@ export type Database = {
   }
   public: {
     Tables: {
+      assistant_audit_events: {
+        Row: {
+          actor_id: string
+          conversation_id: string | null
+          created_at: string
+          decision: string
+          id: string
+          project_id: string | null
+          record_url: string | null
+          result_excerpt: string | null
+          summary: string
+          surface: string
+          tool_name: string
+        }
+        Insert: {
+          actor_id: string
+          conversation_id?: string | null
+          created_at?: string
+          decision: string
+          id?: string
+          project_id?: string | null
+          record_url?: string | null
+          result_excerpt?: string | null
+          summary: string
+          surface: string
+          tool_name: string
+        }
+        Update: {
+          actor_id?: string
+          conversation_id?: string | null
+          created_at?: string
+          decision?: string
+          id?: string
+          project_id?: string | null
+          record_url?: string | null
+          result_excerpt?: string | null
+          summary?: string
+          surface?: string
+          tool_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_audit_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_audit_events_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_audit_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_conversations: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          display_items: Json
+          id: string
+          last_message_at: string
+          model_messages: Json
+          project_id: string | null
+          surface: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          display_items?: Json
+          id?: string
+          last_message_at?: string
+          model_messages?: Json
+          project_id?: string | null
+          surface: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          display_items?: Json
+          id?: string
+          last_message_at?: string
+          model_messages?: Json
+          project_id?: string | null
+          surface?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_conversations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assistant_conversations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
