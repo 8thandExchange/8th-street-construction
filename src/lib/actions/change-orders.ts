@@ -112,51 +112,79 @@ export async function clientRespondChangeOrder(formData: FormData) {
     return { error: "Invalid decision" };
   }
 
-  const { data: co } = await supabase
-    .from("change_orders")
-    .select("id, status, cost_impact, project_id, number, title")
-    .eq("id", id)
-    .single();
-
-  if (!co || co.status !== "pending_client") {
-    return { error: "Change order is not awaiting your response" };
-  }
-
-  const { data: project } = await supabase
-    .from("projects")
-    .select("client_id, contract_value")
-    .eq("id", projectId)
-    .single();
-
-  if (!project || project.client_id !== user.id) {
+  const [{ data: profile }, { data: allowed }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("role, portal_active")
+      .eq("id", user.id)
+      .single(),
+    supabase.rpc("client_has_project_portal_access", {
+      project_uuid: projectId,
+    }),
+  ]);
+  if (profile?.role !== "client" || !profile.portal_active || !allowed) {
     return { error: "Unauthorized" };
   }
 
-  await supabase
+  const [{ data: co }, { data: project }] = await Promise.all([
+    supabase
+      .from("change_orders")
+      .select("id, status, cost_impact, project_id, number, title")
+      .eq("id", id)
+      .eq("project_id", projectId)
+      .single(),
+    supabase
+      .from("projects")
+      .select("title, contract_value")
+      .eq("id", projectId)
+      .single(),
+  ]);
+  if (!co || co.status !== "pending_client" || !project) {
+    return { error: "Change order is not awaiting your response" };
+  }
+
+  // The user-scoped reads above are the authorization boundary. Consequential
+  // writes use the server client so project totals cannot silently no-op under
+  // the client's SELECT-only projects policy.
+  const admin = createAdminClient();
+  const { data: updated, error: updateError } = await admin
     .from("change_orders")
     .update({
       status: decision,
       client_signed_at: new Date().toISOString(),
       client_signed_by: user.id,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("project_id", projectId)
+    .eq("status", "pending_client")
+    .select("id")
+    .maybeSingle();
+  if (updateError) return { error: updateError.message };
+  if (!updated) return { error: "This change order was already answered" };
 
   if (decision === "approved" && co.cost_impact && project.contract_value != null) {
-    await supabase
+    const { error: contractError } = await admin
       .from("projects")
       .update({
         contract_value: Number(project.contract_value) + Number(co.cost_impact),
       })
       .eq("id", projectId);
+    if (contractError) {
+      await admin
+        .from("change_orders")
+        .update({
+          status: "pending_client",
+          client_signed_at: null,
+          client_signed_by: null,
+        })
+        .eq("id", id)
+        .eq("status", decision);
+      return { error: contractError.message };
+    }
   }
 
   // The builder always hears about the client's decision.
-  const { data: projectMeta } = await supabase
-    .from("projects")
-    .select("title")
-    .eq("id", projectId)
-    .single();
-  const projectTitle = projectMeta?.title ?? "your project";
+  const projectTitle = project.title;
   await sendChangeOrderDecisionAdminEmail({
     projectTitle,
     projectId,
