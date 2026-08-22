@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { canHoldPhoto, isLikelyOffline, isNetworkFailure } from "@/lib/field/offline-queue";
 
 type StorageUploadProps = {
   bucket: "project-updates" | "project-documents";
@@ -9,6 +10,8 @@ type StorageUploadProps = {
   accept?: string;
   multiple?: boolean;
   onComplete: (files: { path: string; publicUrl?: string; size: number; type: string }[]) => void;
+  onHold?: (files: File[]) => void;
+  heldCount?: number;
   label?: string;
 };
 
@@ -18,21 +21,40 @@ export function StorageUpload({
   accept,
   multiple = false,
   onComplete,
+  onHold,
+  heldCount = 0,
   label = "Upload files",
 }: StorageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function holdLocally(selected: File[]): string | null {
+    if (!onHold) return "Upload failed";
+    const blocked = selected.map((file, index) => canHoldPhoto(file, heldCount + index)).find(Boolean);
+    if (blocked) return blocked;
+    onHold(selected);
+    return null;
+  }
 
   async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files?.length) return;
     setUploading(true);
     setError(null);
+
+    const selected = Array.from(files);
+    if (onHold && isLikelyOffline()) {
+      setError(holdLocally(selected));
+      e.target.value = "";
+      setUploading(false);
+      return;
+    }
+
     const supabase = createClient();
     const results: { path: string; publicUrl?: string; size: number; type: string }[] = [];
 
     try {
-      for (const file of Array.from(files)) {
+      for (const file of selected) {
         const ext = file.name.split(".").pop() || "bin";
         const path = `${projectId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         const { error: upErr } = await supabase.storage.from(bucket).upload(path, file, {
@@ -50,7 +72,12 @@ export function StorageUpload({
       onComplete(results);
       e.target.value = "";
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      if (onHold && isNetworkFailure(err)) {
+        setError(holdLocally(selected));
+        e.target.value = "";
+      } else {
+        setError(err instanceof Error ? err.message : "Upload failed");
+      }
     } finally {
       setUploading(false);
     }

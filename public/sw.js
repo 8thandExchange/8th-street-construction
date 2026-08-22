@@ -1,5 +1,6 @@
 /* 8th Street Construction service worker — web push + notification clicks.
-   No fetch caching: the site stays live-from-network to avoid stale pages. */
+   No fetch caching: the site stays live-from-network to avoid stale pages.
+   Offline field captures live in IndexedDB and sync from the page, not here. */
 
 self.addEventListener("install", () => {
   self.skipWaiting();

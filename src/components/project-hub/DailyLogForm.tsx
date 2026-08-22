@@ -7,6 +7,9 @@ import { SubmitButton } from "@/components/admin/SubmitButton";
 import { createDailyLog } from "@/lib/actions/daily-logs";
 import { draftDailyLog } from "@/lib/actions/ai-daily-log";
 import { createClient } from "@/lib/supabase/client";
+import { filesToHeldPhotos, queueFieldCapture, uploadHeldPhotos } from "@/lib/field/offline-browser";
+import { shouldQueueCapture } from "@/lib/field/offline-queue";
+import { useOnline } from "./useOnline";
 
 export function DailyLogForm({ projectId, today }: { projectId: string; today: string }) {
   const [notes, setNotes] = useState("");
@@ -16,9 +19,12 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
   const [weather, setWeather] = useState("");
   const [summary, setSummary] = useState("");
   const [issues, setIssues] = useState("");
+  const [heldFiles, setHeldFiles] = useState<File[]>([]);
   const [aiError, setAiError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [queuedNotice, setQueuedNotice] = useState<string | null>(null);
   const [drafting, startDrafting] = useTransition();
+  const online = useOnline();
 
   function handleDraft() {
     setAiError(null);
@@ -48,16 +54,71 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
     <form
       action={async (fd) => {
         setSaveError(null);
-        const result = await createDailyLog(fd);
-        if (result?.error) {
-          setSaveError(result.error);
+        setQueuedNotice(null);
+        const resetForm = () => {
+          setNotes("");
+          setImages([]);
+          setHeldFiles([]);
+          setWeather("");
+          setSummary("");
+          setIssues("");
+        };
+        const queue = async () => {
+          await queueFieldCapture({
+            projectId,
+            kind: "daily_log",
+            text: String(fd.get("summary") ?? summary),
+            logDate: String(fd.get("log_date") ?? today),
+            weather: String(fd.get("weather") ?? weather),
+            crewCount: fd.get("crew_count") ? Number(fd.get("crew_count")) : null,
+            issues: String(fd.get("issues") ?? issues),
+            files: heldFiles,
+            uploadedPaths: images.map((image) => ({ path: image.path, caption: image.caption })),
+          });
+          resetForm();
+          setQueuedNotice("Saved on this phone. It will send when you're back online.");
+        };
+        if (shouldQueueCapture({ online })) {
+          try {
+            await queue();
+          } catch (err) {
+            setSaveError(err instanceof Error ? err.message : "Could not save on this phone.");
+          }
           return;
         }
-        setNotes("");
-        setImages([]);
-        setWeather("");
-        setSummary("");
-        setIssues("");
+        try {
+          if (heldFiles.length > 0) {
+            const uploaded = await uploadHeldPhotos(projectId, filesToHeldPhotos(heldFiles));
+            fd.set(
+              "images",
+              JSON.stringify([
+                ...images.map((image) => ({ path: image.path, caption: image.caption })),
+                ...uploaded,
+              ])
+            );
+          }
+          const result = await createDailyLog(fd);
+          if (result?.error) {
+            if (shouldQueueCapture({ online: true, error: new Error(result.error) })) {
+              await queue();
+              return;
+            }
+            setSaveError(result.error);
+            return;
+          }
+          resetForm();
+        } catch (err) {
+          if (shouldQueueCapture({ online: true, error: err })) {
+            try {
+              await queue();
+              return;
+            } catch (queueError) {
+              setSaveError(queueError instanceof Error ? queueError.message : "Could not save on this phone.");
+              return;
+            }
+          }
+          setSaveError(err instanceof Error ? err.message : "Could not save the daily log.");
+        }
       }}
       className="app-card mt-8 p-6 space-y-5"
     >
@@ -96,6 +157,7 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
           projectId={projectId}
           multiple
           accept="image/*"
+          heldCount={heldFiles.length}
           label="Add jobsite photos"
           onComplete={(files) =>
             setImages((prev) => [
@@ -103,7 +165,14 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
               ...files.map((file) => ({ ...file, caption: "" })),
             ])
           }
+          onHold={(files) => setHeldFiles((prev) => [...prev, ...files])}
         />
+        {heldFiles.length > 0 && (
+          <p className="text-xs app-muted">
+            {heldFiles.length} photo{heldFiles.length === 1 ? "" : "s"} saved on this phone until
+            you&apos;re back online.
+          </p>
+        )}
         {images.length > 0 && (
           <div className="grid gap-3 sm:grid-cols-2">
             {images.map((image, index) => (
@@ -198,7 +267,12 @@ export function DailyLogForm({ projectId, today }: { projectId: string; today: s
           onChange={(e) => setIssues(e.target.value)}
         />
       </div>
-      <SubmitButton>Save Log</SubmitButton>
+      <SubmitButton>{online ? "Save Log" : "Save on this phone"}</SubmitButton>
+      {queuedNotice && (
+        <p role="status" className="text-sm text-navy">
+          {queuedNotice}
+        </p>
+      )}
       {saveError && (
         <p role="alert" className="text-sm text-red-700">
           {saveError}

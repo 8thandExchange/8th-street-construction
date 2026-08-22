@@ -72,7 +72,7 @@ are differentiators when they appear contextually rather than dominating generic
 
 - RFIs and submittals. **Done** on `/admin/projects/[id]/rfis` and the client Questions tab.
 - warranty/service requests after closeout. **Done** on `/admin/projects/[id]/service`.
-- timecards and offline field capture
+- timecards
 - live accounting synchronization
 - integrated e-signature provider
 - portfolio forecasting (job-week crew load is on `/admin/planning`)
@@ -290,6 +290,8 @@ exceptions are explicit rather than discovered during month close.
 - Add crew/capacity planning only after project ownership is modeled.
   **Done.** `/admin/planning` plans people per job-week and compares them to daily-log headcount.
 - Add offline-first field capture if jobsite connectivity proves it necessary.
+  **Done as a local queue**, not a cached PWA. Field capture and daily logs save on the
+  phone when the network is gone, then replay through the same server actions.
 
 **Success measures:** responsibilities are scoped; post-close service is traceable; new modules are
 added only when their record owner and downstream decision are clear.

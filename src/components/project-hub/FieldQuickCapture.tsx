@@ -5,7 +5,10 @@ import { Camera, ClipboardCheck, NotebookPen, Plus, X } from "lucide-react";
 import { createDailyLog } from "@/lib/actions/daily-logs";
 import { createInspection } from "@/lib/actions/inspections";
 import { createPunchItem } from "@/lib/actions/punch-list";
+import { filesToHeldPhotos, queueFieldCapture, uploadHeldPhotos } from "@/lib/field/offline-browser";
+import { shouldQueueCapture } from "@/lib/field/offline-queue";
 import { StorageUpload } from "./StorageUpload";
+import { useOnline } from "./useOnline";
 import { cn } from "@/lib/utils";
 
 type Mode = "note" | "photo" | "issue" | "inspection";
@@ -26,42 +29,77 @@ export function FieldQuickCapture({ projectId }: { projectId: string }) {
   const [mode, setMode] = useState<Mode>("note");
   const [text, setText] = useState("");
   const [photos, setPhotos] = useState<{ path: string; caption?: string }[]>([]);
+  const [heldFiles, setHeldFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const online = useOnline();
 
   function reset() {
     setText("");
     setPhotos([]);
+    setHeldFiles([]);
     setError(null);
+  }
+
+  async function queueOnThisPhone() {
+    await queueFieldCapture({
+      projectId,
+      kind: mode,
+      text,
+      logDate: todayInAugusta(),
+      files: heldFiles,
+      uploadedPaths: photos,
+    });
+    reset();
+    setOpen(false);
   }
 
   function submit() {
     setError(null);
     startTransition(async () => {
+      if (mode === "issue" && !text.trim()) {
+        setError("Describe the issue.");
+        return;
+      }
+      if (mode === "inspection" && !text.trim()) {
+        setError("Name the inspection.");
+        return;
+      }
+      if (shouldQueueCapture({ online })) {
+        try {
+          await queueOnThisPhone();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Could not save on this phone.");
+        }
+        return;
+      }
       try {
+        let uploaded = photos;
+        if (heldFiles.length > 0) {
+          uploaded = [
+            ...photos,
+            ...(await uploadHeldPhotos(projectId, filesToHeldPhotos(heldFiles))),
+          ];
+        }
         const form = new FormData();
         form.set("project_id", projectId);
         if (mode === "note" || mode === "photo") {
           form.set("log_date", todayInAugusta());
           form.set("summary", text.trim() || (mode === "photo" ? "Field photo" : "Field note"));
-          form.set("images", JSON.stringify(photos));
+          form.set("images", JSON.stringify(uploaded));
           const result = await createDailyLog(form);
           if (result && "error" in result && result.error) {
+            if (shouldQueueCapture({ online: true, error: new Error(result.error) })) {
+              await queueOnThisPhone();
+              return;
+            }
             setError(result.error);
             return;
           }
         } else if (mode === "issue") {
-          if (!text.trim()) {
-            setError("Describe the issue.");
-            return;
-          }
           form.set("title", text.trim());
           await createPunchItem(form);
         } else {
-          if (!text.trim()) {
-            setError("Name the inspection.");
-            return;
-          }
           form.set("title", text.trim());
           form.set("scheduled_date", todayInAugusta());
           await createInspection(form);
@@ -69,6 +107,15 @@ export function FieldQuickCapture({ projectId }: { projectId: string }) {
         reset();
         setOpen(false);
       } catch (err) {
+        if (shouldQueueCapture({ online: true, error: err })) {
+          try {
+            await queueOnThisPhone();
+            return;
+          } catch (queueError) {
+            setError(queueError instanceof Error ? queueError.message : "Could not save on this phone.");
+            return;
+          }
+        }
         setError(err instanceof Error ? err.message : "Could not save the capture.");
       }
     });
@@ -150,15 +197,25 @@ export function FieldQuickCapture({ projectId }: { projectId: string }) {
                   projectId={projectId}
                   accept="image/*"
                   multiple
+                  heldCount={heldFiles.length}
                   label={mode === "photo" ? "Add photos" : "Optional photos"}
                   onComplete={(files) =>
                     setPhotos((prev) => [...prev, ...files.map((file) => ({ path: file.path }))])
                   }
+                  onHold={(files) => setHeldFiles((prev) => [...prev, ...files])}
                 />
-                {photos.length > 0 && (
-                  <p className="mt-2 text-[12px] app-muted">{photos.length} photo(s) attached</p>
+                {(photos.length > 0 || heldFiles.length > 0) && (
+                  <p className="mt-2 text-[12px] app-muted">
+                    {photos.length + heldFiles.length} photo(s)
+                    {heldFiles.length > 0 ? " saved on this phone" : " attached"}
+                  </p>
                 )}
               </div>
+            )}
+            {!online && (
+              <p className="mt-3 text-[12px] app-muted">
+                No signal — this will stay on the phone until you&apos;re back online.
+              </p>
             )}
             {error && <p className="mt-3 text-[13px] text-red-700">{error}</p>}
             <div className="mt-4 flex justify-end gap-2">
@@ -171,7 +228,7 @@ export function FieldQuickCapture({ projectId }: { projectId: string }) {
                 disabled={pending}
                 className="app-btn app-btn-primary"
               >
-                {pending ? "Saving…" : "Save"}
+                {pending ? "Saving…" : online ? "Save" : "Save on this phone"}
               </button>
             </div>
           </div>

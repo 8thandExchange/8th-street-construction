@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ProjectHubNav } from "./ProjectHubNav";
 import { FieldQuickCapture } from "./FieldQuickCapture";
+import { OfflineQueueBanner } from "./OfflineQueueBanner";
 import { PROJECT_STATUS_LABELS } from "@/lib/project/labels";
 import { ProjectFundingBadge } from "@/components/project/ProjectFundingBadge";
 import type { ProjectFundingType } from "@/lib/project/funding";
@@ -76,7 +77,10 @@ export function ProjectHubShell({
           <ProjectHubNav projectId={project.id} allowedHrefs={allowedHrefs} />
         </div>
       </div>
-      <div className="px-4 md:px-8 lg:px-10 py-6 md:py-8">{children}</div>
+      <div className="px-4 md:px-8 lg:px-10 py-6 md:py-8">
+        {showFieldCapture ? <OfflineQueueBanner projectId={project.id} /> : null}
+        {children}
+      </div>
       {showFieldCapture ? <FieldQuickCapture projectId={project.id} /> : null}
     </div>
   );
