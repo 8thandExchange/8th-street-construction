@@ -43,6 +43,7 @@ describe("requiresConfirmation", () => {
       "list_rfis",
       "list_submittals",
       "list_service_requests",
+      "list_crew_plan",
     ]) {
       expect(requiresConfirmation(name, {})).toBe(false);
     }
@@ -76,5 +77,6 @@ describe("tool schema", () => {
     expect(names.has("list_rfis")).toBe(true);
     expect(names.has("list_submittals")).toBe(true);
     expect(names.has("list_service_requests")).toBe(true);
+    expect(names.has("list_crew_plan")).toBe(true);
   });
 });

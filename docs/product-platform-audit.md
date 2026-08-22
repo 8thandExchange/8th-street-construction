@@ -72,10 +72,10 @@ are differentiators when they appear contextually rather than dominating generic
 
 - RFIs and submittals. **Done** on `/admin/projects/[id]/rfis` and the client Questions tab.
 - warranty/service requests after closeout. **Done** on `/admin/projects/[id]/service`.
-- timecards, crew allocation, and offline field capture
+- timecards and offline field capture
 - live accounting synchronization
 - integrated e-signature provider
-- portfolio forecasting and capacity planning
+- portfolio forecasting (job-week crew load is on `/admin/planning`)
 
 ## Live usage baseline
 
@@ -288,6 +288,7 @@ exceptions are explicit rather than discovered during month close.
 - Introduce project-manager, superintendent, and accounting permission scopes.
   **Done.** Admin login stays; `staff_scope` narrows nav, job lists, and money writes.
 - Add crew/capacity planning only after project ownership is modeled.
+  **Done.** `/admin/planning` plans people per job-week and compares them to daily-log headcount.
 - Add offline-first field capture if jobsite connectivity proves it necessary.
 
 **Success measures:** responsibilities are scoped; post-close service is traceable; new modules are

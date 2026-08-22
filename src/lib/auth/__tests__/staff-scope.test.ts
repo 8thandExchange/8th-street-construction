@@ -52,6 +52,12 @@ describe("staffCanOpenPath", () => {
     expect(staffCanOpenPath("project_manager", "/admin/projects/abc")).toBe(true);
     expect(staffCanOpenPath("superintendent", "/admin/projects/new")).toBe(false);
   });
+
+  it("lets field staff open the crew board and hides it from accounting", () => {
+    expect(staffCanOpenPath("superintendent", "/admin/planning")).toBe(true);
+    expect(staffCanOpenPath("project_manager", "/admin/planning?week=2026-08-17")).toBe(true);
+    expect(staffCanOpenPath("accounting", "/admin/planning")).toBe(false);
+  });
 });
 
 describe("staffCanSeeProject", () => {
