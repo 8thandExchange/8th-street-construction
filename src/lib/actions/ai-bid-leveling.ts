@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { anthropicConfigured, BRAND_VOICE } from "@/lib/ai/config";
 import { AiNotConfiguredError, generateJson } from "@/lib/ai/client";
+import { matchRecommendedBidId } from "@/lib/procurement/bid-compare";
 
 export type BidLevelingResult = {
   stats: { count: number; low: number; high: number; average: number; spreadPct: number };
@@ -21,7 +22,7 @@ export type BidLevelingResult = {
 type Result = { ok: true; analysis: BidLevelingResult } | { ok: false; error: string };
 
 export async function levelBids(bidRequestId: string): Promise<Result> {
-  await requireAdmin();
+  const { user } = await requireAdmin();
 
   if (!anthropicConfigured()) {
     return { ok: false, error: "Add ANTHROPIC_API_KEY in Vercel to enable AI bid leveling." };
@@ -31,7 +32,7 @@ export async function levelBids(bidRequestId: string): Promise<Result> {
   const { data: rfq } = await admin
     .from("bid_requests")
     .select(
-      "title, trade, scope_of_work, bids(amount, notes, status, subcontractors(company_name))"
+      "title, trade, scope_of_work, bids(id, amount, notes, alternates, exclusions, qualifications, status, subcontractors(company_name))"
     )
     .eq("id", bidRequestId)
     .single();
@@ -49,9 +50,17 @@ export async function levelBids(bidRequestId: string): Promise<Result> {
   const priced = rawBids.map((b) => {
     const sub = Array.isArray(b.subcontractors) ? b.subcontractors[0] : b.subcontractors;
     return {
+      id: b.id,
       company: sub?.company_name ?? "Unknown",
       amount: Number(b.amount),
-      notes: (b.notes ?? "").trim(),
+      notes: [
+        (b.notes ?? "").trim(),
+        b.qualifications ? `Qualifications: ${b.qualifications}` : "",
+        b.exclusions ? `Exclusions: ${b.exclusions}` : "",
+        b.alternates ? `Alternates: ${b.alternates}` : "",
+      ]
+        .filter(Boolean)
+        .join(" · "),
     };
   });
 
@@ -107,14 +116,30 @@ Include every bid. Do not invent scope items not implied by the notes.`;
       };
     });
 
+    const analysis = {
+      stats: { count: priced.length, low, high, average: Math.round(average), spreadPct },
+      summary: ai.summary ?? "",
+      recommendation: ai.recommendation ?? "",
+      bids,
+    };
+
+    const recommendedBidId = matchRecommendedBidId(
+      priced.map((b) => ({ id: b.id, company: b.company, amount: b.amount })),
+      { recommendation: analysis.recommendation, bids: analysis.bids }
+    );
+
+    await admin.from("bid_request_reviews").insert({
+      bid_request_id: bidRequestId,
+      recommended_bid_id: recommendedBidId,
+      summary: analysis.summary,
+      recommendation: analysis.recommendation,
+      analysis_json: analysis,
+      created_by: user.id,
+    });
+
     return {
       ok: true,
-      analysis: {
-        stats: { count: priced.length, low, high, average: Math.round(average), spreadPct },
-        summary: ai.summary ?? "",
-        recommendation: ai.recommendation ?? "",
-        bids,
-      },
+      analysis,
     };
   } catch (err) {
     if (err instanceof AiNotConfiguredError) return { ok: false, error: err.message };

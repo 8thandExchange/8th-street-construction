@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import {
   createProposal,
   deleteProposal,
   sendProposal,
   setProposalStatus,
 } from "@/lib/actions/proposals";
+import { createContractFromAcceptedProposal } from "@/lib/actions/contracts";
 import { formatMoney } from "@/lib/billing/constants";
 import { SubmitButton } from "@/components/admin/SubmitButton";
 
@@ -59,7 +61,7 @@ export default async function ProjectProposalsPage(props: {
   const { id } = await props.params;
   const supabase = await createClient();
 
-  const [{ data: project }, { data: rows }] = await Promise.all([
+  const [{ data: project }, { data: rows }, { data: linkedContracts }] = await Promise.all([
     supabase
       .from("projects")
       .select("id, title, estimated_cost, contract_value, client_id")
@@ -70,10 +72,20 @@ export default async function ProjectProposalsPage(props: {
       .select("*")
       .eq("project_id", id)
       .order("number", { ascending: false }),
+    supabase
+      .from("project_contracts")
+      .select("id, source_proposal_id, status, number")
+      .eq("project_id", id)
+      .not("source_proposal_id", "is", null),
   ]);
   if (!project) notFound();
 
   const proposals = (rows ?? []) as ProposalRow[];
+  const contractByProposal = new Map(
+    (linkedContracts ?? [])
+      .filter((c) => c.source_proposal_id)
+      .map((c) => [c.source_proposal_id as string, c])
+  );
   const suggested =
     Number(project.contract_value ?? 0) || Number(project.estimated_cost ?? 0) || "";
 
@@ -82,7 +94,7 @@ export default async function ProjectProposalsPage(props: {
       <h2 className="app-h2 mb-2">Proposals</h2>
       <p className="text-sm app-muted mb-8">
         The customer-facing offer: scope, price, and the record of how the answer came back.
-        Accepting one sets the project&apos;s contract value.
+        Accepting one sets the project&apos;s contract value and unlocks a drafted agreement.
       </p>
 
       <form action={createProposalAction} className="app-card space-y-5 p-6 md:p-8 mb-10">
@@ -199,6 +211,35 @@ export default async function ProjectProposalsPage(props: {
                   </button>
                 </form>
               )}
+              {p.status === "accepted" &&
+                (() => {
+                  const linked = contractByProposal.get(p.id);
+                  if (linked) {
+                    return (
+                      <Link
+                        href={`/admin/contracts/${linked.id}`}
+                        className="text-xs font-medium text-copper hover:underline"
+                      >
+                        Open agreement #{linked.number}
+                      </Link>
+                    );
+                  }
+                  return (
+                    <form
+                      action={async (fd) => {
+                        "use server";
+                        const { id: contractId } = await createContractFromAcceptedProposal(fd);
+                        redirect(`/admin/contracts/${contractId}`);
+                      }}
+                    >
+                      <input type="hidden" name="project_id" value={id} />
+                      <input type="hidden" name="proposal_id" value={p.id} />
+                      <SubmitButton className="app-btn app-btn-accent !h-8 !px-3 !text-xs">
+                        Draft agreement from this proposal
+                      </SubmitButton>
+                    </form>
+                  );
+                })()}
               {p.status === "draft" && (
                 <form action={deleteProposalAction}>
                   <input type="hidden" name="project_id" value={id} />

@@ -2,6 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { sendAdminSms } from "@/lib/sms/ghl";
+import { sendPushToAdmins } from "@/lib/notify/push";
+import { trackWorkflowEvent } from "@/lib/analytics/track";
 import {
   dollarsToWords,
   longDate,
@@ -9,6 +14,12 @@ import {
   usd,
   type ContractMergeFields,
 } from "@/lib/contracts/standard-terms";
+import {
+  ownerDisplayName,
+  propertyAddressLine,
+  scopeMdToContractParagraph,
+  todayIsoDate,
+} from "@/lib/procurement/proposal-contract";
 
 /**
  * Per-job agreements drafted from the standard templates. The template
@@ -22,7 +33,13 @@ function str(formData: FormData, key: string) {
 
 function revalidate(projectId?: string) {
   revalidatePath("/admin/contracts");
-  if (projectId) revalidatePath(`/admin/projects/${projectId}`);
+  if (projectId) {
+    revalidatePath(`/admin/projects/${projectId}`);
+    revalidatePath(`/admin/projects/${projectId}/proposals`);
+    revalidatePath(`/client/projects/${projectId}`);
+    revalidatePath(`/client/projects/${projectId}/contracts`);
+    revalidatePath(`/client/projects/${projectId}/proposals`);
+  }
 }
 
 export async function createContractFromTemplate(formData: FormData) {
@@ -93,6 +110,185 @@ export async function createContractFromTemplate(formData: FormData) {
 
   revalidate(projectId);
   return { id: created.id };
+}
+
+/**
+ * Draft the standard agreement from an accepted proposal. Price, scope,
+ * owner, and address come from stored records — never from the browser.
+ */
+export async function createContractFromAcceptedProposal(formData: FormData) {
+  const { supabase, user } = await requireAdmin();
+  const proposalId = str(formData, "proposal_id");
+  const projectId = str(formData, "project_id");
+  if (!proposalId || !projectId) throw new Error("Pick a proposal");
+
+  const { data: proposal } = await supabase
+    .from("project_proposals")
+    .select("id, project_id, title, scope_md, terms_md, amount, status")
+    .eq("id", proposalId)
+    .eq("project_id", projectId)
+    .single();
+  if (!proposal) throw new Error("Proposal not found");
+  if (proposal.status !== "accepted") {
+    throw new Error("Draft an agreement only from an accepted proposal");
+  }
+
+  const { data: existing } = await supabase
+    .from("project_contracts")
+    .select("id")
+    .eq("source_proposal_id", proposalId)
+    .maybeSingle();
+  if (existing) return { id: existing.id };
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, title, street_address, location, client_id")
+    .eq("id", projectId)
+    .single();
+  if (!project) throw new Error("Project not found");
+
+  const [{ data: client }, { data: templates }] = await Promise.all([
+    project.client_id
+      ? supabase
+          .from("profiles")
+          .select("first_name, last_name, organization_name, company")
+          .eq("id", project.client_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from("contract_templates")
+      .select("id, name, project_type, body_md")
+      .order("project_type"),
+  ]);
+
+  const templateId = str(formData, "template_id") || templates?.[0]?.id;
+  const template = templates?.find((t) => t.id === templateId) ?? templates?.[0];
+  if (!template) throw new Error("Add a contract template first");
+
+  const ownerName = ownerDisplayName(client);
+  const priceRaw = Number(proposal.amount);
+  const effectiveDate = todayIsoDate();
+  const fields: ContractMergeFields = {
+    owner_name: ownerName,
+    owner_entity_description: "",
+    property_address: propertyAddressLine(project),
+    county: "Richmond",
+    project_name: `${project.title} Residence`,
+    contract_price: usd(priceRaw),
+    contract_price_words: dollarsToWords(priceRaw),
+    effective_date: longDate(effectiveDate),
+    plans_description: "",
+    scope_description: scopeMdToContractParagraph(proposal.scope_md, proposal.terms_md),
+    owner_signatory: "",
+    contractor_signatory: "Troy W. Akers, Managing Principal",
+  };
+
+  const { data: last } = await supabase
+    .from("project_contracts")
+    .select("number")
+    .eq("project_id", projectId)
+    .order("number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: created, error } = await supabase
+    .from("project_contracts")
+    .insert({
+      project_id: projectId,
+      number: (last?.number ?? 0) + 1,
+      template_id: template.id,
+      title: proposal.title,
+      owner_name: ownerName,
+      contract_price: priceRaw,
+      effective_date: effectiveDate,
+      body_md: mergeContractTemplate(template.body_md, fields),
+      source_proposal_id: proposal.id,
+      created_by: user.id,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+
+  await trackWorkflowEvent({
+    workflow: "contract",
+    event: "start",
+    entityId: created.id,
+    projectId,
+  });
+  revalidate(projectId);
+  return { id: created.id };
+}
+
+/** Client types their legal name to sign an agreement sent for signature. */
+export async function clientSignContract(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const projectId = str(formData, "project_id");
+  const contractId = str(formData, "id");
+  const signatureText = str(formData, "signature_text");
+  if (!signatureText) return { error: "Type your full legal name to sign" };
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, title")
+    .eq("id", projectId)
+    .maybeSingle();
+  if (!project) return { error: "You do not have access to this project" };
+
+  const { data: visible } = await supabase
+    .from("project_contracts")
+    .select("id, number, title, contract_price, status")
+    .eq("id", contractId)
+    .eq("project_id", projectId)
+    .maybeSingle();
+  if (!visible || visible.status !== "out_for_signature") {
+    return { error: "This agreement is not awaiting your signature" };
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("project_contracts")
+    .update({
+      status: "signed",
+      client_signature_text: signatureText,
+      client_signed_at: new Date().toISOString(),
+      client_signed_by: user.id,
+      status_note: `Signed in the client portal as ${signatureText}`,
+    })
+    .eq("id", contractId)
+    .eq("project_id", projectId)
+    .eq("status", "out_for_signature");
+  if (error) return { error: error.message };
+
+  const { error: projectError } = await admin
+    .from("projects")
+    .update({ contract_value: Number(visible.contract_price) })
+    .eq("id", projectId);
+  if (projectError) return { error: projectError.message };
+
+  await Promise.allSettled([
+    sendAdminSms(
+      `8th Street portal: agreement #${visible.number} signed on ${project.title} by ${signatureText}.`
+    ),
+    sendPushToAdmins({
+      title: project.title,
+      body: `Agreement #${visible.number} signed by ${signatureText}`,
+      url: `/admin/contracts/${contractId}`,
+    }),
+  ]);
+
+  await trackWorkflowEvent({
+    workflow: "contract",
+    event: "complete",
+    entityId: contractId,
+    projectId,
+  });
+  revalidate(projectId);
+  return { ok: true };
 }
 
 /** Edit the job specifics or the agreement text. Signed agreements are records. */
@@ -167,6 +363,13 @@ export async function setContractStatus(formData: FormData) {
       .eq("id", contract.project_id);
   }
 
+  await trackWorkflowEvent({
+    workflow: "contract",
+    event:
+      status === "signed" ? "complete" : status === "void" ? "abandon" : "start",
+    entityId: id,
+    projectId: contract.project_id,
+  });
   revalidate(contract.project_id);
 }
 

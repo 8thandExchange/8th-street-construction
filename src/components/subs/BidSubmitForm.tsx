@@ -8,11 +8,17 @@ export function BidSubmitForm({
   canSubmit,
   initialAmount,
   initialNotes,
+  initialAlternates,
+  initialExclusions,
+  initialQualifications,
 }: {
   bidId: string;
   canSubmit: boolean;
   initialAmount?: number | null;
   initialNotes?: string | null;
+  initialAlternates?: string | null;
+  initialExclusions?: string | null;
+  initialQualifications?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -62,13 +68,45 @@ export function BidSubmitForm({
         />
       </div>
       <div>
-        <label htmlFor={`bid-notes-${bidId}`} className="field-label">Qualifications and notes</label>
+        <label htmlFor={`bid-qualifications-${bidId}`} className="field-label">Qualifications</label>
+        <textarea
+          id={`bid-qualifications-${bidId}`}
+          name="qualifications"
+          rows={2}
+          defaultValue={initialQualifications ?? undefined}
+          placeholder="Assumptions, inclusions, lead time…"
+          className="field-input"
+        />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor={`bid-exclusions-${bidId}`} className="field-label">Exclusions</label>
+          <textarea
+            id={`bid-exclusions-${bidId}`}
+            name="exclusions"
+            rows={2}
+            defaultValue={initialExclusions ?? undefined}
+            className="field-input"
+          />
+        </div>
+        <div>
+          <label htmlFor={`bid-alternates-${bidId}`} className="field-label">Alternates</label>
+          <textarea
+            id={`bid-alternates-${bidId}`}
+            name="alternates"
+            rows={2}
+            defaultValue={initialAlternates ?? undefined}
+            className="field-input"
+          />
+        </div>
+      </div>
+      <div>
+        <label htmlFor={`bid-notes-${bidId}`} className="field-label">Other notes</label>
         <textarea
           id={`bid-notes-${bidId}`}
           name="notes"
-          rows={4}
+          rows={3}
           defaultValue={initialNotes ?? undefined}
-          placeholder="Exclusions, alternates, lead time, payment terms…"
           className="field-input"
         />
       </div>

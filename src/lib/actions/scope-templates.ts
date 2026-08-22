@@ -15,6 +15,7 @@ function str(formData: FormData, key: string) {
 
 function revalidate() {
   revalidatePath("/admin/settings/scopes");
+  revalidatePath("/admin/projects", "layout");
 }
 
 export async function saveScopeTemplate(formData: FormData) {
@@ -38,6 +39,24 @@ export async function deleteScopeTemplate(formData: FormData) {
   const { supabase } = await requireAdmin();
   const id = str(formData, "id");
   const { error } = await supabase.from("scope_templates").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidate();
+}
+
+/** Record that a job's awarded price should change the library wording. */
+export async function recordScopeVarianceNote(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const id = str(formData, "id");
+  const note = str(formData, "last_variance_note");
+  if (!id || !note) throw new Error("Write the variance note before saving it to the library");
+
+  const { error } = await supabase
+    .from("scope_templates")
+    .update({
+      last_variance_note: note,
+      last_variance_at: new Date().toISOString(),
+    })
+    .eq("id", id);
   if (error) throw new Error(error.message);
   revalidate();
 }

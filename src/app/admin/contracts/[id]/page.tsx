@@ -68,8 +68,23 @@ export default async function AgreementPage(props: { params: Promise<{ id: strin
             <span className="app-num">{usd(Number(contract.contract_price))}</span> ·{" "}
             {contract.owner_name}
             {contract.status_note ? ` · ${contract.status_note}` : ""}
+          {contract.client_signature_text
+            ? ` · signed in portal as ${contract.client_signature_text}`
+            : ""}
           </span>
         </div>
+        {contract.source_proposal_id && (
+          <p className="mt-2 text-xs app-muted">
+            Drafted from{" "}
+            <Link
+              href={`/admin/projects/${contract.project_id}/proposals`}
+              className="text-copper hover:underline"
+            >
+              the accepted proposal
+            </Link>
+            . Price and scope were copied from that record.
+          </p>
+        )}
         <div className="mt-3 flex gap-5">
           <Link
             href={`/print/contract/${contract.id}`}

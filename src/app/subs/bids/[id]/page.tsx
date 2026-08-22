@@ -37,7 +37,7 @@ export default async function SubcontractorBidPage(props: {
   const { data: bid } = await supabase
     .from("bids")
     .select(
-      "id, amount, status, submitted_at, notes, document_id, bid_requests(id, title, trade, scope_of_work, bid_deadline, status, projects(id, title, location))"
+      "id, amount, status, submitted_at, notes, alternates, exclusions, qualifications, document_id, bid_requests(id, title, trade, scope_of_work, bid_deadline, status, projects(id, title, location))"
     )
     .eq("id", id)
     .eq("subcontractor_id", sub.id)
@@ -139,6 +139,9 @@ export default async function SubcontractorBidPage(props: {
               canSubmit={canSubmit}
               initialAmount={bid.amount == null ? null : Number(bid.amount)}
               initialNotes={bid.notes}
+              initialAlternates={bid.alternates}
+              initialExclusions={bid.exclusions}
+              initialQualifications={bid.qualifications}
             />
             {!canSubmit && (
               <p className="mt-4 text-sm app-muted">

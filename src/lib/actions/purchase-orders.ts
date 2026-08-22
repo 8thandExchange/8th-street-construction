@@ -4,12 +4,15 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { invoiceJobPrefix, formatMoney } from "@/lib/billing/constants";
 import { sendPurchaseOrderEmail } from "@/lib/email/purchase-order-notify";
+import { purchaseOrderLineFromAwardedBid } from "@/lib/procurement/po-from-bid";
+import { trackWorkflowEvent } from "@/lib/analytics/track";
 
 export type PurchaseOrderLineInput = {
   description: string;
   quantity: number;
   unit_amount: number;
   cost_division?: string | null;
+  estimate_line_id?: string | null;
 };
 
 function revalidatePo(projectId: string) {
@@ -43,6 +46,7 @@ function parseLines(raw: string): PurchaseOrderLineInput[] {
       quantity,
       unit_amount,
       cost_division: String(item?.cost_division ?? "").trim() || null,
+      estimate_line_id: String(item?.estimate_line_id ?? "").trim() || null,
     };
   });
 }
@@ -106,6 +110,7 @@ async function insertPurchaseOrder(args: {
       unit_amount: li.unit_amount,
       amount: Math.round(li.quantity * li.unit_amount * 100) / 100,
       cost_division: li.cost_division,
+      estimate_line_id: li.estimate_line_id ?? null,
       display_order: index,
     }))
   );
@@ -142,7 +147,7 @@ export async function createPurchaseOrderFromBid(formData: FormData) {
   const { data: bid } = await supabase
     .from("bids")
     .select(
-      "id, amount, notes, subcontractor_id, bid_request:bid_requests(id, title, trade, scope_of_work, project_id, estimate_line:project_estimate_lines!bid_requests_estimate_line_id_fkey(division_code, trade_label))"
+      "id, amount, notes, subcontractor_id, bid_request:bid_requests(id, title, trade, scope_of_work, project_id, estimate_line_id, estimate_line:project_estimate_lines!bid_requests_estimate_line_id_fkey(id, division_code, trade_label))"
     )
     .eq("id", bidId)
     .single();
@@ -162,6 +167,14 @@ export async function createPurchaseOrderFromBid(formData: FormData) {
     .eq("bid_id", bidId);
   if (count) throw new Error("This bid already has a purchase order.");
 
+  const line = purchaseOrderLineFromAwardedBid({
+    title: request.title,
+    trade: request.trade,
+    amount: Number(bid.amount),
+    divisionCode: estimateLine?.division_code ?? null,
+    estimateLineId: request.estimate_line_id ?? estimateLine?.id ?? null,
+  });
+
   await insertPurchaseOrder({
     projectId,
     subcontractorId: bid.subcontractor_id,
@@ -170,14 +183,7 @@ export async function createPurchaseOrderFromBid(formData: FormData) {
     description: request.scope_of_work ?? null,
     neededBy: null,
     notes: bid.notes ?? null,
-    lines: [
-      {
-        description: `${request.title}${request.trade ? ` (${request.trade})` : ""} — per awarded bid`,
-        quantity: 1,
-        unit_amount: Number(bid.amount),
-        cost_division: estimateLine?.division_code ?? null,
-      },
-    ],
+    lines: [line],
   });
 }
 
@@ -206,6 +212,13 @@ export async function issuePurchaseOrder(formData: FormData) {
     })
     .eq("id", id);
   if (error) throw new Error(error.message);
+
+  await trackWorkflowEvent({
+    workflow: "purchase_order",
+    event: "start",
+    entityId: id,
+    projectId,
+  });
 
   if (sendEmail && po.subcontractor_id) {
     const [{ data: sub }, { data: project }, { data: lines }] = await Promise.all([
@@ -286,6 +299,59 @@ export async function closePurchaseOrder(formData: FormData) {
 
 export async function cancelPurchaseOrder(formData: FormData) {
   await setPoStatus(formData, ["draft", "issued"], "cancelled");
+}
+
+export async function acknowledgePurchaseOrder(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const id = String(formData.get("id"));
+  const projectId = String(formData.get("project_id"));
+  const note = String(formData.get("acknowledged_note") ?? "").trim();
+
+  const { data: po } = await supabase
+    .from("purchase_orders")
+    .select("id, status")
+    .eq("id", id)
+    .eq("project_id", projectId)
+    .single();
+  if (!po) throw new Error("Purchase order not found.");
+  if (po.status === "draft" || po.status === "cancelled") {
+    throw new Error("Issue the purchase order before recording acknowledgement.");
+  }
+
+  const { error } = await supabase
+    .from("purchase_orders")
+    .update({
+      acknowledged_at: new Date().toISOString(),
+      acknowledged_note: note || null,
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePo(projectId);
+}
+
+export async function linkVendorBillToPurchaseOrder(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const projectId = String(formData.get("project_id"));
+  const poId = String(formData.get("purchase_order_id"));
+  const billId = String(formData.get("vendor_bill_id"));
+  if (!poId || !billId) throw new Error("Pick a purchase order and a bill.");
+
+  const [{ data: po }, { data: bill }] = await Promise.all([
+    supabase.from("purchase_orders").select("id, project_id").eq("id", poId).single(),
+    supabase.from("vendor_bills").select("id, project_id").eq("id", billId).single(),
+  ]);
+  if (!po || po.project_id !== projectId) throw new Error("Purchase order not found.");
+  if (!bill) throw new Error("Vendor bill not found.");
+  if (bill.project_id && bill.project_id !== projectId) {
+    throw new Error("That bill belongs to a different job.");
+  }
+
+  const { error } = await supabase
+    .from("vendor_bills")
+    .update({ purchase_order_id: poId, project_id: projectId })
+    .eq("id", billId);
+  if (error) throw new Error(error.message);
+  revalidatePo(projectId);
 }
 
 export async function deletePurchaseOrderDraft(formData: FormData) {

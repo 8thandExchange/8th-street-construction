@@ -62,6 +62,8 @@ export async function createBidRequest(formData: FormData) {
   }
   if (!scope) throw new Error("Write a scope of work or pick one from the library");
 
+  const estimateLineId = String(formData.get("estimate_line_id") || "").trim() || null;
+
   const { data: rfq, error } = await supabase
     .from("bid_requests")
     .insert({
@@ -72,6 +74,8 @@ export async function createBidRequest(formData: FormData) {
       bid_deadline: String(formData.get("bid_deadline") || "").trim() || null,
       created_by: user.id,
       status: "open",
+      estimate_line_id: estimateLineId,
+      scope_template_id: templateId || null,
     })
     .select("id, title")
     .single();
@@ -134,9 +138,15 @@ export async function awardBid(formData: FormData) {
 
   const { data: bid } = await supabase
     .from("bids")
-    .select("amount")
+    .select("amount, bid_request:bid_requests(estimate_line_id)")
     .eq("id", bidId)
     .single();
+  const request = bid
+    ? Array.isArray(bid.bid_request)
+      ? bid.bid_request[0]
+      : bid.bid_request
+    : null;
+  const lineId = estimateLineId || request?.estimate_line_id || null;
 
   await supabase.from("bids").update({ status: "awarded" }).eq("id", bidId);
   await supabase
@@ -147,12 +157,26 @@ export async function awardBid(formData: FormData) {
     .in("status", ["invited", "viewed", "submitted", "shortlisted"]);
   await supabase.from("bid_requests").update({ status: "awarded" }).eq("id", rfqId);
 
-  if (estimateLineId && bid?.amount) {
+  if (lineId && bid?.amount) {
     const { linkAwardedBidToLine } = await import("@/lib/actions/estimate");
-    await linkAwardedBidToLine(projectId, estimateLineId, rfqId, Number(bid.amount));
+    await linkAwardedBidToLine(projectId, lineId, rfqId, Number(bid.amount));
   }
 
+  await trackWorkflowEvent({
+    workflow: "bid",
+    event: "complete",
+    entityId: bidId,
+    projectId,
+    metadata: { action: "award" },
+  });
   revalidate(projectId);
+}
+
+/** Award the bid and open a draft PO in the same motion. */
+export async function awardBidAndCreatePurchaseOrder(formData: FormData) {
+  await awardBid(formData);
+  const { createPurchaseOrderFromBid } = await import("@/lib/actions/purchase-orders");
+  await createPurchaseOrderFromBid(formData);
 }
 
 /** Record a sub quote from email, phone, or scanned PDF — no portal login required */
@@ -346,6 +370,9 @@ export async function submitBid(formData: FormData) {
     .update({
       amount,
       notes: String(formData.get("notes") || "").trim() || null,
+      alternates: String(formData.get("alternates") || "").trim() || null,
+      exclusions: String(formData.get("exclusions") || "").trim() || null,
+      qualifications: String(formData.get("qualifications") || "").trim() || null,
       status: "submitted",
       submitted_at: new Date().toISOString(),
       document_id: documentId,

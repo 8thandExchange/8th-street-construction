@@ -1,13 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import {
+  acknowledgePurchaseOrder,
   cancelPurchaseOrder,
   closePurchaseOrder,
   createPurchaseOrderFromBid,
   deletePurchaseOrderDraft,
   issuePurchaseOrder,
+  linkVendorBillToPurchaseOrder,
   markPurchaseOrderBilled,
 } from "@/lib/actions/purchase-orders";
+import { poBillCoverage } from "@/lib/procurement/po-from-bid";
 import { PurchaseOrderForm } from "@/components/costs/PurchaseOrderForm";
 import { appStatusBadge } from "@/lib/project/status-badges";
 import { formatMoney } from "@/lib/billing/constants";
@@ -36,7 +39,7 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
   const { id } = await props.params;
   const supabase = await createClient();
 
-  const [{ data: project }, { data: pos }, { data: subs }, { data: divisions }, { data: awardedBids }] =
+  const [{ data: project }, { data: pos }, { data: subs }, { data: divisions }, { data: awardedBids }, { data: bills }] =
     await Promise.all([
       supabase
         .from("projects")
@@ -46,7 +49,7 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
       supabase
         .from("purchase_orders")
         .select(
-          "id, po_number, title, status, total, issue_date, needed_by, created_at, subcontractor:subcontractors(company_name, trade)"
+          "id, po_number, title, status, total, issue_date, needed_by, created_at, acknowledged_at, acknowledged_note, subcontractor:subcontractors(company_name, trade)"
         )
         .eq("project_id", id)
         .order("created_at", { ascending: false }),
@@ -67,6 +70,11 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
         )
         .eq("status", "awarded")
         .eq("bid_requests.project_id", id),
+      supabase
+        .from("vendor_bills")
+        .select("id, title, amount, status, purchase_order_id")
+        .eq("project_id", id)
+        .neq("status", "void"),
     ]);
 
   if (!project) notFound();
@@ -182,7 +190,57 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
                 {sub?.company_name ? `${sub.company_name}${sub.trade ? ` · ${sub.trade}` : ""}` : "No sub linked"}
                 {po.issue_date ? ` · Issued ${fmt(po.issue_date)}` : ""}
                 {po.needed_by ? ` · Needed by ${fmt(po.needed_by)}` : ""}
+                {po.acknowledged_at
+                  ? ` · Acknowledged ${new Date(po.acknowledged_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}${po.acknowledged_note ? ` — ${po.acknowledged_note}` : ""}`
+                  : ""}
               </p>
+              {(() => {
+                const linked = (bills ?? []).filter((bill) => bill.purchase_order_id === po.id);
+                const coverage = poBillCoverage(
+                  Number(po.total),
+                  linked.map((bill) => Number(bill.amount))
+                );
+                const unlinked = (bills ?? []).filter((bill) => !bill.purchase_order_id);
+                return (
+                  <div className="mt-3 space-y-2 text-xs app-muted">
+                    <p>
+                      Bill coverage{" "}
+                      <span className="app-num text-navy">
+                        {formatMoney(coverage.billed)}
+                      </span>{" "}
+                      of {formatMoney(coverage.committed)}
+                      {coverage.remaining > 0 ? ` · ${formatMoney(coverage.remaining)} open` : ""}
+                      {coverage.over > 0 ? ` · ${formatMoney(coverage.over)} over` : ""}
+                    </p>
+                    {linked.length > 0 && (
+                      <ul className="space-y-0.5">
+                        {linked.map((bill) => (
+                          <li key={bill.id}>
+                            {bill.title} · {formatMoney(Number(bill.amount))}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {unlinked.length > 0 && po.status !== "cancelled" && po.status !== "draft" && (
+                      <form action={linkVendorBillToPurchaseOrder} className="flex flex-wrap items-center gap-2">
+                        <input type="hidden" name="project_id" value={id} />
+                        <input type="hidden" name="purchase_order_id" value={po.id} />
+                        <select name="vendor_bill_id" required className="field-input !h-8 !w-auto !text-xs">
+                          <option value="">Link a job bill…</option>
+                          {unlinked.map((bill) => (
+                            <option key={bill.id} value={bill.id}>
+                              {bill.title} · {formatMoney(Number(bill.amount))}
+                            </option>
+                          ))}
+                        </select>
+                        <SubmitButton className="app-btn app-btn-ghost !h-8 !text-[12px]">
+                          Link bill
+                        </SubmitButton>
+                      </form>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <a
@@ -213,6 +271,20 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
                       </SubmitButton>
                     </form>
                   </>
+                )}
+                {po.status !== "draft" && po.status !== "cancelled" && !po.acknowledged_at && (
+                  <form action={acknowledgePurchaseOrder} className="flex flex-wrap items-center gap-2">
+                    <input type="hidden" name="id" value={po.id} />
+                    <input type="hidden" name="project_id" value={id} />
+                    <input
+                      name="acknowledged_note"
+                      placeholder="How they acknowledged (email, text)"
+                      className="field-input !h-8 !w-52 !text-xs"
+                    />
+                    <SubmitButton className="app-btn app-btn-ghost !h-8 !text-[12.5px]">
+                      Record acknowledgement
+                    </SubmitButton>
+                  </form>
                 )}
                 {po.status === "issued" && (
                   <form action={markPurchaseOrderBilled}>

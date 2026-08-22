@@ -119,6 +119,7 @@ export async function recordVendorBill(formData: FormData) {
       due_date: String(formData.get("due_date") ?? "").trim() || null,
       file_path: filePath,
       notes: String(formData.get("notes") ?? "").trim() || null,
+      purchase_order_id: String(formData.get("purchase_order_id") ?? "").trim() || null,
       created_by: user.id,
     })
     .select("id, title, amount")
