@@ -26,7 +26,6 @@ import {
 import {
   CONSTRUCTION_TOOLS,
   CONSTRUCTION_TOOL_NAMES,
-  constructionToolRequiresConfirmation,
   executeConstructionTool,
 } from "@/lib/assistant/construction-tools";
 
@@ -572,7 +571,7 @@ export const ASSISTANT_TOOLS: Anthropic.Tool[] = [
 export function requiresConfirmation(name: string, input: unknown): boolean {
   if (MEETING_TOOL_NAMES.has(name)) return meetingToolRequiresConfirmation(name);
   if (CONTRACT_TOOL_NAMES.has(name)) return contractToolRequiresConfirmation(name);
-  if (CONSTRUCTION_TOOL_NAMES.has(name)) return constructionToolRequiresConfirmation(name);
+  if (CONSTRUCTION_TOOL_NAMES.has(name)) return false;
   if (name === "send_invoice" || name === "mark_invoice_paid") return true;
   if (name === "send_client_message") return true;
   if (name === "update_milestone") return true;

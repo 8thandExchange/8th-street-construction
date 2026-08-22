@@ -54,10 +54,6 @@ export const CONSTRUCTION_TOOLS: Anthropic.Tool[] = [
 
 export const CONSTRUCTION_TOOL_NAMES = new Set(CONSTRUCTION_TOOLS.map((t) => t.name));
 
-export function constructionToolRequiresConfirmation(_name: string): boolean {
-  return false;
-}
-
 export async function executeConstructionTool(name: string, input: unknown): Promise<unknown> {
   const admin = createAdminClient();
   const i = (input ?? {}) as Record<string, unknown>;
