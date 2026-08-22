@@ -183,6 +183,19 @@ palette dialog pattern.
   alongside a decision;
 - the vendor field-encryption key is now part of the deployment environment template.
 
+### Field and trade collaboration
+
+- daily-log photos now remain attached to the dated field record and render for authorized clients;
+- subcontractors receive bid-specific links, review full scope on a dedicated page, and can submit or
+  revise a bid with a PDF/image document;
+- bid, change-order, proposal, and client-message writes now pass through authenticated server
+  actions instead of broad direct Data API mutation policies;
+- clients can add walkthrough punch items with photos, comment on open items, and see the same
+  evidence and discussion as the project team;
+- project messages support secure PDF/image attachments and live seen state;
+- pull requests and `main` now run tests, type checking, and lint automatically; production build
+  also runs when the public Supabase repository variables are configured.
+
 ## Prioritized roadmap
 
 ### P0 — trust, clarity, and measurement
