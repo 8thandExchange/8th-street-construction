@@ -82,6 +82,7 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
     { data: commitments },
     { data: rfis },
     { data: submittals },
+    { data: serviceRequests },
   ] = await Promise.all([
     projectIds.length
       ? supabase
@@ -140,6 +141,13 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
           .in("project_id", projectIds)
           .in("status", ["submitted", "in_review"])
       : Promise.resolve({ data: [] }),
+    projectIds.length
+      ? supabase
+          .from("project_service_requests")
+          .select("id, project_id, title, status, sla_due")
+          .in("project_id", projectIds)
+          .in("status", ["open", "assigned", "in_progress", "waiting_client"])
+      : Promise.resolve({ data: [] }),
   ]);
 
   const briefing = buildCompanyBriefing({
@@ -197,6 +205,7 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
     if (selectionsOverdue) alertCount++;
     if ((rfis ?? []).some((r) => r.project_id === p.id)) alertCount++;
     if ((submittals ?? []).some((s) => s.project_id === p.id)) alertCount++;
+    if ((serviceRequests ?? []).some((item) => item.project_id === p.id)) alertCount++;
 
     jobs.push({
       id: p.id,
@@ -281,6 +290,18 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
       severity: "warning",
       title: `${pendingSubs.length} submittal${pendingSubs.length === 1 ? "" : "s"} awaiting a decision`,
       detail: "Approve, note, or reject before the field proceeds",
+      href: "/admin/projects",
+    });
+  }
+  const overdueService = (serviceRequests ?? []).filter(
+    (item) => item.sla_due && item.sla_due < today
+  );
+  if (overdueService.length > 0) {
+    attention.push({
+      id: "service-sla",
+      severity: "critical",
+      title: `${overdueService.length} warranty/service request${overdueService.length === 1 ? "" : "s"} past SLA`,
+      detail: "Assign an owner or close the proof",
       href: "/admin/projects",
     });
   }

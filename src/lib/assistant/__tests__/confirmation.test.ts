@@ -42,6 +42,7 @@ describe("requiresConfirmation", () => {
       "company_snapshot",
       "list_rfis",
       "list_submittals",
+      "list_service_requests",
     ]) {
       expect(requiresConfirmation(name, {})).toBe(false);
     }
@@ -74,5 +75,6 @@ describe("tool schema", () => {
     expect(names.has("mark_invoice_paid")).toBe(true);
     expect(names.has("list_rfis")).toBe(true);
     expect(names.has("list_submittals")).toBe(true);
+    expect(names.has("list_service_requests")).toBe(true);
   });
 });

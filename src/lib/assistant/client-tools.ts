@@ -33,6 +33,7 @@ export type ClientAssistantToolName =
   | "get_documents"
   | "get_messages"
   | "get_open_questions"
+  | "get_service_requests"
   | "send_message_to_team";
 
 const PROJECT_ID_PROP = {
@@ -104,6 +105,16 @@ export const CLIENT_ASSISTANT_TOOLS: Anthropic.Tool[] = [
     name: "get_open_questions",
     description:
       "RFIs the project team has sent the client: title, question, status, and any recorded answer. Use when the client asks what they still need to answer, or what was already decided on a written question. Answers are submitted on the portal Questions page — you cannot record an answer here.",
+    input_schema: {
+      type: "object",
+      properties: { ...PROJECT_ID_PROP },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "get_service_requests",
+    description:
+      "Warranty and service requests the client has filed or the team is working: title, status, and closeout notes. Use when they ask if a leak was fixed or what is still open after the build. New requests and confirmations happen on the portal Service page.",
     input_schema: {
       type: "object",
       properties: { ...PROJECT_ID_PROP },
@@ -311,6 +322,21 @@ export async function executeClientAssistantTool(
         questions: data ?? [],
         waiting_on_you: (data ?? []).filter((row) => row.status === "open").length,
         questions_page: `/client/projects/${project.id}/rfis`,
+      };
+    }
+
+    case "get_service_requests": {
+      const { data } = await supabase
+        .from("project_service_requests")
+        .select("number, title, location, category, status, sla_due, closeout_note")
+        .eq("project_id", project.id)
+        .neq("status", "draft")
+        .order("number", { ascending: false });
+      return {
+        project: project.title,
+        requests: data ?? [],
+        waiting_on_you: (data ?? []).filter((row) => row.status === "waiting_client").length,
+        service_page: `/client/projects/${project.id}/service`,
       };
     }
 

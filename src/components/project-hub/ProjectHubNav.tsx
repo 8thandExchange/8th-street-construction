@@ -44,6 +44,7 @@ const GROUPS = [
       { href: "/messages", label: "Messages" },
       { href: "/selections", label: "Selections" },
       { href: "/punch-list", label: "Punch List" },
+      { href: "/service", label: "Service" },
     ],
   },
 ] as const;

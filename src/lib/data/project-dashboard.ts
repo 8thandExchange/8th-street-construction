@@ -14,7 +14,8 @@ export type ActivityKind =
   | "selection"
   | "document"
   | "rfi"
-  | "submittal";
+  | "submittal"
+  | "service";
 
 export type DashboardActivity = {
   id: string;
@@ -80,6 +81,7 @@ const KIND_LABELS: Record<ActivityKind, string> = {
   document: "Document",
   rfi: "RFI",
   submittal: "Submittal",
+  service: "Service",
 };
 
 export function activityKindLabel(kind: ActivityKind): string {
@@ -115,6 +117,7 @@ export async function loadAdminCommandCenter(
     changeOrdersSumRes,
     rfisRes,
     submittalsRes,
+    serviceRes,
   ] = await Promise.all([
     supabase
       .from("project_updates")
@@ -186,6 +189,13 @@ export async function loadAdminCommandCenter(
       .select("id, title, status, updated_at, created_at")
       .eq("project_id", projectId)
       .in("status", ["submitted", "in_review", "approved", "approved_as_noted", "rejected"])
+      .order("updated_at", { ascending: false })
+      .limit(4),
+    supabase
+      .from("project_service_requests")
+      .select("id, title, status, updated_at, created_at")
+      .eq("project_id", projectId)
+      .neq("status", "draft")
       .order("updated_at", { ascending: false })
       .limit(4),
   ]);
@@ -302,6 +312,17 @@ export async function loadAdminCommandCenter(
     });
   }
 
+  for (const item of serviceRes.data ?? []) {
+    activities.push({
+      id: `svc-${item.id}`,
+      kind: "service",
+      title: item.title,
+      detail: item.status.replaceAll("_", " "),
+      at: item.updated_at ?? item.created_at,
+      href: `${base}/service`,
+    });
+  }
+
   const changeOrderTotal = (changeOrdersSumRes.data ?? []).reduce(
     (s, c) => s + Number(c.cost_impact ?? 0),
     0
@@ -356,6 +377,7 @@ export async function loadClientCommandCenter(projectId: string): Promise<Client
     drawsRes,
     changeOrdersSumRes,
     rfisRes,
+    serviceRes,
   ] = await Promise.all([
     supabase
       .from("project_milestones")
@@ -424,6 +446,11 @@ export async function loadClientCommandCenter(projectId: string): Promise<Client
       .select("id, title, status, schedule_impact")
       .eq("project_id", projectId)
       .eq("status", "open"),
+    supabase
+      .from("project_service_requests")
+      .select("id, title, status")
+      .eq("project_id", projectId)
+      .eq("status", "waiting_client"),
   ]);
 
   const milestones = milestonesRes.data ?? [];
@@ -506,6 +533,15 @@ export async function loadClientCommandCenter(projectId: string): Promise<Client
       label: `Answer question: ${rfi.title}`,
       hint: rfi.schedule_impact === "likely" ? "Likely schedule impact" : undefined,
       href: `${base}/rfis`,
+    });
+  }
+
+  for (const item of serviceRes.data ?? []) {
+    actions.push({
+      id: `svc-${item.id}`,
+      severity: "warning",
+      label: `Confirm the work is done: ${item.title}`,
+      href: `${base}/service`,
     });
   }
 

@@ -64,6 +64,7 @@ export async function loadProjectForHub(projectId: string) {
     bidsRes,
     rfisRes,
     submittalsRes,
+    serviceRes,
   ] = await Promise.all([
     supabase.from("project_milestones").select("id, status").eq("project_id", projectId),
     supabase.from("project_updates").select("id", { count: "exact", head: true }).eq("project_id", projectId),
@@ -90,6 +91,11 @@ export async function loadProjectForHub(projectId: string) {
       .select("id, status")
       .eq("project_id", projectId)
       .in("status", ["submitted", "in_review"]),
+    supabase
+      .from("project_service_requests")
+      .select("id, status, sla_due, owner_id")
+      .eq("project_id", projectId)
+      .in("status", ["open", "assigned", "in_progress", "waiting_client"]),
   ]);
 
   const milestones = milestonesRes.data ?? [];
@@ -270,6 +276,27 @@ export async function loadProjectForHub(projectId: string) {
       title: `${pendingSubmittals.length} submittal${pendingSubmittals.length > 1 ? "s" : ""} awaiting a decision`,
       href: `${base}/rfis`,
       actionLabel: "Review",
+    });
+  }
+
+  const openService = serviceRes.data ?? [];
+  const overdueService = openService.filter((item) => item.sla_due && item.sla_due < today);
+  const unownedService = openService.filter((item) => !item.owner_id);
+  if (overdueService.length > 0) {
+    alerts.push({
+      id: "service-sla",
+      severity: "critical",
+      title: `${overdueService.length} service request${overdueService.length > 1 ? "s" : ""} past SLA`,
+      href: `${base}/service`,
+      actionLabel: "Open service",
+    });
+  } else if (unownedService.length > 0) {
+    alerts.push({
+      id: "service-owner",
+      severity: "warning",
+      title: `${unownedService.length} service request${unownedService.length > 1 ? "s" : ""} without an owner`,
+      href: `${base}/service`,
+      actionLabel: "Assign",
     });
   }
 
