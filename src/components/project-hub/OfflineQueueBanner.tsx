@@ -17,21 +17,25 @@ export function OfflineQueueBanner({ projectId }: { projectId?: string }) {
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    let cancelled = false;
+    const cancelled = { current: false };
     async function refresh() {
       try {
         const listed = await listQueuedCaptures();
-        if (!cancelled) {
+        if (!cancelled.current) {
           setItems(projectId ? listed.filter((item) => item.projectId === projectId) : listed);
         }
       } catch {
-        if (!cancelled) setItems([]);
+        if (!cancelled.current) setItems([]);
       }
     }
-    refresh();
-    return subscribeOfflineQueue(() => {
+    const unsubscribe = subscribeOfflineQueue(() => {
       void refresh();
     });
+    void refresh();
+    return () => {
+      cancelled.current = true;
+      unsubscribe();
+    };
   }, [projectId]);
 
   if (items.length === 0) return null;
