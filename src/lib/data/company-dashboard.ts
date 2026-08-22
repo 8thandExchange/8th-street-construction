@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getComplianceDashboardAlerts } from "@/lib/compliance/compliance-reminders";
 import { getPlaybookProgress } from "@/lib/build/apply-playbook";
 import { getPlaybookById, DEFAULT_PLAYBOOK_ID } from "@/lib/build/playbook-registry";
+import {
+  buildCompanyBriefing,
+  type CompanyBriefing,
+} from "@/lib/operations/company-briefing";
 
 export type CompanyJobCard = {
   id: string;
@@ -28,6 +32,16 @@ export type CompanyDashboardData = {
   complianceAlerts: Awaited<ReturnType<typeof getComplianceDashboardAlerts>>;
   newLeads: number;
   pendingConsults: number;
+  briefing: CompanyBriefing;
+  attention: CompanyAttentionItem[];
+};
+
+export type CompanyAttentionItem = {
+  id: string;
+  severity: "critical" | "warning" | "info";
+  title: string;
+  detail: string;
+  href: string;
 };
 
 export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
@@ -55,55 +69,103 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
       .eq("status", "requested"),
   ]);
 
+  const projectIds = (projects ?? []).map((project) => project.id);
+  const [
+    { data: tasks },
+    { data: milestones },
+    { data: draws },
+    { data: invoices },
+    { data: punchItems },
+    { data: selections },
+    { data: estimateLines },
+    { data: vendorBills },
+    { data: commitments },
+  ] = await Promise.all([
+    projectIds.length
+      ? supabase
+          .from("project_tasks")
+          .select("id, project_id, title, status, due_date")
+          .in("project_id", projectIds)
+      : Promise.resolve({ data: [] }),
+    projectIds.length
+      ? supabase
+          .from("project_milestones")
+          .select("project_id, phase_key, status")
+          .in("project_id", projectIds)
+      : Promise.resolve({ data: [] }),
+    projectIds.length
+      ? supabase
+          .from("payment_draws")
+          .select("project_id, amount, status")
+          .in("project_id", projectIds)
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from("invoices")
+      .select("id, project_id, invoice_number, status, total, amount_paid, due_date"),
+    projectIds.length
+      ? supabase
+          .from("punch_list_items")
+          .select("project_id, status")
+          .in("project_id", projectIds)
+      : Promise.resolve({ data: [] }),
+    projectIds.length
+      ? supabase
+          .from("project_selections")
+          .select("project_id, status, due_date")
+          .in("project_id", projectIds)
+      : Promise.resolve({ data: [] }),
+    projectIds.length
+      ? supabase
+          .from("project_estimate_lines")
+          .select("id, project_id")
+          .in("project_id", projectIds)
+      : Promise.resolve({ data: [] }),
+    supabase.from("vendor_bills").select("id, title, status, amount, due_date"),
+    supabase
+      .from("meeting_action_items")
+      .select("id, title, status, priority, due_date, owner_name"),
+  ]);
+
+  const briefing = buildCompanyBriefing({
+    today,
+    invoices: invoices ?? [],
+    vendorBills: vendorBills ?? [],
+    commitments: commitments ?? [],
+    tasks: tasks ?? [],
+  });
+
   const jobs: CompanyJobCard[] = [];
 
   for (const p of projects ?? []) {
-    const [
-      tasksRes,
-      milestonesRes,
-      drawsRes,
-      invoicesRes,
-      punchRes,
-      selectionsRes,
-      estimateRes,
-    ] = await Promise.all([
-      supabase.from("project_tasks").select("status").eq("project_id", p.id),
-      supabase.from("project_milestones").select("phase_key, status").eq("project_id", p.id),
-      supabase.from("payment_draws").select("amount, status").eq("project_id", p.id),
-      supabase.from("invoices").select("status").eq("project_id", p.id),
-      supabase.from("punch_list_items").select("status").eq("project_id", p.id),
-      supabase
-        .from("project_selections")
-        .select("status, due_date")
-        .eq("project_id", p.id),
-      supabase
-        .from("project_estimate_lines")
-        .select("id", { count: "exact", head: true })
-        .eq("project_id", p.id),
-    ]);
+    const projectTasks = (tasks ?? []).filter((item) => item.project_id === p.id);
+    const projectMilestones = (milestones ?? []).filter((item) => item.project_id === p.id);
+    const projectDraws = (draws ?? []).filter((item) => item.project_id === p.id);
+    const projectInvoices = (invoices ?? []).filter((item) => item.project_id === p.id);
+    const projectPunch = (punchItems ?? []).filter((item) => item.project_id === p.id);
+    const projectSelections = (selections ?? []).filter((item) => item.project_id === p.id);
+    const projectEstimateLines = (estimateLines ?? []).filter((item) => item.project_id === p.id);
 
-    const tasks = tasksRes.data ?? [];
-    const tasksDone = tasks.filter((t) => t.status === "done").length;
-    const tasksTotal = tasks.length;
+    const tasksDone = projectTasks.filter((t) => t.status === "done").length;
+    const tasksTotal = projectTasks.length;
     const progressPct = tasksTotal
       ? Math.round((tasksDone / tasksTotal) * 100)
       : p.playbook_applied_at
         ? Math.round(
-            ((milestonesRes.data ?? []).filter((m) => m.status === "completed").length /
-              Math.max(1, (milestonesRes.data ?? []).length)) *
+            (projectMilestones.filter((m) => m.status === "completed").length /
+              Math.max(1, projectMilestones.length)) *
               100
           )
         : 0;
 
-    const paidToUs = (drawsRes.data ?? [])
+    const paidToUs = projectDraws
       .filter((d) => d.status === "paid")
       .reduce((s, d) => s + Number(d.amount), 0);
 
-    const unpaidInvoices = (invoicesRes.data ?? []).filter(
+    const unpaidInvoices = projectInvoices.filter(
       (i) => i.status !== "paid" && i.status !== "void"
     ).length;
 
-    const selectionsOverdue = (selectionsRes.data ?? []).filter(
+    const selectionsOverdue = projectSelections.filter(
       (s) =>
         s.due_date &&
         s.due_date < today &&
@@ -114,7 +176,7 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
     let alertCount = 0;
     if (!p.client_id) alertCount++;
     if (!Number(p.contract_value)) alertCount++;
-    if ((estimateRes.count ?? 0) === 0) alertCount++;
+    if (projectEstimateLines.length === 0) alertCount++;
     if (unpaidInvoices) alertCount++;
     if (selectionsOverdue) alertCount++;
 
@@ -131,11 +193,66 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
       clientContract: Number(p.contract_value ?? 0),
       paidToUs,
       unpaidInvoices,
-      openPunch: (punchRes.data ?? []).filter((x) => x.status !== "complete").length,
+      openPunch: projectPunch.filter((x) => x.status !== "complete").length,
       selectionsOverdue,
-      hasCostPlan: (estimateRes.count ?? 0) > 0,
+      hasCostPlan: projectEstimateLines.length > 0,
       hasClient: Boolean(p.client_id),
       alertCount,
+    });
+  }
+
+  const attention: CompanyAttentionItem[] = [];
+  if (briefing.receivables.overdueCount > 0) {
+    attention.push({
+      id: "overdue-receivables",
+      severity: "critical",
+      title: `${briefing.receivables.overdueCount} overdue client invoice${
+        briefing.receivables.overdueCount === 1 ? "" : "s"
+      }`,
+      detail: "Collect or resolve the outstanding balance",
+      href: "/admin/invoicing",
+    });
+  }
+  if (briefing.payables.overdueCount > 0) {
+    attention.push({
+      id: "overdue-payables",
+      severity: "critical",
+      title: `${briefing.payables.overdueCount} vendor bill${
+        briefing.payables.overdueCount === 1 ? "" : "s"
+      } past due`,
+      detail: "Review accounts payable",
+      href: "/admin/vendors",
+    });
+  }
+  if (briefing.commitments.overdueCount > 0 || briefing.commitments.blockedCount > 0) {
+    attention.push({
+      id: "meeting-commitments",
+      severity: briefing.commitments.blockedCount > 0 ? "critical" : "warning",
+      title: `${briefing.commitments.overdueCount} overdue · ${briefing.commitments.blockedCount} blocked commitment${
+        briefing.commitments.blockedCount === 1 ? "" : "s"
+      }`,
+      detail: "Close the loop on meeting action items",
+      href: "/admin/meetings/action-items",
+    });
+  }
+  if (briefing.schedule.overdueTaskCount > 0) {
+    attention.push({
+      id: "overdue-tasks",
+      severity: "warning",
+      title: `${briefing.schedule.overdueTaskCount} checklist item${
+        briefing.schedule.overdueTaskCount === 1 ? "" : "s"
+      } past due`,
+      detail: "Open a job to update the build plan",
+      href: "/admin/projects",
+    });
+  }
+  for (const item of complianceAlerts.slice(0, 2)) {
+    attention.push({
+      id: `compliance-${item.id}`,
+      severity: item.status === "expired" ? "critical" : "warning",
+      title: item.title,
+      detail: item.status === "expired" ? "Compliance record expired" : `${item.days} days remaining`,
+      href: "/admin/compliance",
     });
   }
 
@@ -144,6 +261,8 @@ export async function loadCompanyDashboard(): Promise<CompanyDashboardData> {
     complianceAlerts,
     newLeads: newLeads ?? 0,
     pendingConsults: pendingConsults ?? 0,
+    briefing,
+    attention,
   };
 }
 
