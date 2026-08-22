@@ -193,6 +193,8 @@ palette dialog pattern.
 - clients can add walkthrough punch items with photos, comment on open items, and see the same
   evidence and discussion as the project team;
 - project messages support secure PDF/image attachments and live seen state;
+- login failures no longer reveal whether an email has an account, revalidation secrets are accepted
+  only through headers, and baseline anti-framing/content-type/referrer platform headers are enabled;
 - pull requests and `main` now run tests, type checking, and lint automatically; production build
   also runs when the public Supabase repository variables are configured.
 
