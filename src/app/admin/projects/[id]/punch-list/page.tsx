@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import {
   createPunchItem,
   togglePunchComplete,
@@ -17,7 +18,9 @@ export default async function ProjectPunchListPage(props: { params: Promise<{ id
 
   const { data: items } = await supabase
     .from("punch_list_items")
-    .select("*")
+    .select(
+      "id, title, location, status, description, completed_at, assigned_trade, priority, due_date, punch_list_images(id, caption), punch_list_comments(id, body, created_at, author:profiles(first_name, last_name, role))"
+    )
     .eq("project_id", id)
     .order("status")
     .order("due_date", { ascending: true, nullsFirst: false });
@@ -104,6 +107,48 @@ export default async function ProjectPunchListPage(props: { params: Promise<{ id
               </div>
               {item.description && (
                 <p className="text-xs app-muted mt-1">{item.description}</p>
+              )}
+              {item.punch_list_images?.length > 0 && (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {item.punch_list_images.map((image) => (
+                    <figure key={image.id} className="overflow-hidden rounded-lg border border-navy/10">
+                      <div className="relative aspect-[4/3]">
+                        <Image
+                          src={`/api/punch-images/${image.id}`}
+                          alt={image.caption || item.title}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                          sizes="(max-width: 640px) 100vw, 340px"
+                        />
+                      </div>
+                      {image.caption && (
+                        <figcaption className="px-3 py-2 text-xs app-muted">
+                          {image.caption}
+                        </figcaption>
+                      )}
+                    </figure>
+                  ))}
+                </div>
+              )}
+              {item.punch_list_comments?.length > 0 && (
+                <div className="mt-4 space-y-2 border-l-2 border-navy/[0.08] pl-3">
+                  {item.punch_list_comments.map((comment) => {
+                    const rawAuthor = comment.author;
+                    const author = Array.isArray(rawAuthor) ? rawAuthor[0] : rawAuthor;
+                    const name =
+                      [author?.first_name, author?.last_name].filter(Boolean).join(" ") ||
+                      (author?.role === "admin" ? "Team" : "Client");
+                    return (
+                      <div key={comment.id} className="text-sm text-navy/75">
+                        <p>{comment.body}</p>
+                        <p className="mt-1 text-[11px] app-muted">
+                          {name} · {new Date(comment.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs app-muted">
                 <span
