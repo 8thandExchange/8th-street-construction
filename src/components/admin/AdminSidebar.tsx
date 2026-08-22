@@ -64,6 +64,7 @@ const NAV_GROUPS: {
       { href: "/admin/invoicing", label: "Invoicing", icon: Banknote },
       { href: "/admin/vendors", label: "Vendors & Bills", icon: Landmark },
       { href: "/admin/accounting", label: "Accounting", icon: BookOpenCheck },
+      { href: "/admin/accounting/forecast", label: "Cash and close", icon: BarChart3 },
       { href: "/admin/job-costs", label: "Job Costs", icon: BarChart3 },
     ],
   },

@@ -151,14 +151,17 @@ export function VendorLogoUpload({ vendorId, hasLogo }: { vendorId: string; hasL
 export function RecordBillForm({
   vendorId,
   projects,
+  billLimit = 10000,
 }: {
   vendorId: string;
   projects: { id: string; title: string }[];
+  billLimit?: number;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [amount, setAmount] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -199,7 +202,16 @@ export function RecordBillForm({
       </div>
       <div>
         <label className="field-label">Amount ($) *</label>
-        <input name="amount" required type="number" step="0.01" min="0.01" placeholder="2500" className="field-input w-full" />
+        <input
+          name="amount"
+          required
+          type="number"
+          step="0.01"
+          min="0.01"
+          placeholder="2500"
+          className="field-input w-full"
+          onChange={(event) => setAmount(Number(event.target.value))}
+        />
       </div>
       <div>
         <label className="field-label">Their invoice #</label>
@@ -245,6 +257,15 @@ export function RecordBillForm({
           Record bill
         </button>
       </div>
+      {amount > billLimit && (
+        <label className="sm:col-span-2 flex items-start gap-2 text-xs text-navy/80">
+          <input type="checkbox" name="confirm_over_threshold" className="mt-0.5 h-4 w-4 accent-copper" />
+          <span>
+            This bill exceeds the ${billLimit.toLocaleString("en-US")} approval threshold. Confirm
+            to continue.
+          </span>
+        </label>
+      )}
       {error && <p className="sm:col-span-2 text-sm text-red-600">{error}</p>}
     </form>
   );

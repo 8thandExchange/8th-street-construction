@@ -99,6 +99,13 @@ export async function recordVendorBill(formData: FormData) {
   if (!vendorId || !title) return { error: "Vendor and description are required" };
   if (!Number.isFinite(amount) || amount <= 0) return { error: "Enter a valid amount" };
 
+  try {
+    const { assertApprovalThreshold } = await import("@/lib/finance/assert-threshold");
+    await assertApprovalThreshold("bill", amount, formData);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Approval required" };
+  }
+
   const admin = createAdminClient();
   const stagedFile = String(formData.get("file_staged_path") ?? "").trim();
   const filePath = stagedFile ? await moveStagedFile(stagedFile, `vendors/${vendorId}/bills`) : null;

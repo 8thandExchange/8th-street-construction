@@ -21,6 +21,8 @@ import { invoiceReadyEmail } from "@/lib/email/templates/invoice-ready";
 import { getSiteUrl } from "@/lib/brand/assets";
 import { FileText } from "lucide-react";
 import { SubmitButton } from "@/components/admin/SubmitButton";
+import { loadApprovalThresholds } from "@/lib/finance/settings";
+import { ThresholdConfirm } from "@/components/finance/ThresholdConfirm";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +58,7 @@ export default async function InvoiceDetailPage(props: {
   const { id, invoiceId } = await props.params;
   const supabase = await createClient();
 
-  const [{ data: invoice }, { data: lines }, { data: attachments }, { data: budgetLines }] =
+  const [{ data: invoice }, { data: lines }, { data: attachments }, { data: budgetLines }, thresholds] =
     await Promise.all([
       supabase
         .from("invoices")
@@ -83,6 +85,7 @@ export default async function InvoiceDetailPage(props: {
         .select("id, city_number, description")
         .eq("project_id", id)
         .order("city_number"),
+      loadApprovalThresholds(),
     ]);
   if (!invoice) notFound();
 
@@ -259,9 +262,14 @@ export default async function InvoiceDetailPage(props: {
                       Delete draft
                     </SubmitButton>
                   </form>
-                  <form action={sendInvoiceAction}>
+                  <form action={sendInvoiceAction} className="space-y-2">
                     <input type="hidden" name="project_id" value={id} />
                     <input type="hidden" name="invoice_id" value={invoiceId} />
+                    <ThresholdConfirm
+                      amount={Number(invoice.total)}
+                      limit={thresholds.invoice}
+                      noun="invoice"
+                    />
                     <SubmitButton className="app-btn app-btn-accent" pendingLabel="Sending…">
                       Send to client
                     </SubmitButton>
