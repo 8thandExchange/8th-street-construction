@@ -16,6 +16,7 @@ export const PORTAL_FEATURES = [
   { key: "proposals", label: "Proposals", href: "/proposals" },
   { key: "contracts", label: "Agreements", href: "/contracts" },
   { key: "punch_list", label: "Punch List", href: "/punch-list" },
+  { key: "rfis", label: "Questions", href: "/rfis" },
   { key: "messages", label: "Messages", href: "/messages" },
   { key: "change_orders", label: "Change Orders", href: "/change-orders" },
 ] as const;

@@ -62,6 +62,8 @@ export async function loadProjectForHub(projectId: string) {
     punchRes,
     selectionsRes,
     bidsRes,
+    rfisRes,
+    submittalsRes,
   ] = await Promise.all([
     supabase.from("project_milestones").select("id, status").eq("project_id", projectId),
     supabase.from("project_updates").select("id", { count: "exact", head: true }).eq("project_id", projectId),
@@ -78,6 +80,16 @@ export async function loadProjectForHub(projectId: string) {
     supabase.from("punch_list_items").select("id, status, due_date").eq("project_id", projectId),
     supabase.from("project_selections").select("id, status, due_date, title").eq("project_id", projectId),
     supabase.from("bid_requests").select("id, status").eq("project_id", projectId).eq("status", "open"),
+    supabase
+      .from("project_rfis")
+      .select("id, status, schedule_impact")
+      .eq("project_id", projectId)
+      .in("status", ["open", "answered"]),
+    supabase
+      .from("project_submittals")
+      .select("id, status")
+      .eq("project_id", projectId)
+      .in("status", ["submitted", "in_review"]),
   ]);
 
   const milestones = milestonesRes.data ?? [];
@@ -225,6 +237,39 @@ export async function loadProjectForHub(projectId: string) {
       title: `${unpaidInvoices} unpaid invoice${unpaidInvoices > 1 ? "s" : ""}`,
       href: `${base}/billing`,
       actionLabel: "Money & Invoices",
+    });
+  }
+
+  const openRfis = (rfisRes.data ?? []).filter((r) => r.status === "open");
+  const answeredRfis = (rfisRes.data ?? []).filter((r) => r.status === "answered");
+  const pendingSubmittals = submittalsRes.data ?? [];
+
+  if (openRfis.length > 0) {
+    alerts.push({
+      id: "rfi-open",
+      severity: openRfis.some((r) => r.schedule_impact === "likely") ? "critical" : "warning",
+      title: `${openRfis.length} RFI${openRfis.length > 1 ? "s" : ""} waiting on an answer`,
+      detail: "The build is waiting on a written answer.",
+      href: `${base}/rfis`,
+      actionLabel: "Open RFIs",
+    });
+  }
+
+  if (answeredRfis.length > 0) {
+    nextActions.push({
+      href: `${base}/rfis`,
+      label: "Close answered RFIs",
+      hint: `${answeredRfis.length} answered`,
+    });
+  }
+
+  if (pendingSubmittals.length > 0) {
+    alerts.push({
+      id: "submittals",
+      severity: "warning",
+      title: `${pendingSubmittals.length} submittal${pendingSubmittals.length > 1 ? "s" : ""} awaiting a decision`,
+      href: `${base}/rfis`,
+      actionLabel: "Review",
     });
   }
 

@@ -40,6 +40,8 @@ describe("requiresConfirmation", () => {
       "get_project_billing",
       "list_recent_leads",
       "company_snapshot",
+      "list_rfis",
+      "list_submittals",
     ]) {
       expect(requiresConfirmation(name, {})).toBe(false);
     }
@@ -70,5 +72,7 @@ describe("tool schema", () => {
     expect(names.has("create_invoice")).toBe(true);
     expect(names.has("send_invoice")).toBe(true);
     expect(names.has("mark_invoice_paid")).toBe(true);
+    expect(names.has("list_rfis")).toBe(true);
+    expect(names.has("list_submittals")).toBe(true);
   });
 });

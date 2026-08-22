@@ -92,12 +92,15 @@ const TOOL_LABELS: Record<string, string> = {
   draft_contract: "Drafting the agreement",
   fill_contract_placeholders: "Updating agreement details",
   set_contract_status: "Updating agreement status",
+  list_rfis: "Checking RFIs",
+  list_submittals: "Checking submittals",
   // Client concierge tools
   get_schedule: "Reading your schedule",
   get_recent_updates: "Checking recent updates",
   get_billing_summary: "Pulling your billing summary",
   get_documents: "Listing your documents",
   get_messages: "Reading the message thread",
+  get_open_questions: "Checking questions for you",
   send_message_to_team: "Drafting a message to the team",
 };
 

@@ -36,6 +36,7 @@ describe("clientRequiresConfirmation", () => {
       "get_billing_summary",
       "get_documents",
       "get_messages",
+      "get_open_questions",
     ]) {
       expect(clientRequiresConfirmation(name)).toBe(false);
     }
@@ -89,6 +90,7 @@ describe("tool schema", () => {
       "get_billing_summary",
       "get_documents",
       "get_messages",
+      "get_open_questions",
       "get_recent_updates",
       "get_schedule",
       "send_message_to_team",

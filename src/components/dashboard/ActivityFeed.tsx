@@ -14,6 +14,8 @@ const KIND_ICONS: Record<ActivityKind, string> = {
   change_order: "±",
   selection: "◆",
   document: "📄",
+  rfi: "?",
+  submittal: "▣",
 };
 
 function formatRelativeTime(iso: string): string {
