@@ -11,6 +11,8 @@ import {
   markPurchaseOrderBilled,
 } from "@/lib/actions/purchase-orders";
 import { poBillCoverage } from "@/lib/procurement/po-from-bid";
+import { loadApprovalThresholds } from "@/lib/finance/settings";
+import { ThresholdConfirm } from "@/components/finance/ThresholdConfirm";
 import { PurchaseOrderForm } from "@/components/costs/PurchaseOrderForm";
 import { appStatusBadge } from "@/lib/project/status-badges";
 import { formatMoney } from "@/lib/billing/constants";
@@ -39,7 +41,7 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
   const { id } = await props.params;
   const supabase = await createClient();
 
-  const [{ data: project }, { data: pos }, { data: subs }, { data: divisions }, { data: awardedBids }, { data: bills }] =
+  const [{ data: project }, { data: pos }, { data: subs }, { data: divisions }, { data: awardedBids }, { data: bills }, thresholds] =
     await Promise.all([
       supabase
         .from("projects")
@@ -75,6 +77,7 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
         .select("id, title, amount, status, purchase_order_id")
         .eq("project_id", id)
         .neq("status", "void"),
+      loadApprovalThresholds(),
     ]);
 
   if (!project) notFound();
@@ -252,9 +255,14 @@ export default async function PurchaseOrdersPage(props: { params: Promise<{ id: 
                 </a>
                 {po.status === "draft" && (
                   <>
-                    <form action={issuePurchaseOrder} className="flex items-center gap-2">
+                    <form action={issuePurchaseOrder} className="flex flex-wrap items-center gap-2">
                       <input type="hidden" name="id" value={po.id} />
                       <input type="hidden" name="project_id" value={id} />
+                      <ThresholdConfirm
+                        amount={Number(po.total)}
+                        limit={thresholds.purchaseOrder}
+                        noun="purchase order"
+                      />
                       <label className="flex items-center gap-1.5 text-xs app-muted cursor-pointer">
                         <input type="checkbox" name="send_email" defaultChecked className="h-4 w-4 accent-copper" />
                         Email the sub

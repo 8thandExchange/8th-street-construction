@@ -851,6 +851,9 @@ export async function sendCustomInvoice(formData: FormData) {
   if (!invoice) throw new Error("Invoice not found.");
   if (invoice.status !== "draft") throw new Error("Only draft invoices can be sent.");
 
+  const { assertApprovalThreshold } = await import("@/lib/finance/assert-threshold");
+  await assertApprovalThreshold("invoice", Number(invoice.total), formData);
+
   const { data: project } = await supabase
     .from("projects")
     .select("title, client_id, slug")

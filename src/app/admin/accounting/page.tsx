@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/billing/constants";
 
@@ -61,6 +62,11 @@ export default async function AccountingPage() {
       <p className="mt-3 app-muted max-w-2xl leading-relaxed">
         Everything your bookkeeper needs, exported straight from the live books. The invoice file
         imports directly into QuickBooks Online; the others match deposits and committed costs.
+        Live cash and month-close live on{" "}
+        <Link href="/admin/accounting/forecast" className="text-copper hover:underline">
+          Cash and close
+        </Link>
+        .
       </p>
 
       <div className="mt-8 grid grid-cols-3 gap-3">

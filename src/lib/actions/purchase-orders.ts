@@ -203,6 +203,9 @@ export async function issuePurchaseOrder(formData: FormData) {
   if (!po) throw new Error("Purchase order not found.");
   if (po.status !== "draft") throw new Error("Only draft purchase orders can be issued.");
 
+  const { assertApprovalThreshold } = await import("@/lib/finance/assert-threshold");
+  await assertApprovalThreshold("purchaseOrder", Number(po.total), formData);
+
   const { error } = await supabase
     .from("purchase_orders")
     .update({

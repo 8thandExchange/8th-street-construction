@@ -269,10 +269,12 @@ typing.
 ### P3 — financial operations
 
 - Add cash forecasting by expected invoice, due date, payable, committed cost, and schedule phase.
-- Add margin-at-completion forecasting and variance explanations.
+  **Done** on `/admin/accounting/forecast`.
+- Add margin-at-completion forecasting and variance explanations. **Done.**
 - Integrate QuickBooks through OAuth with idempotent customer, invoice, payment, vendor, and bill sync.
-- Add month-close reconciliation status and exception handling.
-- Add configurable approval thresholds for invoices, vendor bills, and purchase orders.
+  **Still CSV export only** — OAuth needs a QuickBooks app.
+- Add month-close reconciliation status and exception handling. **Done.**
+- Add configurable approval thresholds for invoices, vendor bills, and purchase orders. **Done.**
 
 **Success measures:** leadership can answer expected cash and margin without exporting; bookkeeper
 exceptions are explicit rather than discovered during month close.
