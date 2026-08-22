@@ -308,6 +308,7 @@ export async function loadClientCommandCenter(projectId: string): Promise<Client
     invoicesRes,
     pendingPlanSetsRes,
     changeOrdersRes,
+    proposalsRes,
     messagesRes,
     drawsRes,
     changeOrdersSumRes,
@@ -349,6 +350,11 @@ export async function loadClientCommandCenter(projectId: string): Promise<Client
       .select("id, title, status, created_at")
       .eq("project_id", projectId)
       .eq("status", "pending_client"),
+    supabase
+      .from("project_proposals")
+      .select("id, title, amount, status")
+      .eq("project_id", projectId)
+      .eq("status", "sent"),
     supabase
       .from("project_messages")
       .select("id, body, created_at, sender_role")
@@ -414,6 +420,16 @@ export async function loadClientCommandCenter(projectId: string): Promise<Client
       severity: "warning",
       label: `Approve change order: ${co.title}`,
       href: `${base}/change-orders`,
+    });
+  }
+
+  for (const proposal of proposalsRes.data ?? []) {
+    actions.push({
+      id: `proposal-${proposal.id}`,
+      severity: "warning",
+      label: `Review proposal: ${proposal.title}`,
+      hint: proposal.amount ? `$${Number(proposal.amount).toLocaleString()}` : undefined,
+      href: `${base}/proposals`,
     });
   }
 

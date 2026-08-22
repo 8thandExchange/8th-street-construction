@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const TABS = [
   { href: "", label: "Overview" },
@@ -13,6 +13,7 @@ const TABS = [
   { href: "/selections", label: "Selections" },
   { href: "/documents", label: "Documents" },
   { href: "/billing", label: "Billing" },
+  { href: "/proposals", label: "Proposals" },
   { href: "/punch-list", label: "Punch List" },
   { href: "/messages", label: "Messages" },
   { href: "/change-orders", label: "Change Orders" },
@@ -27,13 +28,38 @@ export function ClientProjectNav({
   enabledHrefs?: string[];
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const base = `/client/projects/${projectId}`;
   const enabled = enabledHrefs ? new Set(enabledHrefs) : null;
   const tabs = TABS.filter((tab) => tab.href === "" || !enabled || enabled.has(tab.href));
+  const currentHref =
+    tabs
+      .map((tab) => `${base}${tab.href}`)
+      .find((href) =>
+        href === base ? pathname === base || pathname === `${base}/` : pathname.startsWith(href)
+      ) ?? base;
 
   return (
-    <nav className="flex gap-2 overflow-x-auto pb-2 scrollbar-none" aria-label="Project">
-      {tabs.map((tab) => {
+    <nav aria-label="Project">
+      <div className="sm:hidden">
+        <label htmlFor="client-project-section" className="app-label mb-1.5 block">
+          Project section
+        </label>
+        <select
+          id="client-project-section"
+          value={currentHref}
+          onChange={(event) => router.push(event.target.value)}
+          className="w-full"
+        >
+          {tabs.map((tab) => (
+            <option key={tab.href} value={`${base}${tab.href}`}>
+              {tab.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="hidden gap-2 overflow-x-auto pb-2 scrollbar-none sm:flex">
+        {tabs.map((tab) => {
         const href = `${base}${tab.href}`;
         const active =
           tab.href === ""
@@ -49,6 +75,7 @@ export function ClientProjectNav({
           </Link>
         );
       })}
+      </div>
     </nav>
   );
 }

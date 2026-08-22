@@ -20,15 +20,15 @@ export default async function ClientProjectLayout({
 
   return (
     <div className="min-h-full">
-      <div className="border-b border-ink/10 bg-bone/95 backdrop-blur-md sticky top-20 z-20">
-        <div className="px-6 md:px-10 lg:px-14 py-6 max-w-7xl mx-auto">
+      <div className="z-20 border-b border-navy/[0.08] bg-white/95 backdrop-blur-md sm:sticky sm:top-16">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 md:px-10 lg:px-14">
           <Link
             href="/client"
-            className="text-xs font-mono tracking-[0.18em] uppercase text-stone-300 hover:text-ink transition-colors"
+            className="text-xs font-medium app-muted transition-colors hover:text-copper"
           >
             ← My Projects
           </Link>
-          <h1 className="mt-3 font-display text-2xl md:text-3xl text-ink leading-tight">
+          <h1 className="mt-2 app-h1 !text-[20px] md:!text-[22px]">
             {project.title}
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -43,7 +43,7 @@ export default async function ClientProjectLayout({
           {project.subtitle && (
             <p className="mt-1 text-ink/55 text-sm">{project.subtitle}</p>
           )}
-          <div className="mt-5">
+          <div className="mt-4">
             <ClientProjectNav
               projectId={id}
               enabledHrefs={PORTAL_FEATURES.filter((f) =>

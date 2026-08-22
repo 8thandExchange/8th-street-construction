@@ -13,6 +13,7 @@ export const PORTAL_FEATURES = [
   { key: "selections", label: "Selections", href: "/selections" },
   { key: "documents", label: "Documents", href: "/documents" },
   { key: "billing", label: "Billing", href: "/billing" },
+  { key: "proposals", label: "Proposals", href: "/proposals" },
   { key: "punch_list", label: "Punch List", href: "/punch-list" },
   { key: "messages", label: "Messages", href: "/messages" },
   { key: "change_orders", label: "Change Orders", href: "/change-orders" },
