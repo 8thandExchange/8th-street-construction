@@ -17,15 +17,26 @@ const PROJECT_STATUS_OPTIONS = Object.entries(PROJECT_STATUS_LABELS).map(
 
 export default async function AdminProjects() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("staff_scope").eq("id", user.id).single()
+    : { data: null };
+  const { parseStaffScope, staffCanSeeProject, staffHas } = await import("@/lib/auth/staff-scope");
+  const staffScope = parseStaffScope(profile?.staff_scope);
   const { data: projects } = await supabase
     .from("projects")
     .select(
-      "id, slug, title, category, status, updated_at, contract_value, estimated_cost, playbook_applied_at, client_id, funding_type, hud_grant_year"
+      "id, slug, title, category, status, updated_at, contract_value, estimated_cost, playbook_applied_at, client_id, funding_type, hud_grant_year, project_manager_id, superintendent_id"
     )
     .order("updated_at", { ascending: false });
+  const visible = (projects ?? []).filter((p) =>
+    user ? staffCanSeeProject(staffScope, user.id, p) : false
+  );
 
   const enriched = await Promise.all(
-    (projects ?? []).map(async (p) => {
+    visible.map(async (p) => {
       const [{ data: tasks }, { count: estimateLines }] = await Promise.all([
         supabase.from("project_tasks").select("status").eq("project_id", p.id),
         supabase
@@ -48,12 +59,14 @@ export default async function AdminProjects() {
           <h1 className="mt-2 app-h1">Projects</h1>
           <p className="mt-2 text-sm app-muted">Tap any row to open the job master board.</p>
         </div>
+        {staffHas(staffScope, "create_project") && (
         <Link
           href="/admin/projects/new"
           className="app-btn app-btn-primary"
         >
           + New Project
         </Link>
+        )}
       </div>
 
       {enriched.length > 0 ? (

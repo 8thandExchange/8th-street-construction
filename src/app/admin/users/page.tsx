@@ -8,6 +8,8 @@ import {
   InviteUserForm,
   ResetPasswordForm,
 } from "./PortalAccessForms";
+import { setStaffScope } from "@/lib/actions/staff-access";
+import { STAFF_SCOPE_LABELS, STAFF_SCOPES } from "@/lib/auth/staff-scope";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +25,7 @@ export default async function AdminUsersPage() {
   const [{ data: users }, { data: requests }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, email, role, first_name, last_name, must_change_password, portal_active, organization_name, created_at")
+      .select("id, email, role, first_name, last_name, must_change_password, portal_active, organization_name, created_at, staff_scope")
       .order("created_at", { ascending: true }),
     supabase
       .from("portal_access_requests")
@@ -41,7 +43,9 @@ export default async function AdminUsersPage() {
       <p className="mt-4 app-muted max-w-2xl leading-relaxed">
         Grant access with a temporary password — users sign in at{" "}
         <code className="text-xs">/login</code>, then set their own password on first login.
-        Cofounders and team members use the <strong>Admin</strong> role.
+        Cofounders use <strong>Admin</strong> with a full scope. A project manager,
+        superintendent, or bookkeeper also signs in as Admin, then this page
+        narrows what they can do.
       </p>
 
       {pendingCount > 0 && (
@@ -149,6 +153,29 @@ export default async function AdminUsersPage() {
                   <span className="app-badge app-badge-neutral">
                     {ROLE_LABELS[u.role] || u.role}
                   </span>
+                  {u.role === "admin" && (
+                    <form action={setStaffScope} className="mt-2 flex items-center gap-2">
+                      <input type="hidden" name="profile_id" value={u.id} />
+                      <label className="sr-only" htmlFor={`scope-${u.id}`}>
+                        Staff scope for {u.email}
+                      </label>
+                      <select
+                        id={`scope-${u.id}`}
+                        name="staff_scope"
+                        defaultValue={u.staff_scope ?? "full"}
+                        className="field-input !h-8 !text-xs"
+                      >
+                        {STAFF_SCOPES.map((scope) => (
+                          <option key={scope} value={scope}>
+                            {STAFF_SCOPE_LABELS[scope]}
+                          </option>
+                        ))}
+                      </select>
+                      <button type="submit" className="app-btn app-btn-ghost !h-8 !text-xs">
+                        Save
+                      </button>
+                    </form>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   {u.role === "client" ? (
