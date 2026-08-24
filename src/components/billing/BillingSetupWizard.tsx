@@ -21,7 +21,6 @@ type BillingSetupWizardProps = {
   drawCount: number;
   clientId: string | null;
   clientName: string | null;
-  stripeReady: boolean;
   mercuryReady?: boolean;
 };
 
@@ -35,7 +34,6 @@ export function BillingSetupWizard({
   drawCount,
   clientId,
   clientName,
-  stripeReady,
   mercuryReady = false,
 }: BillingSetupWizardProps) {
   const project = { slug: projectSlug, funding_type: fundingType };
@@ -179,10 +177,8 @@ export function BillingSetupWizard({
         <div className="hub-panel border-emerald-200/60 bg-emerald-50/50 p-4 mb-8 text-sm text-emerald-900">
           Invoices go to <strong>{clientName}</strong>
           {mercuryReady
-            ? " — Mercury handles ACH & card payments."
-            : stripeReady
-              ? " — they can pay by card in the portal."
-              : " — connect Mercury or Stripe for online pay."}
+            ? " — Mercury handles ACH payments."
+            : " — connect Mercury for online pay."}
         </div>
       )}
     </>

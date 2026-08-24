@@ -3,7 +3,6 @@ import { BillingBrandHeader } from "@/components/billing/BillingBrandHeader";
 import { BillingStatusBanner } from "@/components/billing/BillingStatusBanner";
 import { InvoicingPortal, type InvoicingProject } from "@/components/billing/InvoicingPortal";
 import { mercuryConfigured } from "@/lib/mercury/config";
-import { stripeConfigured } from "@/lib/stripe/config";
 
 export const dynamic = "force-dynamic";
 
@@ -93,11 +92,7 @@ export default async function AdminInvoicingPage() {
         description="Create and send invoices through Mercury — free ACH bank transfer for clients. Open a project's billing page for the full payment schedule."
       />
 
-      <BillingStatusBanner
-        stripeReady={stripeConfigured()}
-        mercuryReady={mercuryConfigured()}
-        variant="admin"
-      />
+      <BillingStatusBanner mercuryReady={mercuryConfigured()} variant="admin" />
 
       <InvoicingPortal projects={portalProjects} />
     </div>
