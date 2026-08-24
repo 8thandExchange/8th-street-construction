@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getStripe } from "@/lib/stripe/client";
 import { formatMoneyExact, invoiceJobPrefix, invoiceAttachmentTag } from "@/lib/billing/constants";
 import { sendInvoiceReadyEmail } from "@/lib/email/invoice-notify";
 import {
@@ -16,7 +15,6 @@ import { allocateDrawAmounts } from "@/lib/billing/draws";
 import { mercuryConfigured } from "@/lib/mercury/config";
 import { getMercuryPayLink, pushInvoiceToMercury } from "@/lib/mercury/service";
 import { markInvoicePaidLocally } from "@/lib/mercury/sync";
-import { getSiteUrl } from "@/lib/brand/assets";
 import { sendSms } from "@/lib/sms/ghl";
 import { sendPushToProfile } from "@/lib/notify/push";
 
@@ -918,60 +916,4 @@ export async function markInvoicePaid(formData: FormData) {
   const admin = createAdminClient();
   await markInvoicePaidLocally(admin, invoiceId, projectId, { notifyClient: false });
   revalidate(projectId);
-}
-
-export async function createCheckoutSession(invoiceId: string) {
-  const supabase = await (await import("@/lib/supabase/server")).createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-
-  const stripe = getStripe();
-  if (!stripe) throw new Error("Stripe is not configured");
-
-  const { data: invoice } = await supabase
-    .from("invoices")
-    .select("id, project_id, invoice_number, title, total, status, client_id")
-    .eq("id", invoiceId)
-    .single();
-
-  if (!invoice || invoice.status === "paid") throw new Error("Invoice unavailable");
-
-  const { data: project } = await supabase
-    .from("projects")
-    .select("client_id")
-    .eq("id", invoice.project_id)
-    .single();
-
-  const ownsInvoice =
-    invoice.client_id === user.id || (!invoice.client_id && project?.client_id === user.id);
-  if (!ownsInvoice) throw new Error("Unauthorized");
-
-  const amountCents = Math.round(Number(invoice.total) * 100);
-
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    payment_method_types: ["card"],
-    line_items: [
-      {
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: invoice.title || `Invoice ${invoice.invoice_number}`,
-          },
-          unit_amount: amountCents,
-        },
-        quantity: 1,
-      },
-    ],
-    metadata: {
-      invoice_id: invoice.id,
-      project_id: invoice.project_id,
-    },
-    success_url: `${getSiteUrl()}/client/projects/${invoice.project_id}/billing?paid=1`,
-    cancel_url: `${getSiteUrl()}/client/projects/${invoice.project_id}/billing`,
-  });
-
-  return { url: session.url };
 }

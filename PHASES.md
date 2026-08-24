@@ -169,7 +169,7 @@ Goal: site doesn't just convert visitors who arrive — it pulls them in.
 ## Phase 4.5+ — What comes after
 
 These are flagged but lower-priority:
-- **Draws & invoicing** — `invoices` and `draws` tables. Stripe ACH integration.
+- **Draws & invoicing** — `invoices` and `draws` tables. Mercury ACH invoicing integration.
 - **Punch list** — per-project itemized completion tracking, shared with client.
 - **Selections / allowances** — client-facing fixture and finish picker with budget tracking.
 - **Crew scheduling** — calendar view of trade scheduling per project.
