@@ -324,15 +324,6 @@ export default async function InvoiceDetailPage(props: {
                   Mercury pay page
                 </a>
               )}
-              {invoice.mercury_pay_slug && (
-                <a
-                  href={`/api/invoices/${invoice.id}/mercury-pdf`}
-                  target="_blank"
-                  className="app-btn app-btn-secondary !h-9"
-                >
-                  Mercury PDF
-                </a>
-              )}
               {!isPaid && invoice.status !== "void" && (
                 <form action={markPaidAction}>
                   <input type="hidden" name="project_id" value={id} />

@@ -4,13 +4,12 @@ import { useState } from "react";
 
 type InvoiceActionsProps = {
   mercuryPayUrl?: string | null;
-  pdfUrl?: string | null;
   /** Cover sheet + backup invoices merged into one PDF */
   packetUrl?: string | null;
   variant: "admin" | "client";
 };
 
-export function InvoiceActions({ mercuryPayUrl, pdfUrl, packetUrl, variant }: InvoiceActionsProps) {
+export function InvoiceActions({ mercuryPayUrl, packetUrl, variant }: InvoiceActionsProps) {
   const [copied, setCopied] = useState(false);
 
   async function copyPayLink() {
@@ -48,17 +47,7 @@ export function InvoiceActions({ mercuryPayUrl, pdfUrl, packetUrl, variant }: In
           rel="noopener noreferrer"
           className="app-btn app-btn-secondary"
         >
-          Invoice packet (PDF)
-        </a>
-      )}
-      {pdfUrl && (
-        <a
-          href={pdfUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="app-btn app-btn-secondary"
-        >
-          Download PDF
+          {variant === "admin" ? "Invoice packet (PDF)" : "Download PDF"}
         </a>
       )}
       {variant === "admin" && mercuryPayUrl && (
@@ -66,7 +55,6 @@ export function InvoiceActions({ mercuryPayUrl, pdfUrl, packetUrl, variant }: In
           Share the pay link with Habitat or the homeowner — branded on Mercury&apos;s secure checkout.
         </p>
       )}
-      {!mercuryPayUrl && !pdfUrl && null}
     </div>
   );
 }
