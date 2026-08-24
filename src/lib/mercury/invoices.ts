@@ -1,5 +1,5 @@
 import { MERCURY_PAY_BASE } from "./config";
-import { mercuryFetch, mercuryRequest } from "./client";
+import { mercuryFetch } from "./client";
 import type { CreateMercuryInvoiceInput, MercuryInvoice } from "./types";
 
 export function mercuryPayUrl(slug: string) {
@@ -34,12 +34,4 @@ export async function createMercuryInvoice(
 
 export async function getMercuryInvoice(invoiceId: string): Promise<MercuryInvoice> {
   return mercuryFetch<MercuryInvoice>(`/ar/invoices/${invoiceId}`);
-}
-
-export async function fetchMercuryInvoicePdf(slug: string): Promise<ArrayBuffer> {
-  const res = await mercuryRequest(`/ar/invoices/${slug}/pdf`, {
-    headers: { Accept: "application/pdf" },
-  });
-  if (!res.ok) throw new Error(`Mercury PDF failed (${res.status})`);
-  return res.arrayBuffer();
 }
