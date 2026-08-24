@@ -40,9 +40,10 @@ export function InvoiceActions({ mercuryPayUrl, packetUrl, variant }: InvoiceAct
           </a>
         </>
       )}
+      {/* Admins preview the packet in a tab; clients get a real download. */}
       {packetUrl && (
         <a
-          href={packetUrl}
+          href={variant === "admin" ? packetUrl : `${packetUrl}?download=1`}
           target="_blank"
           rel="noopener noreferrer"
           className="app-btn app-btn-secondary"
