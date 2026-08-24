@@ -72,7 +72,7 @@ Three money buckets per job:
 | 2C | Schedule dates + critical path per phase |
 | 2D | Daily logs + weather |
 | 3 | Sub RFQs & bids |
-| 4 | Draw schedule + Stripe invoicing |
+| 4 | Draw schedule + Mercury invoicing |
 | 5 | Selections workbook (allowances) |
 | 6 | Punch list module |
 | 7 | Warranty tickets |
