@@ -22,7 +22,6 @@ import {
 } from "@/lib/billing/summary";
 import { mercuryConfigured } from "@/lib/mercury/config";
 import { syncProjectMercuryInvoices } from "@/lib/mercury/sync";
-import { stripeConfigured } from "@/lib/stripe/config";
 import { SubmitButton } from "@/components/admin/SubmitButton";
 
 export const dynamic = "force-dynamic";
@@ -133,7 +132,6 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
   const summary = computeBillingSummary(contractValue, changeOrderTotal, drawList);
   const setupStep = getBillingSetupStep(contractValue, drawList.length);
   const isHabitat = isHabitatProject(project);
-  const stripeReady = stripeConfigured();
   const mercuryReady = mercuryConfigured();
 
   const clientName = clientRes.data
@@ -180,10 +178,18 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
         description="What Habitat or the homeowner pays you — synced with Mercury for secure ACH bank transfer."
       />
 
-      <BillingStatusBanner stripeReady={stripeReady} mercuryReady={mercuryReady} variant="admin" />
+      <BillingStatusBanner mercuryReady={mercuryReady} variant="admin" />
 
       {isHabitat && (
         <HabitatProjectBanner projectId={id} estimatedCost={Number(project.estimated_cost ?? 0)} />
+      )}
+
+      {/* Progress invoices lead the page — what has been billed and paid is
+          the first thing to see. Never hidden behind billing setup: if any
+          exist (e.g. a draft made before the draw schedule), they must be
+          findable. */}
+      {(invoiceList.length > 0 || (setupStep !== 1 && setupStep !== 2)) && (
+        <InvoiceList projectId={id} invoices={invoiceList} />
       )}
 
       <InvoiceBuilderDropzone projectId={id} />
@@ -217,7 +223,6 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
         drawCount={drawList.length}
         clientId={project.client_id}
         clientName={clientName}
-        stripeReady={stripeReady}
         mercuryReady={mercuryReady}
       />
 
@@ -251,12 +256,6 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
             </>
           )}
         </>
-      )}
-
-      {/* Invoices are never hidden behind billing setup — if any exist
-          (e.g. a draft made before the draw schedule), they must be findable. */}
-      {(invoiceList.length > 0 || (setupStep !== 1 && setupStep !== 2)) && (
-        <InvoiceList projectId={id} invoices={invoiceList} />
       )}
 
       {contractValue > 0 && (

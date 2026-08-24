@@ -10,7 +10,6 @@ import { formatMoney } from "@/lib/billing/constants";
 import { computeBillingSummary } from "@/lib/billing/summary";
 import { DRAW_STATUS_LABELS, DRAW_STATUS_STYLES } from "@/lib/project/labels";
 import { syncProjectMercuryInvoices } from "@/lib/mercury/sync";
-import { stripeConfigured } from "@/lib/stripe/config";
 
 export const dynamic = "force-dynamic";
 
@@ -75,7 +74,6 @@ export default async function ClientBillingPage(props: {
   const contractValue = Number(project.contract_value ?? 0);
   const drawList = draws ?? [];
   const summary = computeBillingSummary(contractValue, 0, drawList);
-  const stripeReady = stripeConfigured();
 
   const openInvoices = (invoices ?? []).filter((i) => i.status !== "paid").length;
 
@@ -102,7 +100,7 @@ export default async function ClientBillingPage(props: {
       )}
 
       <div className="mt-8">
-        <BillingStatusBanner stripeReady={stripeReady} variant="client" />
+        <BillingStatusBanner variant="client" />
       </div>
 
       <BillingProgressHero projectTitle={project.title} summary={summary} />
@@ -173,7 +171,6 @@ export default async function ClientBillingPage(props: {
                   line_items: lineItemMap.get(inv.id),
                 }}
                 variant="client"
-                stripeReady={stripeReady}
               />
             </li>
           ))}

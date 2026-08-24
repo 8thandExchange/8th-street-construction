@@ -2,7 +2,6 @@ import Image from "next/image";
 import { formatMoneyExact } from "@/lib/billing/constants";
 import { mercuryPayUrl } from "@/lib/mercury/invoices";
 import { INVOICE_STATUS_LABELS } from "@/lib/project/labels";
-import { PayInvoiceButton } from "./PayInvoiceButton";
 import { InvoiceActions } from "./InvoiceActions";
 
 export type InvoiceCardData = {
@@ -23,7 +22,6 @@ export type InvoiceCardData = {
 type InvoiceCardProps = {
   invoice: InvoiceCardData;
   variant: "admin" | "client";
-  stripeReady?: boolean;
   markPaidAction?: React.ReactNode;
   /** Admin detail page for this invoice (view / edit draft) */
   detailHref?: string;
@@ -38,7 +36,6 @@ function formatDueDate(due: string | null) {
 export function InvoiceCard({
   invoice,
   variant,
-  stripeReady = false,
   markPaidAction,
   detailHref,
 }: InvoiceCardProps) {
@@ -116,8 +113,7 @@ export function InvoiceCard({
                     Pay securely
                   </a>
                 )}
-                {stripeReady && <PayInvoiceButton invoiceId={invoice.id} variant="secondary" />}
-                {!mercuryUrl && !stripeReady && (
+                {!mercuryUrl && (
                   <p className="text-sm text-ink/55 max-w-[220px] text-right leading-relaxed">
                     Contact your builder to arrange payment by check or bank transfer.
                   </p>
