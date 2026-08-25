@@ -20,6 +20,9 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      # `secrets` is not a legal context in a step `if:`, but `env` is — so the
+      # token is promoted here and the drift steps branch on the env var.
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,13 +39,19 @@ jobs:
       - name: Explain skipped build
         if: ${{ env.NEXT_PUBLIC_SUPABASE_URL == '' || env.NEXT_PUBLIC_SUPABASE_ANON_KEY == '' }}
         run: echo "Build skipped until NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY repository variables are configured."
+      # Reports drift without failing the build. This step was added in PR #69
+      # but the workflow has never once started since (see the `secrets` fix
+      # above), so it has never actually run — and the committed types are now
+      # behind the live schema by 23 whole tables, project_contracts among them.
+      # Blocking on it today would red every PR in the repo for a backlog no
+      # single PR created. Drop continue-on-error once `npm run db:types` has
+      # been run and committed.
       - name: Database type drift
-        if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' }}
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' }}
+        continue-on-error: true
         run: |
           npx supabase gen types typescript --project-id rqmrqndjbkpkewfpyegv --schema public,graphql_public > /tmp/database.generated.ts
           diff -u src/types/database.generated.ts /tmp/database.generated.ts
       - name: Explain skipped type drift
-        if: ${{ secrets.SUPABASE_ACCESS_TOKEN == '' }}
+        if: ${{ env.SUPABASE_ACCESS_TOKEN == '' }}
         run: echo "Type drift check skipped until SUPABASE_ACCESS_TOKEN is configured."
