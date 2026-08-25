@@ -127,6 +127,9 @@ export interface Project {
   funding_type: ProjectFundingType;
   hud_grant_year: number | null;
   hud_program_notes: string | null;
+  notice_to_proceed_at: string | null;
+  notice_to_proceed_note: string | null;
+  notice_to_proceed_document_id: string | null;
   start_date: string | null;
   target_completion_date: string | null;
   actual_completion_date: string | null;

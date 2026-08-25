@@ -6,6 +6,7 @@ import { HabitatProjectBanner } from "@/components/billing/HabitatProjectBanner"
 import { BillingSetupWizard } from "@/components/billing/BillingSetupWizard";
 import { BillingMetricsRow } from "@/components/billing/BillingMetricsRow";
 import { BillingStatusBanner } from "@/components/billing/BillingStatusBanner";
+import { NoticeToProceedCard } from "@/components/billing/NoticeToProceedCard";
 import { DrawTimeline } from "@/components/billing/DrawTimeline";
 import { CustomInvoiceForm } from "@/components/billing/CustomInvoiceForm";
 import { InvoiceBuilderDropzone } from "@/components/billing/InvoiceBuilderDropzone";
@@ -60,7 +61,9 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title, slug, contract_value, client_id, funding_type, estimated_cost")
+    .select(
+      "id, title, slug, contract_value, client_id, funding_type, estimated_cost, notice_to_proceed_at, notice_to_proceed_note"
+    )
     .eq("id", id)
     .single();
 
@@ -179,6 +182,8 @@ export default async function ProjectBillingPage(props: { params: Promise<{ id: 
       />
 
       <BillingStatusBanner mercuryReady={mercuryReady} variant="admin" />
+
+      <NoticeToProceedCard projectId={id} project={project} />
 
       {isHabitat && (
         <HabitatProjectBanner projectId={id} estimatedCost={Number(project.estimated_cost ?? 0)} />

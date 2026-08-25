@@ -15,6 +15,7 @@ import { allocateDrawAmounts } from "@/lib/billing/draws";
 import { mercuryConfigured } from "@/lib/mercury/config";
 import { getMercuryPayLink, pushInvoiceToMercury } from "@/lib/mercury/service";
 import { markInvoicePaidLocally } from "@/lib/mercury/sync";
+import { assertClearedToInvoice } from "@/lib/project/funding";
 import { sendSms } from "@/lib/sms/ghl";
 import { sendPushToProfile } from "@/lib/notify/push";
 
@@ -400,6 +401,39 @@ export async function updateContractValue(formData: FormData) {
   revalidate(projectId);
 }
 
+/**
+ * Record (or clear) Augusta's notice to proceed. On a Habitat or HUD HOME
+ * job this is what releases invoicing — see `assertClearedToInvoice`.
+ * Clearing it puts the job back behind the gate, which is the right move if
+ * a notice turns out to have been entered against the wrong address.
+ */
+export async function recordNoticeToProceed(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const { requireCapability, requireProjectStaff } = await import("@/lib/actions/admin-auth");
+  await requireCapability("money.write");
+  const projectId = String(formData.get("project_id"));
+  await requireProjectStaff(projectId);
+
+  const issued = String(formData.get("notice_to_proceed_at") ?? "").trim();
+  const note = String(formData.get("notice_to_proceed_note") ?? "").trim() || null;
+
+  if (issued && !/^\d{4}-\d{2}-\d{2}$/.test(issued)) {
+    throw new Error("Give the notice an issue date.");
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update({
+      notice_to_proceed_at: issued || null,
+      notice_to_proceed_note: issued ? note : null,
+    })
+    .eq("id", projectId);
+
+  if (error) throw new Error(error.message);
+
+  revalidate(projectId);
+}
+
 /** One-click: Habitat payment schedule only — client billing amount entered separately */
 export async function setupHabitat608DrawSchedule(formData: FormData) {
   const { supabase } = await requireAdmin();
@@ -522,9 +556,13 @@ export async function createInvoiceFromDraw(formData: FormData) {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("title, client_id, slug")
+    .select("title, client_id, slug, funding_type, notice_to_proceed_at")
     .eq("id", projectId)
     .single();
+
+  // A draw invoice is issued the moment it is created — there is no draft
+  // stage to hold it in, so the notice gates creation itself.
+  assertClearedToInvoice(project ?? {});
 
   const invoiceNumber = await nextInvoiceNumber(supabase, projectId);
   const amount = Number(draw.amount);
@@ -613,7 +651,7 @@ export async function createCustomInvoice(formData: FormData) {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("title, client_id, slug")
+    .select("title, client_id, slug, funding_type, notice_to_proceed_at")
     .eq("id", projectId)
     .single();
 
@@ -621,6 +659,8 @@ export async function createCustomInvoice(formData: FormData) {
   if (sendNow && !project.client_id) {
     throw new Error("Link a client to this job before sending an invoice.");
   }
+  // Saving this as a draft is always allowed; issuing it is what the notice gates.
+  if (sendNow) assertClearedToInvoice(project);
 
   const subtotal = lineItems.reduce(
     (sum, item) => sum + Math.round(item.quantity * item.unit_amount * 100) / 100,
@@ -857,11 +897,12 @@ export async function sendCustomInvoice(formData: FormData) {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("title, client_id, slug")
+    .select("title, client_id, slug, funding_type, notice_to_proceed_at")
     .eq("id", projectId)
     .single();
 
   if (!project?.client_id) throw new Error("Link a client to this job before sending.");
+  assertClearedToInvoice(project);
 
   const { data: rows } = await supabase
     .from("invoice_line_items")
