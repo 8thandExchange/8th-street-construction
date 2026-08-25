@@ -2806,6 +2806,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "projects_notice_to_proceed_document_id_fkey"
+            columns: ["notice_to_proceed_document_id"]
+            isOneToOne: false
+            referencedRelation: "project_documents"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "projects_project_manager_id_fkey"
             columns: ["project_manager_id"]
             isOneToOne: false
