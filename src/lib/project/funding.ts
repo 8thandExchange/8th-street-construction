@@ -19,7 +19,11 @@ export const KNOWN_CLIENT_ORGS = [
   {
     slug: "habitat-augusta",
     name: "Augusta/CSRA Habitat for Humanity",
-    email: "habitat@habitataugusta.org",
+    // Habitat's domain is augustahabitat.org. An earlier value here had the
+    // halves transposed (habitataugusta.org), which bound 1137 Merry Street to
+    // a placeholder profile and sent its first draw to an address nobody reads.
+    // This is the contact whose invoices have actually been paid.
+    email: "bkelliher@augustahabitat.org",
     description: "Primary partner · homeownership program builds",
     defaultFunding: "hud_home" as ProjectFundingType,
   },
@@ -103,4 +107,55 @@ export function getDrawTemplateKey(project: {
 export function parseFundingType(value: string | null | undefined): ProjectFundingType {
   if (value === "habitat" || value === "hud_home" || value === "private") return value;
   return "private";
+}
+
+/* =====================================================================
+ * Notice to proceed.
+ *
+ * Augusta-Richmond County reimburses Habitat partner and HUD HOME jobs,
+ * and will not honor a request for payment covering work billed before it
+ * issues the notice to proceed. So the notice gates *issuing* an invoice,
+ * not drafting one — a draft can be built and edited while the notice is
+ * still outstanding, which is how a draw gets staged ahead of the paperwork.
+ * ===================================================================== */
+
+export type NoticeToProceedState = {
+  funding_type?: ProjectFundingType | string | null;
+  slug?: string | null;
+  notice_to_proceed_at?: string | null;
+};
+
+/** True when this job's funding makes the notice a precondition to billing. */
+export function requiresNoticeToProceed(project: NoticeToProceedState): boolean {
+  return isHabitatProject(project);
+}
+
+export function hasNoticeToProceed(project: NoticeToProceedState): boolean {
+  return Boolean(project.notice_to_proceed_at);
+}
+
+/**
+ * Null when the job may be invoiced. Otherwise the reason it may not, phrased
+ * for whoever just clicked Send.
+ */
+export function noticeToProceedBlock(project: NoticeToProceedState): string | null {
+  if (!requiresNoticeToProceed(project)) return null;
+  if (hasNoticeToProceed(project)) return null;
+
+  const funding = parseFundingType(
+    typeof project.funding_type === "string" ? project.funding_type : null
+  );
+  const label = FUNDING_TYPE_SHORT[funding === "private" ? "hud_home" : funding];
+
+  return (
+    `This is a ${label} job with no notice to proceed on file. Augusta will not ` +
+    `reimburse a draw billed before the notice issues. Record the notice on this ` +
+    `job's Billing page, then send. The invoice can stay a draft until then.`
+  );
+}
+
+/** Throwing form for server actions that are about to issue an invoice. */
+export function assertClearedToInvoice(project: NoticeToProceedState): void {
+  const blocked = noticeToProceedBlock(project);
+  if (blocked) throw new Error(blocked);
 }

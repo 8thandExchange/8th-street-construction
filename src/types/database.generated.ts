@@ -2663,6 +2663,9 @@ export type Database = {
           lot_number: string | null
           meta_description: string | null
           narrative: string | null
+          notice_to_proceed_at: string | null
+          notice_to_proceed_document_id: string | null
+          notice_to_proceed_note: string | null
           plat_storage_path: string | null
           playbook_applied_at: string | null
           playbook_id: string | null
@@ -2711,6 +2714,9 @@ export type Database = {
           lot_number?: string | null
           meta_description?: string | null
           narrative?: string | null
+          notice_to_proceed_at?: string | null
+          notice_to_proceed_document_id?: string | null
+          notice_to_proceed_note?: string | null
           plat_storage_path?: string | null
           playbook_applied_at?: string | null
           playbook_id?: string | null
@@ -2759,6 +2765,9 @@ export type Database = {
           lot_number?: string | null
           meta_description?: string | null
           narrative?: string | null
+          notice_to_proceed_at?: string | null
+          notice_to_proceed_document_id?: string | null
+          notice_to_proceed_note?: string | null
           plat_storage_path?: string | null
           playbook_applied_at?: string | null
           playbook_id?: string | null
@@ -2794,6 +2803,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_notice_to_proceed_document_id_fkey"
+            columns: ["notice_to_proceed_document_id"]
+            isOneToOne: false
+            referencedRelation: "project_documents"
             referencedColumns: ["id"]
           },
           {
