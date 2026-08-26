@@ -7,7 +7,12 @@ export const dynamic = "force-dynamic";
 async function createTestimonial(formData: FormData) {
   "use server";
   const supabase = await createClient();
+  // Org comes from the caller's verified context, never guessed. The insert
+  // still runs on the user-scoped client so RLS stays the enforcer.
+  const { createOrgContext } = await import("@/lib/supabase/org");
+  const { orgId } = await createOrgContext();
   await supabase.from("testimonials").insert({
+    org_id: orgId,
     client_name: String(formData.get("client_name")).trim(),
     client_title: String(formData.get("client_title") || "").trim() || null,
     quote: String(formData.get("quote")).trim(),

@@ -46,9 +46,16 @@ export async function POST(request: Request) {
 
   const supabase = createAdminClient();
 
+  const { getDefaultOrgId } = await import("@/lib/org/default-org");
+  const orgId = await getDefaultOrgId();
+  if (!orgId) {
+    return NextResponse.json({ error: "Not configured" }, { status: 503 });
+  }
+
   const { data: lead, error } = await supabase
     .from("leads")
     .insert({
+      org_id: orgId,
       first_name: data.first_name,
       last_name: data.last_name,
       email: data.email,
