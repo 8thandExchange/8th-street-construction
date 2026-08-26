@@ -4,6 +4,10 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Manual re-run for when a pull_request webhook is dropped (it happens:
+  # PR #84's opened event produced no run) — Actions → Verify application →
+  # Run workflow, pick the branch.
+  workflow_dispatch:
 
 permissions:
   contents: read

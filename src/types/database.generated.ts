@@ -656,6 +656,7 @@ export type Database = {
           lead_id: string | null
           meeting_type: string
           notes: string | null
+          org_id: string
           phone: string | null
           preferred_date: string | null
           preferred_time_window: string | null
@@ -676,6 +677,7 @@ export type Database = {
           lead_id?: string | null
           meeting_type?: string
           notes?: string | null
+          org_id: string
           phone?: string | null
           preferred_date?: string | null
           preferred_time_window?: string | null
@@ -696,6 +698,7 @@ export type Database = {
           lead_id?: string | null
           meeting_type?: string
           notes?: string | null
+          org_id?: string
           phone?: string | null
           preferred_date?: string | null
           preferred_time_window?: string | null
@@ -717,6 +720,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1205,6 +1215,7 @@ export type Database = {
           last_name: string
           message: string
           notes: string | null
+          org_id: string
           phone: string | null
           project_type: Database["public"]["Enums"]["project_category"] | null
           qualified_at: string | null
@@ -1228,6 +1239,7 @@ export type Database = {
           last_name: string
           message: string
           notes?: string | null
+          org_id: string
           phone?: string | null
           project_type?: Database["public"]["Enums"]["project_category"] | null
           qualified_at?: string | null
@@ -1251,6 +1263,7 @@ export type Database = {
           last_name?: string
           message?: string
           notes?: string | null
+          org_id?: string
           phone?: string | null
           project_type?: Database["public"]["Enums"]["project_category"] | null
           qualified_at?: string | null
@@ -1268,6 +1281,13 @@ export type Database = {
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -4709,6 +4729,7 @@ export type Database = {
           display_order: number | null
           featured: boolean
           id: string
+          org_id: string
           project_id: string | null
           published: boolean
           quote: string
@@ -4723,6 +4744,7 @@ export type Database = {
           display_order?: number | null
           featured?: boolean
           id?: string
+          org_id: string
           project_id?: string | null
           published?: boolean
           quote: string
@@ -4737,6 +4759,7 @@ export type Database = {
           display_order?: number | null
           featured?: boolean
           id?: string
+          org_id?: string
           project_id?: string | null
           published?: boolean
           quote?: string
@@ -4744,6 +4767,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "testimonials_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "testimonials_project_id_fkey"
             columns: ["project_id"]

@@ -16,17 +16,39 @@
 
 begin;
 
+-- ── Bridge trigger, single-org era (must run BEFORE fixture orgs exist) ──
+-- With exactly one organization, an insert without org_id is filled in.
+
+do $$
+declare
+  filled uuid;
+  the_org uuid;
+begin
+  select id into strict the_org from public.organizations;
+  insert into public.leads (first_name, last_name, email, message)
+  values ('RLS', 'Probe', 'rls-trigger-probe@example.invalid', 'harness probe')
+  returning org_id into filled;
+  if filled is distinct from the_org then
+    raise exception 'fill_default_org_id did not assign the single org (got %)', filled;
+  end if;
+  delete from public.leads where email = 'rls-trigger-probe@example.invalid';
+end $$;
+
 -- ── Fixtures ─────────────────────────────────────────────────────────────
 
 insert into auth.users (id, email) values
   ('00000000-0000-4000-8000-00000000a001', 'rls-t1-admin@example.invalid'),
   ('00000000-0000-4000-8000-00000000c001', 'rls-t1-client@example.invalid'),
-  ('00000000-0000-4000-8000-00000000a002', 'rls-t2-admin@example.invalid');
+  ('00000000-0000-4000-8000-00000000a002', 'rls-t2-admin@example.invalid'),
+  ('00000000-0000-4000-8000-00000000b001', 'rls-t1-orgadmin@example.invalid');
 
 insert into public.profiles (id, email, role) values
   ('00000000-0000-4000-8000-00000000a001', 'rls-t1-admin@example.invalid', 'admin'),
   ('00000000-0000-4000-8000-00000000c001', 'rls-t1-client@example.invalid', 'client'),
-  ('00000000-0000-4000-8000-00000000a002', 'rls-t2-admin@example.invalid', 'admin');
+  ('00000000-0000-4000-8000-00000000a002', 'rls-t2-admin@example.invalid', 'admin'),
+  -- Org-admin WITHOUT platform admin: profiles.role stays client, so only
+  -- the org-scoped policy arm can admit them — the purest tenancy probe.
+  ('00000000-0000-4000-8000-00000000b001', 'rls-t1-orgadmin@example.invalid', 'client');
 
 insert into public.organizations (id, slug, legal_name, display_name) values
   ('00000000-0000-4000-8000-0000000000f1', 'rls-test-tenant-1', 'RLS Test Tenant 1 LLC', 'Tenant 1'),
@@ -35,7 +57,26 @@ insert into public.organizations (id, slug, legal_name, display_name) values
 insert into public.org_members (org_id, user_id, role, staff_scope) values
   ('00000000-0000-4000-8000-0000000000f1', '00000000-0000-4000-8000-00000000a001', 'admin', 'full'),
   ('00000000-0000-4000-8000-0000000000f1', '00000000-0000-4000-8000-00000000c001', 'client', null),
-  ('00000000-0000-4000-8000-0000000000f2', '00000000-0000-4000-8000-00000000a002', 'admin', 'full');
+  ('00000000-0000-4000-8000-0000000000f2', '00000000-0000-4000-8000-00000000a002', 'admin', 'full'),
+  ('00000000-0000-4000-8000-0000000000f1', '00000000-0000-4000-8000-00000000b001', 'admin', 'full');
+
+-- One lead per tenant, keyed explicitly.
+insert into public.leads (org_id, first_name, last_name, email, message) values
+  ('00000000-0000-4000-8000-0000000000f1', 'Lead', 'One', 'rls-lead-t1@example.invalid', 't1'),
+  ('00000000-0000-4000-8000-0000000000f2', 'Lead', 'Two', 'rls-lead-t2@example.invalid', 't2');
+
+-- ── Bridge trigger, multi-org era: guessing a tenant must fail loud ──────
+
+do $$
+begin
+  begin
+    insert into public.leads (first_name, last_name, email, message)
+    values ('RLS', 'Probe2', 'rls-trigger-probe2@example.invalid', 'must fail');
+    raise exception 'insert without org_id succeeded with multiple orgs present';
+  exception
+    when too_many_rows then null; -- correct: refuse to guess the tenant
+  end;
+end $$;
 
 -- ── Anonymous callers see no operational or tenancy data ─────────────────
 
@@ -94,6 +135,39 @@ begin
   end if;
   if public.is_org_admin() then
     raise exception 'is_org_admin() true for a client member';
+  end if;
+  if (select count(*) from public.leads) <> 0 then
+    raise exception 'RLS: client can read leads';
+  end if;
+end $$;
+
+reset role;
+
+-- ── Cross-tenant isolation on re-keyed tables (group 1: leads) ───────────
+-- The org-admin-without-platform-admin can only be admitted by the
+-- org-scoped policy arm, so what they see IS the tenancy boundary.
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-00000000b001","role":"authenticated","app_metadata":{"org_id":"00000000-0000-4000-8000-0000000000f1"}}';
+
+do $$
+begin
+  if (select count(*) from public.leads) <> 1
+     or (select email from public.leads limit 1) <> 'rls-lead-t1@example.invalid' then
+    raise exception 'RLS: org admin of tenant 1 must see exactly tenant 1''s lead, saw %',
+      (select count(*) from public.leads);
+  end if;
+end $$;
+
+-- The same person with a claim for an org they do not belong to sees nothing.
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-00000000b001","role":"authenticated","app_metadata":{"org_id":"00000000-0000-4000-8000-0000000000f2"}}';
+
+do $$
+begin
+  if (select count(*) from public.leads) <> 0 then
+    raise exception 'RLS: cross-tenant lead read through a non-member claim';
   end if;
 end $$;
 
