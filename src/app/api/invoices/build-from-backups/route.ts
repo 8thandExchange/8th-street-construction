@@ -9,6 +9,7 @@ import {
   MAX_BACKUP_BYTES,
 } from "@/lib/billing/backup-attachments";
 import { invoiceJobPrefix } from "@/lib/billing/constants";
+import { anthropicModel } from "@/lib/ai/config";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -163,7 +164,7 @@ export async function POST(request: Request) {
 
   const budget = budgetLines ?? [];
   const anthropic = new Anthropic({ apiKey });
-  const model = process.env.ANTHROPIC_ASSISTANT_MODEL?.trim() || "claude-opus-4-8";
+  const model = process.env.ANTHROPIC_ASSISTANT_MODEL?.trim() || anthropicModel();
 
   // Read every dropped invoice
   const results = await Promise.all(

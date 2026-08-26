@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getClientVisibleProjects } from "@/lib/portal/access";
 import { enforceRateLimit } from "@/lib/rate-limit";
-import { BRAND_VOICE } from "@/lib/ai/config";
+import { anthropicModel, BRAND_VOICE } from "@/lib/ai/config";
 import { assistantStreamResponse, type ConfirmPayload } from "@/lib/assistant/stream";
 import {
   CLIENT_ASSISTANT_TOOLS,
@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 function assistantModel() {
-  return process.env.ANTHROPIC_ASSISTANT_MODEL?.trim() || "claude-opus-4-8";
+  return process.env.ANTHROPIC_ASSISTANT_MODEL?.trim() || anthropicModel();
 }
 
 function systemPrompt(ctx: ClientAssistantContext) {

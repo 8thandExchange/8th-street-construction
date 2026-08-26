@@ -1,3 +1,4 @@
+import { bytesMatchClaimedType } from "@/lib/uploads/sniff";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Resend } from "resend";
@@ -149,11 +150,15 @@ export async function POST(
     if (w9.size > MAX_W9_BYTES) {
       return fail("That file is too large — please keep the W-9 under 10 MB.");
     }
+    const w9Bytes = new Uint8Array(await w9.arrayBuffer());
+    if (!bytesMatchClaimedType(w9Bytes, w9.type)) {
+      return fail("That file doesn't look like a valid PDF or image. Re-export it and try again.");
+    }
     const ext = w9.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "pdf";
     const path = `vendors/w9/${invite.vendor.id}/${Date.now()}.${ext}`;
     const { error: uploadError } = await admin.storage
       .from(ATTACHMENT_BUCKET)
-      .upload(path, w9, { contentType: w9.type, upsert: false });
+      .upload(path, w9Bytes, { contentType: w9.type, upsert: false });
     if (uploadError) {
       console.error("Vendor W-9 upload failed:", uploadError.message);
       return fail("We couldn't save that file. Try again, or submit without it.", 500);

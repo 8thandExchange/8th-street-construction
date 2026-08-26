@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { reportError } from "@/lib/observability/report-error";
 
 /**
  * Per-IP / per-user rate limiting, backed by the rate_limits table.
@@ -28,6 +29,14 @@ export const RATE_LIMITS = {
    * app. A real vendor submits once, maybe twice after a typo.
    */
   vendorOnboarding: { limit: 8, windowSeconds: 600 },
+  /** Password sign-in: brute-force guard. A real person mistypes a handful of times. */
+  login: { limit: 10, windowSeconds: 600 },
+  /** Magic-link requests: each one sends an email. */
+  magicLink: { limit: 5, windowSeconds: 600 },
+  /** Public access-request form: inserts a row AND emails the admin inbox. */
+  accessRequest: { limit: 5, windowSeconds: 3600 },
+  /** Share-page access codes: short human codes need attempt limiting. */
+  sharePassword: { limit: 10, windowSeconds: 600 },
 } as const;
 
 export type RateLimitResult = {
@@ -73,7 +82,7 @@ export async function checkRateLimit(
     });
 
     if (error) {
-      console.error("[rate-limit] check failed, allowing request:", error);
+      reportError("rate_limit.fail_open", error.message, { scope });
       return { allowed: true, retryAfter: 0 };
     }
 
@@ -86,7 +95,7 @@ export async function checkRateLimit(
 
     return { allowed: row.allowed, retryAfter: Number(row.retry_after) || 0 };
   } catch (err) {
-    console.error("[rate-limit] check threw, allowing request:", err);
+    reportError("rate_limit.fail_open", err, { scope });
     return { allowed: true, retryAfter: 0 };
   }
 }
