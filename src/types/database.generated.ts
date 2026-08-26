@@ -1874,6 +1874,86 @@ export type Database = {
         }
         Relationships: []
       }
+      org_members: {
+        Row: {
+          created_at: string
+          org_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          staff_scope: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          org_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          staff_scope?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          org_id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          staff_scope?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          address: Json | null
+          created_at: string
+          display_name: string
+          id: string
+          jurisdiction_default: string | null
+          legal_name: string
+          logo_path: string | null
+          phone: string | null
+          reply_to_email: string | null
+          sending_domain: string | null
+          slug: string
+          theme: Json | null
+          updated_at: string
+        }
+        Insert: {
+          address?: Json | null
+          created_at?: string
+          display_name: string
+          id?: string
+          jurisdiction_default?: string | null
+          legal_name: string
+          logo_path?: string | null
+          phone?: string | null
+          reply_to_email?: string | null
+          sending_domain?: string | null
+          slug: string
+          theme?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          address?: Json | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          jurisdiction_default?: string | null
+          legal_name?: string
+          logo_path?: string | null
+          phone?: string | null
+          reply_to_email?: string | null
+          sending_domain?: string | null
+          slug?: string
+          theme?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payment_draws: {
         Row: {
           amount: number
@@ -5204,7 +5284,9 @@ export type Database = {
         Returns: boolean
       }
       client_portal_is_active: { Args: never; Returns: boolean }
+      current_org_id: { Args: never; Returns: string }
       is_admin: { Args: never; Returns: boolean }
+      is_org_admin: { Args: never; Returns: boolean }
       user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]

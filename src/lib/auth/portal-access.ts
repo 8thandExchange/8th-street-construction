@@ -201,6 +201,33 @@ export async function provisionPortalUser(input: {
 
   if (profileErr) return { error: profileErr.message };
 
+  // Tenancy bridge (Phase 2): every provisioned person joins the default org
+  // and carries its id in their JWT app_metadata. Dual-written with
+  // profiles.role until the org-scoped RLS rewrite makes org_members the
+  // source of truth. Best-effort: a membership hiccup must not strand a
+  // freshly created login, and the backfill migration reconciles stragglers.
+  try {
+    const { getDefaultOrgId } = await import("@/lib/org/default-org");
+    const orgId = await getDefaultOrgId();
+    if (orgId) {
+      await admin.from("org_members").upsert(
+        {
+          org_id: orgId,
+          user_id: userId,
+          role: input.role,
+          staff_scope: input.role === "admin" ? "full" : null,
+        },
+        { onConflict: "org_id,user_id" }
+      );
+      // GoTrue shallow-merges app_metadata keys.
+      await admin.auth.admin.updateUserById(userId, {
+        app_metadata: { org_id: orgId },
+      });
+    }
+  } catch (err) {
+    console.error(`[org] membership/claim for ${email} not written:`, err);
+  }
+
   let email_: CredentialsEmailOutcome = { status: "not-requested" };
   if (input.sendEmail !== false) {
     email_ = await sendPortalCredentialsEmail({
