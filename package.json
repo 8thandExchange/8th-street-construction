@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "type-check": "tsc --noEmit",
-    "db:types": "supabase gen types typescript --project-id rqmrqndjbkpkewfpyegv --schema public,graphql_public > src/types/database.generated.ts.tmp && mv src/types/database.generated.ts.tmp src/types/database.generated.ts || (rm -f src/types/database.generated.ts.tmp; exit 1)",
+    "db:types": "supabase gen types typescript --project-id rqmrqndjbkpkewfpyegv --schema public > src/types/database.generated.ts.tmp && mv src/types/database.generated.ts.tmp src/types/database.generated.ts || (rm -f src/types/database.generated.ts.tmp; exit 1)",
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
     "seed:portfolio": "tsx scripts/seed-portfolio-examples.ts",

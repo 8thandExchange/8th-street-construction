@@ -1,12 +1,24 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { writeAudit } from "@/lib/audit";
 import { getPortalKind } from "@/lib/portal-links";
+import { checkRateLimit, clientIp, RATE_LIMITS } from "@/lib/rate-limit";
 import { accessRequestNotificationEmail } from "@/lib/email/templates/access-request";
 import { Resend } from "resend";
 import type { UserRole } from "@/types/database";
+
+/** Server-action flavor of the limiter: an error string instead of a 429 response. */
+async function rateLimited(scope: keyof typeof RATE_LIMITS): Promise<string | null> {
+  const ip = clientIp(await headers());
+  const { allowed, retryAfter } = await checkRateLimit(scope, ip);
+  if (allowed) return null;
+  const wait = retryAfter > 60 ? `${Math.ceil(retryAfter / 60)} minutes` : "a minute";
+  return `Too many attempts. Wait ${wait} and try again.`;
+}
 
 const TO_LEADS = process.env.EMAIL_TO_LEADS || "construction@8thandexchange.com";
 const FROM = process.env.EMAIL_FROM || "8th Street Construction <hello@8thstreetconstruction.com>";
@@ -47,6 +59,9 @@ export async function signInWithPassword(formData: FormData): Promise<LoginResul
   if (!email.includes("@")) return { error: "Enter a valid email address." };
   if (!password) return { error: "Enter your password." };
 
+  const limited = await rateLimited("login");
+  if (limited) return { error: limited };
+
   const admin = createAdminClient();
   const { data: profile } = await admin
     .from("profiles")
@@ -64,8 +79,22 @@ export async function signInWithPassword(formData: FormData): Promise<LoginResul
     // Keep unknown accounts and wrong passwords indistinguishable. If Auth has
     // a user without an approved profile, immediately discard that session.
     if (!error) await supabase.auth.signOut();
+    await writeAudit({
+      actorId: profile?.id ?? null,
+      action: "auth.login_failed",
+      entityType: "profile",
+      metadata: { email },
+    });
     return { error: "Incorrect email or password." };
   }
+
+  await writeAudit({
+    actorId: profile.id,
+    action: "auth.login",
+    entityType: "profile",
+    entityId: profile.id,
+    metadata: { role: profile.role },
+  });
 
   if (profile.must_change_password) {
     return { ok: true, redirectTo: "/account/password" };
@@ -85,6 +114,9 @@ export async function requestMagicLink(formData: FormData): Promise<AccessReques
   const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://www.8thstreetconstruction.com";
 
   if (!email.includes("@")) return { error: "Enter a valid email address." };
+
+  const limited = await rateLimited("magicLink");
+  if (limited) return { error: limited };
 
   const admin = createAdminClient();
   const { data: profile } = await admin
@@ -123,6 +155,9 @@ export async function requestPortalAccess(formData: FormData): Promise<AccessReq
   const requestedRole = requestedRoleFromRedirect(redirect);
 
   if (!email.includes("@")) return { error: "Enter a valid email address." };
+
+  const limited = await rateLimited("accessRequest");
+  if (limited) return { error: limited };
 
   const admin = createAdminClient();
 

@@ -541,7 +541,10 @@ export async function createDraw(formData: FormData) {
 }
 
 export async function createInvoiceFromDraw(formData: FormData) {
-  const { supabase, user } = await requireAdmin();
+  // A draw invoice is issued (not drafted) the moment it exists, so this is a
+  // money write, not record-keeping.
+  const { requireCapability } = await import("@/lib/actions/admin-auth");
+  const { supabase, user } = await requireCapability("money.write");
   const projectId = String(formData.get("project_id"));
   const drawId = String(formData.get("draw_id"));
 
@@ -666,6 +669,15 @@ export async function createCustomInvoice(formData: FormData) {
     (sum, item) => sum + Math.round(item.quantity * item.unit_amount * 100) / 100,
     0
   );
+
+  // Send-now skips the separate send action, so it must carry the same gates:
+  // the money capability and the approval threshold.
+  if (sendNow) {
+    const { requireCapability } = await import("@/lib/actions/admin-auth");
+    await requireCapability("money.write");
+    const { assertApprovalThreshold } = await import("@/lib/finance/assert-threshold");
+    await assertApprovalThreshold("invoice", subtotal, formData);
+  }
   const invoiceNumber = await nextInvoiceNumber(supabase, projectId);
   const now = new Date().toISOString();
 
@@ -722,6 +734,19 @@ export async function createCustomInvoice(formData: FormData) {
       lineItems,
       emailAttachments
     );
+    const { writeAudit } = await import("@/lib/audit");
+    await writeAudit({
+      actorId: user.id,
+      action: "invoice.sent",
+      entityType: "invoice",
+      entityId: invoice.id,
+      metadata: {
+        project_id: projectId,
+        invoice_number: invoiceNumber,
+        total: subtotal,
+        over_threshold_confirmed: formData.get("confirm_over_threshold") === "on",
+      },
+    });
   }
 
   revalidate(projectId);
@@ -946,15 +971,39 @@ export async function sendCustomInvoice(formData: FormData) {
     emailAttachments
   );
 
+  const { writeAudit } = await import("@/lib/audit");
+  const { data: sender } = await supabase.auth.getUser();
+  await writeAudit({
+    actorId: sender.user?.id ?? null,
+    action: "invoice.sent",
+    entityType: "invoice",
+    entityId: invoiceId,
+    metadata: {
+      project_id: projectId,
+      invoice_number: invoice.invoice_number,
+      total: Number(invoice.total),
+      over_threshold_confirmed: formData.get("confirm_over_threshold") === "on",
+    },
+  });
+
   revalidate(projectId);
 }
 
 export async function markInvoicePaid(formData: FormData) {
-  await requireAdmin();
+  const { requireCapability } = await import("@/lib/actions/admin-auth");
+  const { user } = await requireCapability("money.write");
   const projectId = String(formData.get("project_id"));
   const invoiceId = String(formData.get("invoice_id"));
 
   const admin = createAdminClient();
   await markInvoicePaidLocally(admin, invoiceId, projectId, { notifyClient: false });
+  const { writeAudit } = await import("@/lib/audit");
+  await writeAudit({
+    actorId: user.id,
+    action: "invoice.marked_paid",
+    entityType: "invoice",
+    entityId: invoiceId,
+    metadata: { project_id: projectId },
+  });
   revalidate(projectId);
 }

@@ -1364,6 +1364,9 @@ export async function executeAssistantTool(
         password,
         forcePasswordChange: password ? false : true,
         sendEmail: Boolean(i.send_credentials_email),
+        // The tool creates accounts; resetting an existing person's password
+        // is a different, human-only action.
+        onExisting: "reject",
       });
       if ("error" in result) return { error: result.error };
 

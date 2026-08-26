@@ -1,3 +1,4 @@
+import { bytesMatchClaimedType } from "@/lib/uploads/sniff";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { enforceRateLimit } from "@/lib/rate-limit";
@@ -60,10 +61,18 @@ export async function POST(request: Request) {
   const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
   const path = `${STAGING_PREFIX}${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
+  const bytes = Buffer.from(await file.arrayBuffer());
+  if (!bytesMatchClaimedType(bytes, file.type)) {
+    return NextResponse.json(
+      { error: "That file doesn't match its declared type. Re-export it and try again." },
+      { status: 400 }
+    );
+  }
+
   const admin = createAdminClient();
   const { error } = await admin.storage
     .from(ATTACHMENT_BUCKET)
-    .upload(path, Buffer.from(await file.arrayBuffer()), {
+    .upload(path, bytes, {
       contentType: file.type,
       upsert: false,
     });

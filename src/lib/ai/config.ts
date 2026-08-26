@@ -1,4 +1,7 @@
-export const DEFAULT_ANTHROPIC_MODEL = "claude-3-5-sonnet-latest";
+// Single source of truth for the model every AI surface runs on. The assistant
+// routes previously pinned their own (newer) default while this one had gone
+// stale — keep them reading anthropicModel() so one env var moves everything.
+export const DEFAULT_ANTHROPIC_MODEL = "claude-opus-4-8";
 
 export function anthropicConfigured() {
   return Boolean(process.env.ANTHROPIC_API_KEY?.trim());

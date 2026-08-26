@@ -2,7 +2,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { enforceRateLimit } from "@/lib/rate-limit";
-import { BRAND_VOICE } from "@/lib/ai/config";
+import { anthropicModel, BRAND_VOICE } from "@/lib/ai/config";
 import { assistantStreamResponse, type ConfirmPayload } from "@/lib/assistant/stream";
 import { resolveAttachments } from "@/lib/assistant/attachments";
 import {
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 function assistantModel() {
-  return process.env.ANTHROPIC_ASSISTANT_MODEL?.trim() || "claude-opus-4-8";
+  return process.env.ANTHROPIC_ASSISTANT_MODEL?.trim() || anthropicModel();
 }
 
 const SYSTEM_PROMPT = `You are the 8th Street Construction operations assistant, living inside the company's admin portal. The person talking to you is a verified admin (the builder). You take real actions on the business through your tools: invoicing (Mercury ACH rail), projects, clients, leads, build schedules, and client messaging.

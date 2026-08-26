@@ -37,6 +37,9 @@ export async function approveAccessRequest(
     role,
     firstName: request.first_name,
     lastName: request.last_name,
+    // If an account appeared between request and approval, refuse rather
+    // than silently resetting that person's password.
+    onExisting: "reject",
   });
 
   // Narrow on the key alone — `&& result.error` leaves the failure branch in

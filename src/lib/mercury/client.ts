@@ -47,7 +47,17 @@ type MercuryResponse = {
 export type MercuryInit = Omit<RequestInit, "mode"> & {
   json?: unknown;
   mode?: MercuryMode;
+  /** Per-request timeout override in milliseconds. */
+  timeoutMs?: number;
 };
+
+/**
+ * A hung Mercury or Fixie connection must not occupy a serverless invocation
+ * until maxDuration. 30s is far beyond any healthy Mercury response; on the
+ * write path a timeout surfaces as an unknown-outcome error, which
+ * payVendorBillAch already treats as "keep the bill locked and reconcile".
+ */
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 function readToken() {
   return process.env.MERCURY_READ_TOKEN?.trim() || null;
@@ -112,6 +122,7 @@ export async function mercuryRequest(
   const url = `${MERCURY_API_BASE}${path}`;
   const body = json !== undefined ? JSON.stringify(json) : rest.body;
   const dispatcher = needsProxy(mode) ? getFixieDispatcher() : undefined;
+  const signal = rest.signal ?? AbortSignal.timeout(init?.timeoutMs ?? DEFAULT_TIMEOUT_MS);
 
   return dispatcher
     ? ((await undiciFetch(url, {
@@ -119,11 +130,13 @@ export async function mercuryRequest(
         headers,
         body: body as string | undefined,
         dispatcher,
+        signal,
       })) as MercuryResponse)
     : ((await fetch(url, {
         ...rest,
         headers,
         body,
+        signal,
       })) as MercuryResponse);
 }
 

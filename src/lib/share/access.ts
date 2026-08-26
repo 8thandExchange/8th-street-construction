@@ -1,6 +1,13 @@
+import { timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { shareCookieName, shareSessionValue } from "./password";
+
+function constantTimeMatch(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return bufA.length === bufB.length && timingSafeEqual(bufA, bufB);
+}
 
 export type ShareProject = {
   id: string;
@@ -36,7 +43,7 @@ export async function resolveShareAccess(token: string): Promise<ShareAccess> {
   const cookie = cookieStore.get(shareCookieName(token))?.value;
   const expected = shareSessionValue(token, project.share_password_hash);
 
-  if (cookie && cookie === expected) {
+  if (cookie && constantTimeMatch(cookie, expected)) {
     return { state: "unlocked", project: project as ShareProject };
   }
 

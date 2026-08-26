@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/actions/admin-auth";
+import { requireCapability } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { writeAudit } from "@/lib/audit";
 import {
   provisionPortalUser,
   type ProvisionActionResult,
@@ -15,7 +16,7 @@ function revalidate() {
 export async function invitePortalUser(
   formData: FormData
 ): Promise<ProvisionActionResult> {
-  await requireAdmin();
+  const { user: actor } = await requireCapability("users.write");
 
   const email = String(formData.get("email") || "")
     .trim()
@@ -34,17 +35,26 @@ export async function invitePortalUser(
     role: role as "admin" | "client" | "subcontractor",
     firstName,
     lastName,
+    // Inviting must never reset an existing person's password or role.
+    onExisting: "reject",
   });
 
   // Narrow on the key alone — `&& result.error` leaves the failure branch in
   // the union, which erases the types of everything returned below it.
   if ("error" in result) return { error: result.error };
+  await writeAudit({
+    actorId: actor.id,
+    action: "portal_user.invited",
+    entityType: "profile",
+    entityId: result.userId,
+    metadata: { email, role },
+  });
   revalidate();
   return { ok: true as const, tempPassword: result.tempPassword, email: result.email };
 }
 
 export async function removePortalUser(formData: FormData) {
-  await requireAdmin();
+  const { user: actor } = await requireCapability("users.write");
   const id = String(formData.get("id"));
   const admin = createAdminClient();
 
@@ -68,6 +78,14 @@ export async function removePortalUser(formData: FormData) {
   await admin.from("profiles").delete().eq("id", id);
   await admin.auth.admin.deleteUser(id);
 
+  await writeAudit({
+    actorId: actor.id,
+    action: "portal_user.removed",
+    entityType: "profile",
+    entityId: id,
+    metadata: { email: profile.email, role: profile.role },
+  });
+
   revalidate();
   return { ok: true };
 }
@@ -75,7 +93,7 @@ export async function removePortalUser(formData: FormData) {
 export async function resetPortalPassword(
   formData: FormData
 ): Promise<ProvisionActionResult> {
-  await requireAdmin();
+  const { user: actor } = await requireCapability("users.write");
   const id = String(formData.get("id"));
   const admin = createAdminClient();
 
@@ -92,11 +110,19 @@ export async function resetPortalPassword(
     role: profile.role as "admin" | "client" | "subcontractor",
     firstName: profile.first_name,
     sendEmail: true,
+    onExisting: "reset",
   });
 
   // Narrow on the key alone — `&& result.error` leaves the failure branch in
   // the union, which erases the types of everything returned below it.
   if ("error" in result) return { error: result.error };
+  await writeAudit({
+    actorId: actor.id,
+    action: "portal_user.password_reset",
+    entityType: "profile",
+    entityId: id,
+    metadata: { email: profile.email, role: profile.role },
+  });
   revalidate();
   return { ok: true as const, tempPassword: result.tempPassword, email: result.email };
 }

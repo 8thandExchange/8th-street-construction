@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/actions/admin-auth";
+import { requireAdmin, requireCapability } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ATTACHMENT_BUCKET, STAGING_PREFIX } from "@/lib/assistant/attachments";
+import { writeAudit } from "@/lib/audit";
 import { encryptField, lastFour, vendorFieldContext } from "@/lib/crypto/field-encryption";
+import { reportError } from "@/lib/observability/report-error";
 
 function revalidateVendors(vendorId?: string) {
   revalidatePath("/admin/vendors");
@@ -141,6 +143,17 @@ export async function recordVendorBill(formData: FormData) {
     .single();
 
   if (error || !bill) return { error: error?.message ?? "Could not record the bill" };
+  await writeAudit({
+    actorId: user.id,
+    action: "vendor_bill.recorded",
+    entityType: "vendor_bill",
+    entityId: bill.id,
+    metadata: {
+      vendor_id: vendorId,
+      amount: Number(bill.amount),
+      over_threshold_confirmed: formData.get("confirm_over_threshold") === "on",
+    },
+  });
   revalidateVendors(vendorId);
   return { ok: true, bill_id: bill.id };
 }
@@ -165,7 +178,7 @@ function parseBillLines(raw: string): BillLine[] {
 
 /** Edit a bill — line items drive the total when present. */
 export async function updateVendorBill(formData: FormData) {
-  await requireAdmin();
+  const { user } = await requireCapability("money.write");
   const billId = String(formData.get("bill_id") ?? "");
   const vendorId = String(formData.get("vendor_id") ?? "");
   const title = String(formData.get("title") ?? "").trim();
@@ -177,6 +190,25 @@ export async function updateVendorBill(formData: FormData) {
   if (!Number.isFinite(amount) || amount <= 0) return { error: "Enter a valid amount" };
 
   const admin = createAdminClient();
+
+  // The create path asserts the approval threshold; without the same check
+  // here, a bill could be recorded small and edited large. Only a raised
+  // amount re-asserts — date/note edits on an already-approved bill pass.
+  const { data: existing } = await admin
+    .from("vendor_bills")
+    .select("amount")
+    .eq("id", billId)
+    .single();
+  if (!existing) return { error: "Bill not found" };
+  if (amount > Number(existing.amount)) {
+    try {
+      const { assertApprovalThreshold } = await import("@/lib/finance/assert-threshold");
+      await assertApprovalThreshold("bill", amount, formData);
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : "Approval required" };
+    }
+  }
+
   const { error } = await admin
     .from("vendor_bills")
     .update({
@@ -192,6 +224,16 @@ export async function updateVendorBill(formData: FormData) {
     .eq("id", billId);
   if (error) return { error: error.message };
 
+  if (amount !== Number(existing.amount)) {
+    await writeAudit({
+      actorId: user.id,
+      action: "vendor_bill.amount_changed",
+      entityType: "vendor_bill",
+      entityId: billId,
+      metadata: { from: Number(existing.amount), to: amount },
+    });
+  }
+
   revalidateVendors(vendorId);
   revalidatePath(`/admin/vendors/${vendorId}/bills/${billId}`);
   return { ok: true, amount };
@@ -199,7 +241,7 @@ export async function updateVendorBill(formData: FormData) {
 
 /** Save the vendor's remit (ACH) details — stored in the database only. */
 export async function updateVendorRemit(formData: FormData) {
-  await requireAdmin();
+  const { user } = await requireCapability("money.write");
   const vendorId = String(formData.get("vendor_id") ?? "");
   if (!vendorId) return { error: "Vendor is required" };
 
@@ -239,13 +281,25 @@ export async function updateVendorRemit(formData: FormData) {
   const { error } = await admin.from("vendors").update(patch).eq("id", vendorId);
   if (error) return { error: error.message };
 
+  await writeAudit({
+    actorId: user.id,
+    action: "vendor.banking_changed",
+    entityType: "vendor",
+    entityId: vendorId,
+    metadata: {
+      account_changed: Boolean(accountNumber),
+      routing_changed: Boolean(routingNumber),
+      account_last4: accountNumber ? lastFour(accountNumber) : undefined,
+    },
+  });
+
   revalidateVendors(vendorId);
   return { ok: true };
 }
 
 /** Pay an open bill by ACH through Mercury. Idempotent per bill. */
 export async function payVendorBillAch(formData: FormData) {
-  await requireAdmin();
+  const { user } = await requireCapability("money.write");
   const billId = String(formData.get("bill_id") ?? "");
   const vendorId = String(formData.get("vendor_id") ?? "");
 
@@ -328,7 +382,14 @@ export async function payVendorBillAch(formData: FormData) {
     }
     // Timeout or transport failure: the ACH may well have gone out. Keep the
     // claim so the button stays locked, and let reconciliation settle it.
-    console.error(`Vendor bill ${billId}: ACH outcome unknown:`, err);
+    reportError("mercury.ach_outcome_unknown", err, { bill_id: billId, vendor_id: vendorId });
+    await writeAudit({
+      actorId: user.id,
+      action: "vendor_bill.ach_outcome_unknown",
+      entityType: "vendor_bill",
+      entityId: billId,
+      metadata: { amount: Number(bill.amount) },
+    });
     return {
       error:
         "The payment request did not complete cleanly, so we can't confirm whether the ACH was sent. Check Mercury before retrying — this bill is locked until you do.",
@@ -345,14 +406,26 @@ export async function payVendorBillAch(formData: FormData) {
     .eq("id", billId);
 
   if (updateError) {
-    console.error(
-      `Vendor bill ${billId}: ACH ${txn.id} sent but the bill could not be marked paid:`,
-      updateError.message
-    );
+    reportError("mercury.ach_sent_not_marked_paid", updateError.message, {
+      bill_id: billId,
+      transaction_id: txn.id,
+    });
     return {
       error: `Payment sent (Mercury transaction ${txn.id}), but the bill could not be marked paid: ${updateError.message}. Do not send again — reconciliation will catch up.`,
     };
   }
+
+  await writeAudit({
+    actorId: user.id,
+    action: "vendor_bill.ach_sent",
+    entityType: "vendor_bill",
+    entityId: billId,
+    metadata: {
+      vendor_id: vendorId,
+      amount: Number(bill.amount),
+      mercury_transaction_id: txn.id,
+    },
+  });
 
   revalidateVendors(vendorId);
   revalidatePath(`/admin/vendors/${vendorId}/bills/${billId}`);
@@ -360,7 +433,7 @@ export async function payVendorBillAch(formData: FormData) {
 }
 
 export async function setVendorBillStatus(formData: FormData) {
-  await requireAdmin();
+  const { user } = await requireCapability("money.write");
   const billId = String(formData.get("bill_id") ?? "");
   const vendorId = String(formData.get("vendor_id") ?? "");
   const status = String(formData.get("status") ?? "");
@@ -372,12 +445,19 @@ export async function setVendorBillStatus(formData: FormData) {
     .update({ status, paid_at: status === "paid" ? new Date().toISOString() : null })
     .eq("id", billId);
   if (error) return { error: error.message };
+  await writeAudit({
+    actorId: user.id,
+    action: "vendor_bill.status_changed",
+    entityType: "vendor_bill",
+    entityId: billId,
+    metadata: { status },
+  });
   revalidateVendors(vendorId);
   return { ok: true };
 }
 
 export async function deleteVendorBill(formData: FormData) {
-  await requireAdmin();
+  const { user } = await requireCapability("money.write");
   const billId = String(formData.get("bill_id") ?? "");
   const vendorId = String(formData.get("vendor_id") ?? "");
   const admin = createAdminClient();
@@ -390,6 +470,13 @@ export async function deleteVendorBill(formData: FormData) {
     await admin.storage.from(ATTACHMENT_BUCKET).remove([bill.file_path]);
   }
   await admin.from("vendor_bills").delete().eq("id", billId);
+  await writeAudit({
+    actorId: user.id,
+    action: "vendor_bill.deleted",
+    entityType: "vendor_bill",
+    entityId: billId,
+    metadata: { vendor_id: vendorId },
+  });
   revalidateVendors(vendorId);
   return { ok: true };
 }

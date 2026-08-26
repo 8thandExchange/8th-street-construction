@@ -1,10 +1,19 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { requireAdmin } from "@/lib/actions/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSiteUrl } from "@/lib/brand/assets";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
+
+/**
+ * Codes are typed by homeowners' relatives on phones, so they stay short-ish —
+ * but 4 characters with unlimited attempts was guessable. 8 plus the attempt
+ * limiter on submission puts brute force out of reach. Existing codes keep
+ * working; the floor applies when a code is set or changed.
+ */
+const MIN_SHARE_CODE_LENGTH = 8;
 import {
   generateShareToken,
   hashSharePassword,
@@ -46,8 +55,8 @@ export async function enableProjectShare(formData: FormData) {
   const projectId = String(formData.get("project_id"));
   const password = String(formData.get("share_password") || "").trim();
 
-  if (password.length < 4) {
-    throw new Error("Choose an access code of at least 4 characters.");
+  if (password.length < MIN_SHARE_CODE_LENGTH) {
+    throw new Error(`Choose an access code of at least ${MIN_SHARE_CODE_LENGTH} characters.`);
   }
 
   const admin = createAdminClient();
@@ -78,8 +87,8 @@ export async function updateSharePassword(formData: FormData) {
   const projectId = String(formData.get("project_id"));
   const password = String(formData.get("share_password") || "").trim();
 
-  if (password.length < 4) {
-    throw new Error("Choose an access code of at least 4 characters.");
+  if (password.length < MIN_SHARE_CODE_LENGTH) {
+    throw new Error(`Choose an access code of at least ${MIN_SHARE_CODE_LENGTH} characters.`);
   }
 
   const admin = createAdminClient();
@@ -130,6 +139,13 @@ export async function submitSharePassword(
   const password = String(formData.get("password") || "");
 
   if (!token) return { error: "Invalid link." };
+
+  const ip = clientIp(await headers());
+  const { allowed, retryAfter } = await checkRateLimit("sharePassword", `${ip}:${token}`);
+  if (!allowed) {
+    const wait = retryAfter > 60 ? `${Math.ceil(retryAfter / 60)} minutes` : "a minute";
+    return { error: `Too many attempts. Wait ${wait} and try again.` };
+  }
 
   const admin = createAdminClient();
   const { data: project } = await admin
