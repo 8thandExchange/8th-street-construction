@@ -86,6 +86,16 @@ insert into public.project_portal_members (org_id, project_id, profile_id, porta
   ('00000000-0000-4000-8000-0000000000f1', '00000000-0000-4000-8000-0000000000d1',
    '00000000-0000-4000-8000-00000000c001', true);
 
+-- Group 3 fixtures: one vendor per tenant, and a t1 subcontractor owned by
+-- the t1 client profile (doubling as the sub self-access probe).
+insert into public.vendors (org_id, name) values
+  ('00000000-0000-4000-8000-0000000000f1', 'RLS Vendor T1'),
+  ('00000000-0000-4000-8000-0000000000f2', 'RLS Vendor T2');
+
+insert into public.subcontractors (org_id, company_name, trade, profile_id) values
+  ('00000000-0000-4000-8000-0000000000f1', 'RLS Sub T1', 'framing',
+   '00000000-0000-4000-8000-00000000c001');
+
 -- ── Bridge trigger, multi-org era: guessing a tenant must fail loud ──────
 
 do $$
@@ -228,6 +238,61 @@ begin
   end if;
   if (select count(*) from public.project_documents) <> 0 then
     raise exception 'RLS: cross-tenant project document read through a non-member claim';
+  end if;
+end $$;
+
+reset role;
+
+-- ── Cross-tenant isolation on re-keyed tables (group 3: vendors) ─────────
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-00000000b001","role":"authenticated","app_metadata":{"org_id":"00000000-0000-4000-8000-0000000000f1"}}';
+
+do $$
+begin
+  if (select count(*) from public.vendors) <> 1
+     or (select name from public.vendors limit 1) <> 'RLS Vendor T1' then
+    raise exception 'RLS: t1 org admin must see exactly t1''s vendor, saw %',
+      (select count(*) from public.vendors);
+  end if;
+end $$;
+
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-00000000b001","role":"authenticated","app_metadata":{"org_id":"00000000-0000-4000-8000-0000000000f2"}}';
+
+do $$
+begin
+  if (select count(*) from public.vendors) <> 0 then
+    raise exception 'RLS: cross-tenant vendor read through a non-member claim';
+  end if;
+end $$;
+
+reset role;
+
+-- ── Sub self-access survives the org conjunct ────────────────────────────
+-- The t1 client profile owns a subcontractor record: readable under the
+-- matching claim, gone under a foreign-org claim.
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-00000000c001","role":"authenticated","app_metadata":{"org_id":"00000000-0000-4000-8000-0000000000f1"}}';
+
+do $$
+begin
+  if (select count(*) from public.subcontractors) <> 1
+     or (select company_name from public.subcontractors limit 1) <> 'RLS Sub T1' then
+    raise exception 'RLS: sub must read exactly their own record';
+  end if;
+end $$;
+
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-00000000c001","role":"authenticated","app_metadata":{"org_id":"00000000-0000-4000-8000-0000000000f2"}}';
+
+do $$
+begin
+  if (select count(*) from public.subcontractors) <> 0 then
+    raise exception 'RLS: sub self-access leaked across a foreign-org claim';
   end if;
 end $$;
 
