@@ -15,11 +15,14 @@ export function BillEditForm({
   vendorId,
   billId,
   projects,
+  billThreshold,
   initial,
 }: {
   vendorId: string;
   billId: string;
   projects: { id: string; title: string }[];
+  /** Approval threshold for bills — raising the total past it needs the confirm box. */
+  billThreshold?: number;
   initial: {
     title: string;
     bill_number: string | null;
@@ -192,6 +195,23 @@ export function BillEditForm({
         <label className="field-label">Notes (internal)</label>
         <input name="notes" defaultValue={initial.notes ?? ""} className="field-input w-full" />
       </div>
+
+      {billThreshold !== undefined &&
+        lineTotal > billThreshold &&
+        lineTotal > initial.amount && (
+          <label className="sm:col-span-2 flex items-start gap-2 text-xs text-navy/80">
+            <input
+              type="checkbox"
+              name="confirm_over_threshold"
+              className="mt-0.5 h-4 w-4 accent-copper"
+            />
+            <span>
+              This raises the invoice to{" "}
+              <span className="app-num">${lineTotal.toLocaleString("en-US")}</span>, past the $
+              {billThreshold.toLocaleString("en-US")} approval threshold. Confirm to continue.
+            </span>
+          </label>
+        )}
 
       <div className="sm:col-span-2 flex items-center gap-3">
         <button type="submit" disabled={busy} className="app-btn app-btn-primary !h-9">

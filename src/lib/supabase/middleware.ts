@@ -1,5 +1,6 @@
 import { createServerClient, type SetAllCookies } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { parseStaffScope, staffCanOpenPath } from "@/lib/auth/staff-scope";
 import { getSupabaseAnonKey, getSupabaseProjectUrl } from "@/lib/supabase/project-env";
 
 export async function updateSession(request: NextRequest) {
@@ -45,7 +46,7 @@ export async function updateSession(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role, must_change_password, portal_active")
+      .select("role, must_change_password, portal_active, staff_scope")
       .eq("id", user.id)
       .single();
 
@@ -60,6 +61,19 @@ export async function updateSession(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       return NextResponse.redirect(url);
+    }
+
+    // Staff-scope gating for /admin sections. The client-side guard is a
+    // convenience; this is the enforcement — a scoped login typing a URL by
+    // hand lands back on the dashboard, not on the page.
+    if (pathname.startsWith("/admin") && profile?.role === "admin") {
+      const scope = parseStaffScope(profile.staff_scope);
+      if (!staffCanOpenPath(scope, pathname)) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/admin";
+        url.search = "";
+        return NextResponse.redirect(url);
+      }
     }
 
     // Client portal master switch

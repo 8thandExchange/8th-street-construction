@@ -115,6 +115,13 @@ export async function provisionPortalUser(input: {
   password?: string;
   /** Force a password change at first login (defaults to true only for generated passwords) */
   forcePasswordChange?: boolean;
+  /**
+   * What to do when the email already has an account. "reject" (the invite
+   * flows) refuses instead of silently resetting the person's password —
+   * inviting an existing address must never become a takeover. "reset" is for
+   * the explicit password-reset action only.
+   */
+  onExisting?: "reset" | "reject";
 }): Promise<ProvisionPortalUserResult> {
   const admin = createAdminClient();
   const email = input.email.trim().toLowerCase();
@@ -123,9 +130,26 @@ export async function provisionPortalUser(input: {
 
   const { data: existingProfile } = await admin
     .from("profiles")
-    .select("id, email")
+    .select("id, email, role")
     .ilike("email", email)
     .maybeSingle();
+
+  if (existingProfile) {
+    if (input.onExisting === "reject") {
+      return {
+        error: `${email} already has an account (${existingProfile.role}). Use "Reset password" to re-send credentials.`,
+      };
+    }
+    // Re-provisioning never changes who somebody is. A role change is a
+    // deliberate access decision, not a side effect of resetting a password —
+    // without this check, inviting an admin's email as "client" would demote
+    // them AND rotate their password in one motion.
+    if (existingProfile.role !== input.role) {
+      return {
+        error: `${email} already has the ${existingProfile.role} role. Roles are not changed by re-inviting.`,
+      };
+    }
+  }
 
   let userId = existingProfile?.id;
 

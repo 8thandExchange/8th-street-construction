@@ -8,6 +8,7 @@ import {
   RemitForm,
 } from "@/components/vendors/VendorBillEditor";
 import { formatMoney } from "@/lib/billing/constants";
+import { loadApprovalThresholds } from "@/lib/finance/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +18,11 @@ export default async function VendorBillPage(props: {
   const { vendorId, billId } = await props.params;
   const admin = createAdminClient();
 
-  const [{ data: bill }, { data: vendor }, { data: projects }] = await Promise.all([
+  const [{ data: bill }, { data: vendor }, { data: projects }, thresholds] = await Promise.all([
     admin.from("vendor_bills").select("*").eq("id", billId).eq("vendor_id", vendorId).single(),
     admin.from("vendors").select("*").eq("id", vendorId).single(),
     admin.from("projects").select("id, title").neq("status", "archived").order("title"),
+    loadApprovalThresholds(),
   ]);
   if (!bill || !vendor) notFound();
 
@@ -83,6 +85,7 @@ export default async function VendorBillPage(props: {
           vendorId={vendorId}
           billId={billId}
           projects={projects ?? []}
+          billThreshold={thresholds.bill}
           initial={{
             title: bill.title,
             bill_number: bill.bill_number,
