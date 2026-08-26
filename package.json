@@ -17,7 +17,8 @@
     "vendors:encrypt": "npx tsx --env-file=.env.local scripts/encrypt-vendor-secrets.ts",
     "costs:import": "tsx scripts/import-cost-sheet.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:rls": "psql \"$SUPABASE_DB_URL\" -v ON_ERROR_STOP=1 -f scripts/rls-tests.sql"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.106.0",
