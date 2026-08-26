@@ -42,13 +42,14 @@ insert into auth.users (id, email) values
   ('00000000-0000-4000-8000-00000000a002', 'rls-t2-admin@example.invalid'),
   ('00000000-0000-4000-8000-00000000b001', 'rls-t1-orgadmin@example.invalid');
 
-insert into public.profiles (id, email, role) values
-  ('00000000-0000-4000-8000-00000000a001', 'rls-t1-admin@example.invalid', 'admin'),
-  ('00000000-0000-4000-8000-00000000c001', 'rls-t1-client@example.invalid', 'client'),
-  ('00000000-0000-4000-8000-00000000a002', 'rls-t2-admin@example.invalid', 'admin'),
+insert into public.profiles (id, email, role, portal_active) values
+  ('00000000-0000-4000-8000-00000000a001', 'rls-t1-admin@example.invalid', 'admin', false),
+  -- portal_active so the t1 client exercises client_has_project_portal_access.
+  ('00000000-0000-4000-8000-00000000c001', 'rls-t1-client@example.invalid', 'client', true),
+  ('00000000-0000-4000-8000-00000000a002', 'rls-t2-admin@example.invalid', 'admin', false),
   -- Org-admin WITHOUT platform admin: profiles.role stays client, so only
   -- the org-scoped policy arm can admit them — the purest tenancy probe.
-  ('00000000-0000-4000-8000-00000000b001', 'rls-t1-orgadmin@example.invalid', 'client');
+  ('00000000-0000-4000-8000-00000000b001', 'rls-t1-orgadmin@example.invalid', 'client', false);
 
 insert into public.organizations (id, slug, legal_name, display_name) values
   ('00000000-0000-4000-8000-0000000000f1', 'rls-test-tenant-1', 'RLS Test Tenant 1 LLC', 'Tenant 1'),
@@ -64,6 +65,26 @@ insert into public.org_members (org_id, user_id, role, staff_scope) values
 insert into public.leads (org_id, first_name, last_name, email, message) values
   ('00000000-0000-4000-8000-0000000000f1', 'Lead', 'One', 'rls-lead-t1@example.invalid', 't1'),
   ('00000000-0000-4000-8000-0000000000f2', 'Lead', 'Two', 'rls-lead-t2@example.invalid', 't2');
+
+-- Group 2 fixtures: one DRAFT project per tenant with a client-visible
+-- document, plus portal membership for the t1 client on the t1 project.
+-- Draft status keeps the anon/public "published projects" policy out of
+-- play, so the org-scoped and portal arms are the only admission paths.
+insert into public.projects (id, org_id, slug, title, category, status) values
+  ('00000000-0000-4000-8000-0000000000d1', '00000000-0000-4000-8000-0000000000f1',
+   'rls-test-project-t1', 'RLS Project T1', 'custom_home', 'draft'),
+  ('00000000-0000-4000-8000-0000000000d2', '00000000-0000-4000-8000-0000000000f2',
+   'rls-test-project-t2', 'RLS Project T2', 'custom_home', 'draft');
+
+insert into public.project_documents (org_id, project_id, title, storage_path, visibility) values
+  ('00000000-0000-4000-8000-0000000000f1', '00000000-0000-4000-8000-0000000000d1',
+   'RLS Doc T1', 'rls-test/t1.pdf', 'client'),
+  ('00000000-0000-4000-8000-0000000000f2', '00000000-0000-4000-8000-0000000000d2',
+   'RLS Doc T2', 'rls-test/t2.pdf', 'client');
+
+insert into public.project_portal_members (org_id, project_id, profile_id, portal_enabled) values
+  ('00000000-0000-4000-8000-0000000000f1', '00000000-0000-4000-8000-0000000000d1',
+   '00000000-0000-4000-8000-00000000c001', true);
 
 -- ── Bridge trigger, multi-org era: guessing a tenant must fail loud ──────
 
@@ -92,7 +113,8 @@ declare
   t text;
   n int;
 begin
-  foreach t in array array['vendors', 'vendor_bills', 'invoices', 'organizations', 'org_members']
+  foreach t in array array['vendors', 'vendor_bills', 'invoices', 'organizations', 'org_members',
+                           'project_documents', 'project_contracts', 'meetings']
   loop
     begin
       execute format('select count(*) from public.%I', t) into n;
@@ -168,6 +190,79 @@ do $$
 begin
   if (select count(*) from public.leads) <> 0 then
     raise exception 'RLS: cross-tenant lead read through a non-member claim';
+  end if;
+end $$;
+
+reset role;
+
+-- ── Cross-tenant isolation on re-keyed tables (group 2: projects) ────────
+-- Draft projects are invisible to the public policy, so the org-admin arm
+-- is the only way the t1 org admin (who is NOT a platform admin) sees them.
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-00000000b001","role":"authenticated","app_metadata":{"org_id":"00000000-0000-4000-8000-0000000000f1"}}';
+
+do $$
+begin
+  if (select count(*) from public.projects where status = 'draft') <> 1
+     or (select slug from public.projects where status = 'draft' limit 1) <> 'rls-test-project-t1' then
+    raise exception 'RLS: t1 org admin must see exactly t1''s draft project, saw %',
+      (select count(*) from public.projects where status = 'draft');
+  end if;
+  if (select count(*) from public.project_documents) <> 1
+     or (select title from public.project_documents limit 1) <> 'RLS Doc T1' then
+    raise exception 'RLS: t1 org admin must see exactly t1''s document, saw %',
+      (select count(*) from public.project_documents);
+  end if;
+end $$;
+
+-- Same person claiming the org they do not belong to: nothing.
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-00000000b001","role":"authenticated","app_metadata":{"org_id":"00000000-0000-4000-8000-0000000000f2"}}';
+
+do $$
+begin
+  if (select count(*) from public.projects where status = 'draft') <> 0 then
+    raise exception 'RLS: cross-tenant draft project read through a non-member claim';
+  end if;
+  if (select count(*) from public.project_documents) <> 0 then
+    raise exception 'RLS: cross-tenant project document read through a non-member claim';
+  end if;
+end $$;
+
+reset role;
+
+-- ── Portal client path survives the org conjunct ─────────────────────────
+-- The t1 client is a portal member of the t1 project with portal_active,
+-- so client_has_project_portal_access admits them — but only inside the
+-- org their claim names.
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-00000000c001","role":"authenticated","app_metadata":{"org_id":"00000000-0000-4000-8000-0000000000f1"}}';
+
+do $$
+begin
+  if (select count(*) from public.projects where status = 'draft') <> 1 then
+    raise exception 'RLS: portal client must see their project through the portal arm';
+  end if;
+  if (select count(*) from public.project_documents) <> 1
+     or (select title from public.project_documents limit 1) <> 'RLS Doc T1' then
+    raise exception 'RLS: portal client must see exactly their client-visible document';
+  end if;
+end $$;
+
+-- The same client under a foreign-org claim loses everything: membership
+-- alone is not enough once the claim names another tenant.
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-00000000c001","role":"authenticated","app_metadata":{"org_id":"00000000-0000-4000-8000-0000000000f2"}}';
+
+do $$
+begin
+  if (select count(*) from public.projects where status = 'draft') <> 0
+     or (select count(*) from public.project_documents) <> 0 then
+    raise exception 'RLS: portal membership leaked across a foreign-org claim';
   end if;
 end $$;
 
