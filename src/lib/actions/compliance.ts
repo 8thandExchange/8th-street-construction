@@ -2,20 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { COMPANY_COMPLIANCE_SEED } from "@/lib/compliance/company-compliance-seed";
 import { computeComplianceStatus, seedItemToRow } from "@/lib/compliance/compliance-utils";
 import { runComplianceReminders } from "@/lib/compliance/compliance-reminders";
 
 function revalidate() {
-  revalidatePath("/admin/compliance");
-  revalidatePath("/admin");
+  revalidatePath("/supabase/compliance");
+  revalidatePath("/supabase");
 }
 
 export async function seedCompanyCompliance() {
-  await requireAdmin();
-  const admin = createAdminClient();
-  const { count } = await admin
+  const { supabase } = await requireAdmin();
+  const { count } = await supabase
     .from("company_compliance_items")
     .select("id", { count: "exact", head: true });
 
@@ -23,14 +21,13 @@ export async function seedCompanyCompliance() {
     return { error: "Compliance items already exist. Add manually or delete first." };
   }
 
-  await admin.from("company_compliance_items").insert(COMPANY_COMPLIANCE_SEED.map(seedItemToRow));
+  await supabase.from("company_compliance_items").insert(COMPANY_COMPLIANCE_SEED.map(seedItemToRow));
   revalidate();
   return { ok: true, count: COMPANY_COMPLIANCE_SEED.length };
 }
 
 export async function upsertComplianceItem(formData: FormData) {
-  await requireAdmin();
-  const admin = createAdminClient();
+  const { supabase } = await requireAdmin();
   const id = String(formData.get("id") || "").trim();
   const expiresAt = String(formData.get("expires_at") || "").trim() || null;
   const renewalLead = Number(formData.get("renewal_lead_days") || 60);
@@ -59,18 +56,17 @@ export async function upsertComplianceItem(formData: FormData) {
   };
 
   if (id) {
-    await admin.from("company_compliance_items").update(payload).eq("id", id);
+    await supabase.from("company_compliance_items").update(payload).eq("id", id);
   } else {
-    await admin.from("company_compliance_items").insert(payload);
+    await supabase.from("company_compliance_items").insert(payload);
   }
   revalidate();
   return { ok: true };
 }
 
 export async function deleteComplianceItem(formData: FormData) {
-  await requireAdmin();
-  const admin = createAdminClient();
-  await admin.from("company_compliance_items").delete().eq("id", String(formData.get("id")));
+  const { supabase } = await requireAdmin();
+  await supabase.from("company_compliance_items").delete().eq("id", String(formData.get("id")));
   revalidate();
   return { ok: true };
 }
@@ -83,12 +79,11 @@ export async function triggerComplianceReminders() {
 }
 
 export async function syncComplianceStatuses() {
-  await requireAdmin();
-  const admin = createAdminClient();
-  const { data: items } = await admin.from("company_compliance_items").select("*");
+  const { supabase } = await requireAdmin();
+  const { data: items } = await supabase.from("company_compliance_items").select("*");
   for (const item of items ?? []) {
     const status = computeComplianceStatus(item);
-    await admin.from("company_compliance_items").update({ status }).eq("id", item.id);
+    await supabase.from("company_compliance_items").update({ status }).eq("id", item.id);
   }
   revalidate();
   return { ok: true };

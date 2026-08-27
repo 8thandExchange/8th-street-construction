@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/actions/admin-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { summarizeWorkflowEvents } from "@/lib/analytics/summary";
 
 export const dynamic = "force-dynamic";
@@ -20,9 +19,9 @@ const LABELS: Record<string, string> = {
 };
 
 export default async function WorkflowUsagePage() {
-  await requireAdmin();
+  const { supabase } = await requireAdmin();
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  const { data } = await createAdminClient()
+  const { data } = await supabase
     .from("workflow_events")
     .select("workflow, event, entity_id, created_at")
     .gte("created_at", since)

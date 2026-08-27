@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/actions/admin-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +15,8 @@ const DECISION_LABELS: Record<string, string> = {
 };
 
 export default async function AssistantAuditPage() {
-  await requireAdmin();
-  const admin = createAdminClient();
-  const { data } = await admin
+  const { supabase } = await requireAdmin();
+  const { data } = await supabase
     .from("assistant_audit_events")
     .select(
       "id, created_at, surface, tool_name, summary, decision, result_excerpt, record_url, conversation_id, actor_id, project_id"
@@ -35,13 +33,13 @@ export default async function AssistantAuditPage() {
 
   const [{ data: actors }, { data: projects }, { data: conversations }] = await Promise.all([
     actorIds.length
-      ? admin.from("profiles").select("id, first_name, last_name, email").in("id", actorIds)
+      ? supabase.from("profiles").select("id, first_name, last_name, email").in("id", actorIds)
       : Promise.resolve({ data: [] }),
     projectIds.length
-      ? admin.from("projects").select("id, title").in("id", projectIds)
+      ? supabase.from("projects").select("id, title").in("id", projectIds)
       : Promise.resolve({ data: [] }),
     conversationIds.length
-      ? admin.from("assistant_conversations").select("id, title").in("id", conversationIds)
+      ? supabase.from("assistant_conversations").select("id, title").in("id", conversationIds)
       : Promise.resolve({ data: [] }),
   ]);
 
@@ -76,7 +74,7 @@ export default async function AssistantAuditPage() {
           Every assistant action that moved money, reached a client, or changed a live record. Chat
           transcripts stay with the person who had them; this log is the company record.
         </p>
-        <Link href="/admin/assistant" className="mt-4 inline-block text-[13px] font-medium text-copper">
+        <Link href="/supabase/assistant" className="mt-4 inline-block text-[13px] font-medium text-copper">
           ← Back to assistant
         </Link>
       </div>

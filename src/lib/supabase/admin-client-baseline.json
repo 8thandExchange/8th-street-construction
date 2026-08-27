@@ -1,6 +1,4 @@
 [
-  "src/app/admin/assistant/audit/page.tsx",
-  "src/app/admin/settings/usage/page.tsx",
   "src/app/admin/vendors/[vendorId]/bills/[billId]/page.tsx",
   "src/app/admin/vendors/[vendorId]/page.tsx",
   "src/app/admin/vendors/page.tsx",
@@ -23,7 +21,6 @@
   "src/lib/actions/bids.ts",
   "src/lib/actions/billing.ts",
   "src/lib/actions/change-orders.ts",
-  "src/lib/actions/compliance.ts",
   "src/lib/actions/contracts.ts",
   "src/lib/actions/invoice-attachments.ts",
   "src/lib/actions/messages.ts",
