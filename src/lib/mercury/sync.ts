@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { formatMoneyExact, isHabitat608Project } from "@/lib/billing/constants";
+import { formatMoneyExact } from "@/lib/billing/constants";
+import { isHabitatProject } from "@/lib/project/funding";
 import { sendInvoicePaidEmail } from "@/lib/email/invoice-notify";
 import { mercuryConfigured } from "./config";
 import { getMercuryInvoice } from "./invoices";
@@ -122,7 +123,7 @@ export async function backfillMissingMercuryInvoices(projectId?: string) {
       const [{ data: project }, { data: lines }] = await Promise.all([
         admin
           .from("projects")
-          .select("id, title, slug, client_id")
+          .select("id, title, client_id, funding_type")
           .eq("id", invoice.project_id)
           .single(),
         admin
@@ -157,7 +158,7 @@ export async function backfillMissingMercuryInvoices(projectId?: string) {
         clientEmail: client.email,
         clientName:
           [client.first_name, client.last_name].filter(Boolean).join(" ") || client.email,
-        payerMemo: isHabitat608Project(project?.slug ?? "")
+        payerMemo: isHabitatProject(project ?? {})
           ? "Habitat for Humanity draw payment — ACH bank transfer."
           : undefined,
       });

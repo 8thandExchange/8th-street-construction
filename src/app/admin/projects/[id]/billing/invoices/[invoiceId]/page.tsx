@@ -11,11 +11,8 @@ import { InvoiceAttachments } from "@/components/billing/InvoiceAttachments";
 import { InvoiceAttachmentsCard } from "@/components/billing/InvoiceAttachmentsCard";
 import { appStatusBadge } from "@/lib/project/status-badges";
 import { INVOICE_STATUS_LABELS } from "@/lib/project/labels";
-import {
-  formatMoneyExact,
-  invoiceAttachmentTag,
-  isHabitat608Project,
-} from "@/lib/billing/constants";
+import { formatMoneyExact, invoiceAttachmentTag } from "@/lib/billing/constants";
+import { isHabitatProject } from "@/lib/project/funding";
 import { mercuryPayUrl } from "@/lib/mercury/invoices";
 import { invoiceReadyEmail } from "@/lib/email/templates/invoice-ready";
 import { getSiteUrl } from "@/lib/brand/assets";
@@ -63,7 +60,7 @@ export default async function InvoiceDetailPage(props: {
       supabase
         .from("invoices")
         .select(
-          "id, invoice_number, title, status, subtotal, total, amount_paid, due_date, notes, sent_at, paid_at, created_at, mercury_pay_slug, mercury_status, project:projects(title, slug, client_id)"
+          "id, invoice_number, title, status, subtotal, total, amount_paid, due_date, notes, sent_at, paid_at, created_at, mercury_pay_slug, mercury_status, project:projects(title, client_id, funding_type)"
         )
         .eq("id", invoiceId)
         .eq("project_id", id)
@@ -127,7 +124,7 @@ export default async function InvoiceDetailPage(props: {
       dueDateFormatted: fmt(invoice.due_date),
       portalUrl: `${getSiteUrl()}/client/projects/${id}/billing`,
       mercuryPayUrl: "#mercury-pay-link",
-      isHabitat: isHabitat608Project(project?.slug ?? ""),
+      isHabitat: isHabitatProject(project ?? {}),
     });
     clientPreview = { to: client?.email ?? null, subject, html };
   }
