@@ -366,6 +366,26 @@ begin
   end if;
 end $$;
 
+-- ── Claimless sessions get nothing through the client arms ───────────────
+-- The re-keying bridged client/sub/owner policies with "or current_org_id()
+-- is null" so pre-claim sessions kept working. That hatch is torn down
+-- (every auth user carries the claim; provisioning stamps it), so the same
+-- portal member with NO org claim — a state no live session should be in —
+-- must now read zero rows, not every tenant's.
+
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-00000000c001","role":"authenticated"}';
+
+do $$
+begin
+  if (select count(*) from public.projects where status = 'draft') <> 0
+     or (select count(*) from public.project_documents) <> 0
+     or (select count(*) from public.subcontractors) <> 0
+     or (select count(*) from public.invoices) <> 0 then
+    raise exception 'RLS: claimless session read rows through a client arm after bridge teardown';
+  end if;
+end $$;
+
 reset role;
 
 -- ── Org-admin checks are bound to the JWT claim, not just membership ─────
