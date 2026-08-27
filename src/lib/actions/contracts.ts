@@ -451,8 +451,8 @@ export async function sendContractForEsign(formData: FormData) {
         email: contractorEmail,
         order: 1,
         fields: [
-          field("contractor-signature", "Signature", EXECUTION_FIELDS.contractorSignature),
-          field("contractor-date", "DateSigned", EXECUTION_FIELDS.contractorDate),
+          field("contractor_signature", "Signature", EXECUTION_FIELDS.contractorSignature),
+          field("contractor_date", "DateSigned", EXECUTION_FIELDS.contractorDate),
         ],
       },
       {
@@ -460,8 +460,8 @@ export async function sendContractForEsign(formData: FormData) {
         email: ownerEmail,
         order: 1,
         fields: [
-          field("owner-signature", "Signature", EXECUTION_FIELDS.ownerSignature),
-          field("owner-date", "DateSigned", EXECUTION_FIELDS.ownerDate),
+          field("owner_signature", "Signature", EXECUTION_FIELDS.ownerSignature),
+          field("owner_date", "DateSigned", EXECUTION_FIELDS.ownerDate),
         ],
       },
     ],

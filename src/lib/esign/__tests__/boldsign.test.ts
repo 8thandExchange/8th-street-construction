@@ -74,7 +74,7 @@ describe("sendDocumentForSignature", () => {
           order: 1,
           fields: [
             {
-              id: "contractor-signature",
+              id: "contractor_signature",
               fieldType: "Signature",
               pageNumber: 5,
               bounds: { x: 48, y: 250, width: 230, height: 44 },
