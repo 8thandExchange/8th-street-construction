@@ -57,11 +57,14 @@ describe("draw templates", () => {
     expect(LUXURY_DRAW_TEMPLATE.reduce((s, d) => s + d.percent, 0)).toBe(100);
   });
 
-  it("routes Habitat projects to the Habitat template", () => {
+  it("routes on funding_type, never the slug", () => {
     expect(getDrawTemplateForProject({ funding_type: "habitat" })).toBe(HABITAT_DRAW_TEMPLATE);
     expect(getDrawTemplateForProject({ funding_type: "hud_home" })).toBe(HABITAT_DRAW_TEMPLATE);
-    expect(getDrawTemplateForProject("608-macon-ave")).toBe(HABITAT_DRAW_TEMPLATE);
     expect(getDrawTemplateForProject({ funding_type: "private" })).toBe(LUXURY_DRAW_TEMPLATE);
+    // The slug-string overload once special-cased 608 Macon, which handed
+    // every OTHER Habitat house the luxury template. Untyped funding falls
+    // back to luxury; classification is the funding_type column's job.
+    expect(getDrawTemplateForProject({})).toBe(LUXURY_DRAW_TEMPLATE);
   });
 });
 

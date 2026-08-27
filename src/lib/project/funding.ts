@@ -83,25 +83,28 @@ export function isHudHomeFund(type: ProjectFundingType): boolean {
   return type === "hud_home";
 }
 
+/**
+ * Funding classification comes from funding_type alone. The slug fallback
+ * for 608 Macon is gone: every live job carries its funding_type, and
+ * keying off the slug silently misclassified every OTHER Habitat house
+ * (1137 Merry etc. got the luxury draw template). 608-specific presets
+ * (its city budget, its setup wizard shortcut) still gate on the slug —
+ * that's project identity, not funding classification.
+ */
 export function isHabitatProject(project: {
   funding_type?: ProjectFundingType | string | null;
-  slug?: string | null;
 }): boolean {
-  if (project.funding_type === "habitat" || project.funding_type === "hud_home") return true;
-  return project.slug === "608-macon-ave";
+  return project.funding_type === "habitat" || project.funding_type === "hud_home";
 }
 
 export function isHudHomeProject(project: {
   funding_type?: ProjectFundingType | string | null;
-  slug?: string | null;
 }): boolean {
-  if (project.funding_type === "hud_home") return true;
-  return project.slug === "608-macon-ave";
+  return project.funding_type === "hud_home";
 }
 
 export function getDrawTemplateKey(project: {
   funding_type?: ProjectFundingType | string | null;
-  slug?: string | null;
 }): "habitat" | "luxury" {
   return isHabitatProject(project) ? "habitat" : "luxury";
 }
@@ -123,7 +126,6 @@ export function parseFundingType(value: string | null | undefined): ProjectFundi
 
 export type NoticeToProceedState = {
   funding_type?: ProjectFundingType | string | null;
-  slug?: string | null;
   notice_to_proceed_at?: string | null;
 };
 

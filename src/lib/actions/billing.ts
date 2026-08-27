@@ -15,7 +15,7 @@ import { allocateDrawAmounts } from "@/lib/billing/draws";
 import { mercuryConfigured } from "@/lib/mercury/config";
 import { getMercuryPayLink, pushInvoiceToMercury } from "@/lib/mercury/service";
 import { markInvoicePaidLocally } from "@/lib/mercury/sync";
-import { assertClearedToInvoice } from "@/lib/project/funding";
+import { assertClearedToInvoice, isHabitatProject } from "@/lib/project/funding";
 import { sendSms } from "@/lib/sms/ghl";
 import { sendPushToProfile } from "@/lib/notify/push";
 
@@ -259,7 +259,12 @@ async function deliverInvoice(
     total: number;
     due_date: string | null;
   },
-  project: { id: string; title: string | null; client_id: string | null; slug: string | null },
+  project: {
+    id: string;
+    title: string | null;
+    client_id: string | null;
+    funding_type: string | null;
+  },
   lineItems: CustomLineItem[],
   attachments: { filename: string; url: string }[] = []
 ) {
@@ -297,7 +302,7 @@ async function deliverInvoice(
         clientEmail: client.email,
         clientName:
           [client.first_name, client.last_name].filter(Boolean).join(" ") || client.email,
-        payerMemo: isHabitat608Project(project.slug ?? "")
+        payerMemo: isHabitatProject(project)
           ? "Habitat for Humanity draw payment — ACH bank transfer."
           : undefined,
       });
@@ -320,7 +325,7 @@ async function deliverInvoice(
       amountFormatted: formatMoneyExact(Number(invoice.total)),
       dueDateFormatted: formatDueDateLabel(invoice.due_date),
       mercuryPayUrl: mercuryPayLink,
-      isHabitat: isHabitat608Project(project.slug ?? ""),
+      isHabitat: isHabitatProject(project),
       attachments,
     });
     if ("error" in emailResult && emailResult.error) {
@@ -377,7 +382,7 @@ export async function updateContractValue(formData: FormData) {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("slug")
+    .select("funding_type")
     .eq("id", projectId)
     .single();
 
@@ -393,7 +398,7 @@ export async function updateContractValue(formData: FormData) {
       .eq("project_id", projectId);
 
     if ((count ?? 0) === 0) {
-      const template = getDrawTemplateForProject(project?.slug ?? "");
+      const template = getDrawTemplateForProject(project ?? {});
       await insertDrawSchedule(supabase, projectId, contractValue, template);
     }
   }
@@ -441,7 +446,7 @@ export async function setupHabitat608DrawSchedule(formData: FormData) {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("slug, title, contract_value")
+    .select("slug, title, contract_value, funding_type")
     .eq("id", projectId)
     .single();
 
@@ -473,7 +478,7 @@ export async function setupHabitat608DrawSchedule(formData: FormData) {
       supabase,
       projectId,
       contractValue,
-      getDrawTemplateForProject(project.slug)
+      getDrawTemplateForProject(project)
     );
   }
 
@@ -498,14 +503,14 @@ export async function seedDrawSchedule(formData: FormData) {
 
   const { data: project } = await supabase
     .from("projects")
-    .select("contract_value, slug")
+    .select("contract_value, funding_type")
     .eq("id", projectId)
     .single();
 
   const contract = Number(project?.contract_value ?? 0);
   if (!contract) throw new Error("Set the contract amount first.");
 
-  const template = getDrawTemplateForProject(project?.slug ?? "");
+  const template = getDrawTemplateForProject(project ?? {});
   await insertDrawSchedule(supabase, projectId, contract, template);
   revalidate(projectId);
 }
@@ -622,7 +627,7 @@ export async function createInvoiceFromDraw(formData: FormData) {
       id: projectId,
       title: project?.title ?? null,
       client_id: project?.client_id ?? null,
-      slug: project?.slug ?? null,
+      funding_type: project?.funding_type ?? null,
     },
     lineItems
   );
@@ -729,7 +734,7 @@ export async function createCustomInvoice(formData: FormData) {
         id: projectId,
         title: project.title ?? null,
         client_id: project.client_id ?? null,
-        slug: project.slug ?? null,
+        funding_type: project.funding_type ?? null,
       },
       lineItems,
       emailAttachments
@@ -965,7 +970,7 @@ export async function sendCustomInvoice(formData: FormData) {
       id: projectId,
       title: project.title ?? null,
       client_id: project.client_id ?? null,
-      slug: project.slug ?? null,
+      funding_type: project.funding_type ?? null,
     },
     lineItems,
     emailAttachments

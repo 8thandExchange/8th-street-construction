@@ -8,7 +8,7 @@ import {
 
 describe("notice to proceed", () => {
   it("does not apply to privately funded jobs", () => {
-    const project = { funding_type: "private", slug: "some-custom-home" };
+    const project = { funding_type: "private" };
     expect(requiresNoticeToProceed(project)).toBe(false);
     expect(noticeToProceedBlock(project)).toBeNull();
     expect(() => assertClearedToInvoice(project)).not.toThrow();
@@ -35,12 +35,13 @@ describe("notice to proceed", () => {
     expect(() => assertClearedToInvoice(project)).not.toThrow();
   });
 
-  // 608 Macon predates the funding_type column being set reliably, and
-  // isHabitatProject still recognises it by slug. The gate has to agree.
-  it("recognises 608 Macon by slug even without a funding type", () => {
-    const project = { slug: "608-macon-ave", notice_to_proceed_at: null };
-    expect(requiresNoticeToProceed(project)).toBe(true);
-    expect(() => assertClearedToInvoice(project)).toThrow();
+  // The slug fallback for 608 Macon is gone: funding_type is set on every
+  // live job and is the only thing that gates. A job with no funding type
+  // is private by definition — slug spelling never re-arms the gate.
+  it("gates on funding_type alone — no slug recognition", () => {
+    const project = { notice_to_proceed_at: null };
+    expect(requiresNoticeToProceed(project)).toBe(false);
+    expect(() => assertClearedToInvoice(project)).not.toThrow();
   });
 
   it("treats an empty date string as no notice", () => {

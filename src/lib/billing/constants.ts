@@ -134,17 +134,22 @@ export const HABITAT_608_MACON_CITY_BUDGET: {
   { city_number: 33, description: "Blower Test", budget_amount: 365 },
 ];
 
-export function getDrawTemplateForProject(
-  projectOrSlug:
-    | { funding_type?: ProjectFundingType | string | null; slug?: string | null }
-    | string
-): DrawTemplateLine[] {
-  const project =
-    typeof projectOrSlug === "string" ? { slug: projectOrSlug } : projectOrSlug;
+/**
+ * funding_type picks the template. The old slug-string overload is gone —
+ * it recognised only 608 Macon, so every other Habitat house was handed
+ * the luxury template.
+ */
+export function getDrawTemplateForProject(project: {
+  funding_type?: ProjectFundingType | string | null;
+}): DrawTemplateLine[] {
   return isHabitatProject(project) ? HABITAT_DRAW_TEMPLATE : LUXURY_DRAW_TEMPLATE;
 }
 
-/** @deprecated Use isHabitatProject({ funding_type, slug }) */
+/**
+ * Literally "is this the 608 Macon Ave job" — gates 608-specific presets
+ * (its city-approved budget, its setup shortcut). NOT a funding check:
+ * use isHabitatProject / isHudHomeProject for anything funding-shaped.
+ */
 export function isHabitat608Project(slug: string): boolean {
   return slug === HABITAT_608_MACON.slug;
 }
