@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getPlaybookById, DEFAULT_PLAYBOOK_ID } from "@/lib/build/playbook-registry";
+import { isHabitatProject } from "@/lib/project/funding";
 import type { HubAlert } from "@/components/hub/HubUI";
 
 export type ProjectHubSummary = {
@@ -171,7 +172,10 @@ export async function loadProjectForHub(projectId: string) {
     });
   }
 
-  if (contractValue === 0 && project.slug === "608-macon-ave") {
+  // These two prompts were gated to the 608 Macon slug; they apply to any
+  // Habitat-funded build (the billing amount is what Habitat pays, distinct
+  // from our cost plan), so funding_type is the key now.
+  if (contractValue === 0 && isHabitatProject(project)) {
     nextActions.unshift({
       href: `${base}/billing`,
       label: "Set client billing amount",
@@ -179,7 +183,7 @@ export async function loadProjectForHub(projectId: string) {
     });
   }
 
-  if (Number(project.estimated_cost ?? 0) === 0 && project.slug === "608-macon-ave") {
+  if (Number(project.estimated_cost ?? 0) === 0 && isHabitatProject(project)) {
     nextActions.unshift({
       href: `${base}/costs`,
       label: "Import our cost plan",

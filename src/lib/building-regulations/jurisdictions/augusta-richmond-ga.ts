@@ -77,5 +77,9 @@ export const AUGUSTA_RICHMOND_GA: JurisdictionRegulations = {
     "richmond county, ga",
     "richmond county ga",
     "city of augusta",
+    // "Augusta, Georgia" spelled out — normalization strips the comma.
+    // Deliberately NOT bare "augusta": it would also match "North Augusta,
+    // SC", which belongs to Aiken County.
+    "augusta georgia",
   ],
 };
