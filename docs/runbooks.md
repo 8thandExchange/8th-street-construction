@@ -99,11 +99,16 @@ Contracts go out for signature from `/admin/contracts/<id>` once two env
 vars are set (Vercel → Settings → Environment Variables):
 
 - `BOLDSIGN_API_KEY` — app.boldsign.com → API → API Key.
-- `BOLDSIGN_WEBHOOK_SECRET` — create a webhook in BoldSign pointing at
-  `https://<site>/api/esign/boldsign/webhook` with events **Completed,
-  Declined, Revoked, Expired**, and copy its secret here. Without the
-  webhook, envelopes still send but never auto-complete — mark them
-  signed manually as before.
+- The webhook: BoldSign → API → Webhooks → Add Webhook. **Account
+  level**, environment Both, URL
+  `https://<site>/api/esign/boldsign/webhook`, Document Events
+  **Completed, Declined, Revoked, Expired**, no custom headers. The
+  dashboard's Verify button POSTs an unsigned ping; the route answers it
+  200 without acting, so Verify passes once the site is deployed.
+  Deliveries are signature-verified against the API key —
+  `BOLDSIGN_WEBHOOK_SECRET` is only needed if BoldSign is configured
+  with a distinct signing secret. Without the webhook, envelopes still
+  send but never auto-complete — mark them signed manually as before.
 
 On Completed, the webhook downloads the executed PDF, files it under the
 project's documents (category `contract`), flips the agreement to Signed,

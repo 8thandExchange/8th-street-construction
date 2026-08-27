@@ -31,13 +31,19 @@ type BoldSignEvent = {
 export async function POST(request: Request) {
   const rawBody = await request.text();
 
+  // BoldSign signs deliveries with the account API key unless a separate
+  // webhook secret is configured. Its "Verify" ping (sent when the webhook
+  // is created in the dashboard) is unsigned and expects a 200 — so an
+  // unverified request gets a 200 with NO side effects, never a 401 that
+  // would block webhook registration. State only ever changes below the
+  // signature check.
   const verified = verifyWebhookSignature(
     rawBody,
     request.headers.get("x-boldsign-signature"),
-    process.env.BOLDSIGN_WEBHOOK_SECRET
+    process.env.BOLDSIGN_WEBHOOK_SECRET ?? process.env.BOLDSIGN_API_KEY
   );
   if (!verified) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    return NextResponse.json({ ok: true, verified: false });
   }
 
   let payload: BoldSignEvent;

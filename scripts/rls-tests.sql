@@ -96,6 +96,11 @@ insert into public.subcontractors (org_id, company_name, trade, profile_id) valu
   ('00000000-0000-4000-8000-0000000000f1', 'RLS Sub T1', 'framing',
    '00000000-0000-4000-8000-00000000c001');
 
+-- Group 4 fixtures: one invoice per tenant, on each tenant's project.
+insert into public.invoices (org_id, project_id, invoice_number) values
+  ('00000000-0000-4000-8000-0000000000f1', '00000000-0000-4000-8000-0000000000d1', 'RLS-T1-001'),
+  ('00000000-0000-4000-8000-0000000000f2', '00000000-0000-4000-8000-0000000000d2', 'RLS-T2-001');
+
 -- ── Bridge trigger, multi-org era: guessing a tenant must fail loud ──────
 
 do $$
@@ -265,6 +270,36 @@ do $$
 begin
   if (select count(*) from public.vendors) <> 0 then
     raise exception 'RLS: cross-tenant vendor read through a non-member claim';
+  end if;
+end $$;
+
+reset role;
+
+-- ── Cross-tenant isolation on re-keyed tables (group 4: invoices) ────────
+-- The money boundary: the t1 org admin (not a platform admin) sees exactly
+-- t1's invoice, and the same identity under a t2 claim sees none.
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-00000000b001","role":"authenticated","app_metadata":{"org_id":"00000000-0000-4000-8000-0000000000f1"}}';
+
+do $$
+begin
+  if (select count(*) from public.invoices where invoice_number like 'RLS-%') <> 1
+     or (select invoice_number from public.invoices where invoice_number like 'RLS-%' limit 1)
+        <> 'RLS-T1-001' then
+    raise exception 'RLS: t1 org admin must see exactly t1''s invoice, saw %',
+      (select count(*) from public.invoices where invoice_number like 'RLS-%');
+  end if;
+end $$;
+
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-00000000b001","role":"authenticated","app_metadata":{"org_id":"00000000-0000-4000-8000-0000000000f2"}}';
+
+do $$
+begin
+  if (select count(*) from public.invoices) <> 0 then
+    raise exception 'RLS: cross-tenant invoice read through a non-member claim';
   end if;
 end $$;
 
