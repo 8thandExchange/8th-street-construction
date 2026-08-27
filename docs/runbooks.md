@@ -92,3 +92,26 @@ manually (SQL editor) and note it in the bill; if not, clear
 - Login, magic-link, access-request, and share-code attempts are rate-limited
   per IP (see `RATE_LIMITS` in `src/lib/rate-limit.ts`). Limit trips log to
   the audit trail via failed-login events.
+
+## BoldSign e-signatures
+
+Contracts go out for signature from `/admin/contracts/<id>` once two env
+vars are set (Vercel → Settings → Environment Variables):
+
+- `BOLDSIGN_API_KEY` — app.boldsign.com → API → API Key.
+- `BOLDSIGN_WEBHOOK_SECRET` — create a webhook in BoldSign pointing at
+  `https://<site>/api/esign/boldsign/webhook` with events **Completed,
+  Declined, Revoked, Expired**, and copy its secret here. Without the
+  webhook, envelopes still send but never auto-complete — mark them
+  signed manually as before.
+
+On Completed, the webhook downloads the executed PDF, files it under the
+project's documents (category `contract`), flips the agreement to Signed,
+and sets the project's contract value — same effects as the manual path.
+A failed filing returns 500 so BoldSign retries; the error lands in the
+structured logs under `boldsign.webhook.completed`.
+
+If a signature or date lands off its line on the first live envelope, the
+coordinates live in `EXECUTION_FIELDS`
+(`src/lib/esign/contract-esign-pdf.ts`) — the execution page and the
+BoldSign fields share those numbers, so one edit moves both.

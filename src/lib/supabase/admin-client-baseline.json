@@ -6,6 +6,7 @@
   "src/app/admin/vendors/page.tsx",
   "src/app/api/assistant/upload/route.ts",
   "src/app/api/bookings/route.ts",
+  "src/app/api/esign/boldsign/webhook/route.ts",
   "src/app/api/invoices/[id]/attachments/route.ts",
   "src/app/api/invoices/build-from-backups/route.ts",
   "src/app/api/leads/route.ts",

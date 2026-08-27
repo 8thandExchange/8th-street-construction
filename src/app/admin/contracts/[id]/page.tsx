@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
   deleteContract,
+  sendContractForEsign,
   setContractStatus,
   updateContract,
 } from "@/lib/actions/contracts";
@@ -31,12 +32,27 @@ export default async function AgreementPage(props: { params: Promise<{ id: strin
 
   const { data: contract } = await supabase
     .from("project_contracts")
-    .select("*, project:projects(id, title, street_address)")
+    .select("*, project:projects(id, title, street_address, client_id)")
     .eq("id", id)
     .single();
   if (!contract) notFound();
 
   const project = Array.isArray(contract.project) ? contract.project[0] : contract.project;
+
+  const [{ data: clientProfile }, { data: auth }] = await Promise.all([
+    project?.client_id
+      ? supabase
+          .from("profiles")
+          .select("first_name, last_name, email")
+          .eq("id", project.client_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.auth.getUser(),
+  ]);
+  const ownerSignerName =
+    [clientProfile?.first_name, clientProfile?.last_name].filter(Boolean).join(" ") ||
+    contract.owner_name;
+  const esignConfigured = Boolean(process.env.BOLDSIGN_API_KEY);
 
   const { data: signedDocs } = await supabase
     .from("project_documents")
@@ -101,6 +117,92 @@ export default async function AgreementPage(props: { params: Promise<{ id: strin
           This agreement still has unfilled placeholders (they look like{" "}
           <span className="font-mono">{"{{field}}"}</span>). Fill them in the
           text below before sending it out.
+        </p>
+      )}
+
+      {/* ------------------------------------------------------ e-sign -- */}
+      {contract.status === "draft" && !unmerged && (
+        <section className="app-card mb-8 p-6">
+          <h2 className="app-h2 !text-[15px]">Send for e-signature</h2>
+          {esignConfigured ? (
+            <form
+              action={async (fd) => {
+                "use server";
+                await sendContractForEsign(fd);
+              }}
+              className="mt-4 space-y-4"
+            >
+              <input type="hidden" name="id" value={contract.id} />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="field-label">Owner signer (name)</label>
+                  <input
+                    name="owner_signer_name"
+                    defaultValue={ownerSignerName}
+                    className="field-input"
+                  />
+                </div>
+                <div>
+                  <label className="field-label">Owner signer (email)</label>
+                  <input
+                    name="owner_signer_email"
+                    type="email"
+                    defaultValue={clientProfile?.email ?? ""}
+                    className="field-input"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="field-label">Contractor signer (name)</label>
+                  <input
+                    name="contractor_signer_name"
+                    defaultValue="Troy W. Akers"
+                    className="field-input"
+                  />
+                </div>
+                <div>
+                  <label className="field-label">Contractor signer (email)</label>
+                  <input
+                    name="contractor_signer_email"
+                    type="email"
+                    defaultValue={auth?.user?.email ?? ""}
+                    className="field-input"
+                  />
+                </div>
+              </div>
+              <p className="text-xs app-muted">
+                Both signers get a BoldSign email with the agreement and
+                positioned signature fields. When everyone has signed, the
+                executed PDF files itself under the project&apos;s documents and
+                this agreement flips to Signed automatically.
+              </p>
+              <SubmitButton pendingLabel="Sending…">
+                Send via BoldSign
+              </SubmitButton>
+            </form>
+          ) : (
+            <p className="mt-3 text-sm app-muted">
+              Add <span className="font-mono">BOLDSIGN_API_KEY</span> to the
+              environment to send agreements for signature from here. Until
+              then, use Print / save as PDF and upload to BoldSign manually.
+            </p>
+          )}
+        </section>
+      )}
+
+      {contract.esign_envelope_id && contract.status === "out_for_signature" && (
+        <p className="mb-6 rounded-[10px] border border-amber-600/25 bg-amber-50 p-4 text-sm text-ink">
+          Out with BoldSign since{" "}
+          {contract.esign_sent_at
+            ? new Date(contract.esign_sent_at).toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+              })
+            : "recently"}{" "}
+          · envelope <span className="font-mono">{contract.esign_envelope_id}</span> ·
+          status {contract.esign_status ?? "sent"}. It will flip to Signed on
+          its own when everyone has signed.
         </p>
       )}
 
