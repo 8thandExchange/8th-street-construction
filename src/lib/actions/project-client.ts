@@ -2,11 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
-import {
-  parseFundingType,
-  type ProjectFundingType,
-  KNOWN_CLIENT_ORGS,
-} from "@/lib/project/funding";
+import { parseFundingType } from "@/lib/project/funding";
 
 function revalidateProject(projectId: string) {
   revalidatePath(`/admin/projects/${projectId}`);
@@ -47,11 +43,18 @@ export async function assignProjectClient(formData: FormData) {
   revalidateProject(projectId);
 }
 
-/** One-click: assign Habitat Augusta + HUD HOME funding + enable portal */
-export async function assignHabitatHudHome(formData: FormData) {
+/** One-click: assign a known client org + its default funding + enable portal */
+export async function assignClientOrg(formData: FormData) {
   const { supabase } = await requireAdmin();
   const projectId = String(formData.get("project_id"));
-  const org = KNOWN_CLIENT_ORGS[0];
+  const clientOrgId = String(formData.get("client_org_id"));
+
+  const { data: org } = await supabase
+    .from("client_orgs")
+    .select("name, email, default_funding, default_hud_notes")
+    .eq("id", clientOrgId)
+    .single();
+  if (!org) throw new Error("Client organization not found.");
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -61,27 +64,25 @@ export async function assignHabitatHudHome(formData: FormData) {
 
   if (!profile) {
     throw new Error(
-      `Habitat portal user (${org.email}) not found. Invite them under Admin → Portal Users.`
+      `${org.name} portal user (${org.email}) not found. Invite them under Admin → Portal Users.`
     );
   }
 
+  const funding = parseFundingType(org.default_funding);
   const { error } = await supabase
     .from("projects")
     .update({
       client_id: profile.id,
       client_portal_enabled: true,
-      funding_type: "hud_home" satisfies ProjectFundingType,
-      hud_grant_year: new Date().getFullYear(),
-      hud_program_notes: HUD_DEFAULT_NOTES,
+      funding_type: funding,
+      hud_grant_year: funding === "hud_home" ? new Date().getFullYear() : null,
+      hud_program_notes: funding === "hud_home" ? org.default_hud_notes : null,
     })
     .eq("id", projectId);
 
   if (error) throw new Error(error.message);
   revalidateProject(projectId);
 }
-
-const HUD_DEFAULT_NOTES =
-  "Augusta-Richmond County HOME / DCA CHIP — income-eligible homebuyer, EER, Section 3, sweat equity.";
 
 export async function clearProjectClient(formData: FormData) {
   const { supabase } = await requireAdmin();

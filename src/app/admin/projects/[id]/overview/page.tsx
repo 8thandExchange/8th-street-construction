@@ -27,6 +27,12 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
     .eq("role", "client")
     .order("email");
 
+  const { data: quickAssignOrgs } = await supabase
+    .from("client_orgs")
+    .select("id, slug, name, email, description, default_funding")
+    .eq("quick_assign", true)
+    .order("name");
+
   const { data: staff } = await supabase
     .from("profiles")
     .select("id, first_name, last_name, email, staff_scope")
@@ -138,6 +144,7 @@ export default async function ProjectOverviewPage(props: { params: Promise<{ id:
         hudProgramNotes={project.hud_program_notes}
         clients={clients ?? []}
         portalMembers={portalMembers}
+        quickAssignOrgs={quickAssignOrgs ?? []}
       />
 
       <form

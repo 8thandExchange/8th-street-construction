@@ -14,20 +14,22 @@ export const FUNDING_TYPE_SHORT: Record<ProjectFundingType, string> = {
   hud_home: "HUD HOME",
 };
 
-/** Known portal clients — quick-assign in Job Details */
-export const KNOWN_CLIENT_ORGS = [
-  {
-    slug: "habitat-augusta",
-    name: "Augusta/CSRA Habitat for Humanity",
-    // Habitat's domain is augustahabitat.org. An earlier value here had the
-    // halves transposed (habitataugusta.org), which bound 1137 Merry Street to
-    // a placeholder profile and sent its first draw to an address nobody reads.
-    // This is the contact whose invoices have actually been paid.
-    email: "bkelliher@augustahabitat.org",
-    description: "Primary partner · homeownership program builds",
-    defaultFunding: "hud_home" as ProjectFundingType,
-  },
-] as const;
+/**
+ * A row of the org-owned client_orgs directory (quick-assign partners on
+ * Job Details). Was a hardcoded KNOWN_CLIENT_ORGS array; the entries are
+ * data now so a second tenant can have different partners. Contact emails
+ * live in the table — verify against the domain that actually gets read
+ * before saving one (a transposed habitataugusta.org once sent a draw
+ * notice to an address nobody reads).
+ */
+export type ClientOrg = {
+  id: string;
+  slug: string;
+  name: string;
+  email: string;
+  description: string | null;
+  default_funding: ProjectFundingType | string;
+};
 
 /**
  * HUD HOME / DCA CHIP requirements for Augusta-Richmond County area builds.
