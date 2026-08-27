@@ -101,6 +101,12 @@ insert into public.invoices (org_id, project_id, invoice_number) values
   ('00000000-0000-4000-8000-0000000000f1', '00000000-0000-4000-8000-0000000000d1', 'RLS-T1-001'),
   ('00000000-0000-4000-8000-0000000000f2', '00000000-0000-4000-8000-0000000000d2', 'RLS-T2-001');
 
+-- site_settings fixture: the same key in both tenants, distinguishable
+-- values — the (org_id, key) PK is the point.
+insert into public.site_settings (org_id, key, value) values
+  ('00000000-0000-4000-8000-0000000000f1', 'rls_probe', '{"tenant": 1}'),
+  ('00000000-0000-4000-8000-0000000000f2', 'rls_probe', '{"tenant": 2}');
+
 -- ── Bridge trigger, multi-org era: guessing a tenant must fail loud ──────
 
 do $$
@@ -300,6 +306,49 @@ do $$
 begin
   if (select count(*) from public.invoices) <> 0 then
     raise exception 'RLS: cross-tenant invoice read through a non-member claim';
+  end if;
+end $$;
+
+reset role;
+
+-- ── site_settings: (org_id, key) tenancy + public read allow-list ────────
+-- The org admin sees exactly their tenant's row of a key both tenants
+-- hold, and an update aimed at the other tenant's row hits nothing.
+-- Anonymous readers keep the marketing keys the public site renders
+-- (hero, stats, contact) and never see anything else.
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"00000000-0000-4000-8000-00000000b001","role":"authenticated","app_metadata":{"org_id":"00000000-0000-4000-8000-0000000000f1"}}';
+
+do $$
+declare
+  touched int;
+begin
+  if (select count(*) from public.site_settings where key = 'rls_probe') <> 1
+     or (select value->>'tenant' from public.site_settings where key = 'rls_probe') <> '1' then
+    raise exception 'RLS: t1 org admin must see exactly t1''s rls_probe setting';
+  end if;
+  update public.site_settings set value = '{"tenant": 2, "touched": true}'
+  where org_id = '00000000-0000-4000-8000-0000000000f2' and key = 'rls_probe';
+  get diagnostics touched = row_count;
+  if touched <> 0 then
+    raise exception 'RLS: cross-tenant site_settings update touched % rows', touched;
+  end if;
+end $$;
+
+reset role;
+
+set local role anon;
+set local request.jwt.claims = '{}';
+
+do $$
+begin
+  if (select count(*) from public.site_settings where key = 'rls_probe') <> 0 then
+    raise exception 'RLS: anon can read non-marketing site settings';
+  end if;
+  if (select count(*) from public.site_settings where key = 'contact') < 1 then
+    raise exception 'RLS: anon lost the public contact setting the marketing site renders';
   end if;
 end $$;
 
