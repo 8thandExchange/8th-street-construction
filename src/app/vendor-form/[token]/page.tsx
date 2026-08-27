@@ -1,6 +1,10 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { BRAND } from "@/lib/brand/assets";
+import {
+  getSiteIdentity,
+  identityTelHref,
+  type SiteIdentity,
+} from "@/lib/brand/identity";
 import { VendorOnboardingForm } from "@/components/vendors/VendorOnboardingForm";
 import { resolveInvite } from "@/lib/vendors/onboarding";
 
@@ -11,21 +15,21 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ identity, children }: { identity: SiteIdentity; children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-bone">
       <header className="bg-navy">
         <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-4 px-6 py-6 md:px-8">
           <Image
             src="/img/logo-horizontal-navy.svg"
-            alt={BRAND.name}
+            alt={identity.name}
             width={220}
             height={52}
             className="h-10 w-auto"
             priority
           />
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-parchment/50">
-            {BRAND.tagline}
+            {identity.tagline}
           </p>
         </div>
       </header>
@@ -34,16 +38,24 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Notice({ title, body }: { title: string; body: string }) {
+function Notice({
+  identity,
+  title,
+  body,
+}: {
+  identity: SiteIdentity;
+  title: string;
+  body: string;
+}) {
   return (
-    <Shell>
+    <Shell identity={identity}>
       <div className="app-card p-8 text-center">
         <h1 className="font-display text-2xl tracking-tight text-ink">{title}</h1>
         <p className="mt-3 text-sm leading-relaxed text-ink/60">{body}</p>
         <p className="mt-6 text-sm text-ink/60">
           Questions? Call us at{" "}
-          <a href={`tel:${BRAND.phone.replace(/\D/g, "")}`} className="text-copper hover:underline">
-            {BRAND.phone}
+          <a href={`tel:${identityTelHref(identity.phone)}`} className="text-copper hover:underline">
+            {identity.phone}
           </a>
           .
         </p>
@@ -54,13 +66,14 @@ function Notice({ title, body }: { title: string; body: string }) {
 
 export default async function VendorFormPage(props: { params: Promise<{ token: string }> }) {
   const { token } = await props.params;
-  const invite = await resolveInvite(token);
+  const [invite, identity] = await Promise.all([resolveInvite(token), getSiteIdentity()]);
 
   if (invite.state === "invalid") notFound();
 
   if (invite.state === "expired") {
     return (
       <Notice
+        identity={identity}
         title="This link has expired"
         body="For security, vendor setup links stop working after two weeks. Let us know and we'll send you a fresh one — it only takes a moment."
       />
@@ -70,6 +83,7 @@ export default async function VendorFormPage(props: { params: Promise<{ token: s
   if (invite.state === "completed") {
     return (
       <Notice
+        identity={identity}
         title="You're all set"
         body={`We've already received ${invite.vendorName}'s details, and this link has been closed. If something needs correcting, get in touch and we'll send a new form.`}
       />
@@ -77,7 +91,7 @@ export default async function VendorFormPage(props: { params: Promise<{ token: s
   }
 
   return (
-    <Shell>
+    <Shell identity={identity}>
       <div className="mb-8">
         <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-copper">Vendor setup</p>
         <h1 className="mt-2 font-display text-3xl tracking-tight text-ink md:text-4xl">

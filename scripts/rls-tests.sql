@@ -350,6 +350,9 @@ begin
   if (select count(*) from public.site_settings where key = 'contact') < 1 then
     raise exception 'RLS: anon lost the public contact setting the marketing site renders';
   end if;
+  if (select count(*) from public.site_settings where key = 'identity') < 1 then
+    raise exception 'RLS: anon lost the public identity setting brand surfaces render';
+  end if;
 end $$;
 
 reset role;
