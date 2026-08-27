@@ -9,6 +9,7 @@ import { sendPushToAdmins } from "@/lib/notify/push";
 import { trackWorkflowEvent } from "@/lib/analytics/track";
 import {
   dollarsToWords,
+  hasUnmergedFields,
   longDate,
   mergeContractTemplate,
   usd,
@@ -386,6 +387,108 @@ export async function deleteContract(formData: FormData) {
     .eq("status", "draft");
   if (error) throw new Error(error.message);
   revalidate(projectId);
+}
+
+/**
+ * Send a drafted agreement out for signature through BoldSign. Renders the
+ * e-sign PDF (agreement text + a fixed execution page), creates the
+ * BoldSign document with both signers and positioned signature/date
+ * fields, and marks the agreement out_for_signature with the envelope id.
+ * The webhook route completes the loop when everyone has signed.
+ */
+export async function sendContractForEsign(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const id = str(formData, "id");
+
+  const contractorName = str(formData, "contractor_signer_name");
+  const contractorEmail = str(formData, "contractor_signer_email");
+  const ownerName = str(formData, "owner_signer_name");
+  const ownerEmail = str(formData, "owner_signer_email");
+  if (!contractorName || !contractorEmail || !ownerName || !ownerEmail)
+    throw new Error("Both signers need a name and an email address");
+
+  const { data: contract } = await supabase
+    .from("project_contracts")
+    .select(
+      "id, project_id, number, title, status, body_md, esign_envelope_id, project:projects(id, title, street_address)"
+    )
+    .eq("id", id)
+    .single();
+  if (!contract) throw new Error("Agreement not found");
+  if (contract.status !== "draft")
+    throw new Error("Only a draft agreement can be sent for signature");
+  if (hasUnmergedFields(contract.body_md))
+    throw new Error("Fill the remaining {{placeholders}} before sending for signature");
+
+  const project = Array.isArray(contract.project) ? contract.project[0] : contract.project;
+  const shortAddress = project?.street_address || project?.title || "the Property";
+
+  const { renderContractEsignPdf, EXECUTION_FIELDS } = await import(
+    "@/lib/esign/contract-esign-pdf"
+  );
+  const { sendDocumentForSignature } = await import("@/lib/esign/boldsign");
+
+  const { pdf, executionPageNumber } = await renderContractEsignPdf({
+    bodyMd: contract.body_md,
+    footerLabel: `${contract.title} — ${shortAddress} · 8th Street Construction LLC`,
+  });
+
+  const field = (
+    fieldId: string,
+    fieldType: "Signature" | "DateSigned",
+    bounds: { x: number; y: number; width: number; height: number }
+  ) => ({ id: fieldId, fieldType, pageNumber: executionPageNumber, bounds });
+
+  const { documentId } = await sendDocumentForSignature({
+    title: `${contract.title} — ${shortAddress}`,
+    message:
+      "Please review and sign the attached agreement with 8th Street Construction LLC.",
+    fileName: `agreement-${contract.number}-${contract.project_id}.pdf`,
+    pdf,
+    signers: [
+      {
+        name: contractorName,
+        email: contractorEmail,
+        order: 1,
+        fields: [
+          field("contractor-signature", "Signature", EXECUTION_FIELDS.contractorSignature),
+          field("contractor-date", "DateSigned", EXECUTION_FIELDS.contractorDate),
+        ],
+      },
+      {
+        name: ownerName,
+        email: ownerEmail,
+        order: 1,
+        fields: [
+          field("owner-signature", "Signature", EXECUTION_FIELDS.ownerSignature),
+          field("owner-date", "DateSigned", EXECUTION_FIELDS.ownerDate),
+        ],
+      },
+    ],
+  });
+
+  const { error } = await supabase
+    .from("project_contracts")
+    .update({
+      status: "out_for_signature",
+      esign_provider: "boldsign",
+      esign_envelope_id: documentId,
+      esign_sent_at: new Date().toISOString(),
+      esign_status: "sent",
+      status_note: `Sent via BoldSign to ${ownerName} <${ownerEmail}> and ${contractorName}`,
+    })
+    .eq("id", id)
+    .eq("status", "draft");
+  if (error) throw new Error(error.message);
+
+  await trackWorkflowEvent({
+    workflow: "contract",
+    event: "start",
+    entityId: id,
+    projectId: contract.project_id,
+  });
+  revalidate(contract.project_id);
+  return { ok: true, documentId };
 }
 
 /** Edit a standard template. Changes affect future drafts only. */

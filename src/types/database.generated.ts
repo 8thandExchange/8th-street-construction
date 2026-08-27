@@ -2375,6 +2375,10 @@ export type Database = {
           created_at: string
           created_by: string | null
           effective_date: string | null
+          esign_envelope_id: string | null
+          esign_provider: string | null
+          esign_sent_at: string | null
+          esign_status: string | null
           id: string
           number: number
           org_id: string
@@ -2397,6 +2401,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           effective_date?: string | null
+          esign_envelope_id?: string | null
+          esign_provider?: string | null
+          esign_sent_at?: string | null
+          esign_status?: string | null
           id?: string
           number: number
           org_id: string
@@ -2419,6 +2427,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           effective_date?: string | null
+          esign_envelope_id?: string | null
+          esign_provider?: string | null
+          esign_sent_at?: string | null
+          esign_status?: string | null
           id?: string
           number?: number
           org_id?: string
