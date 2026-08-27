@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { sendProjectUpdateEmail } from "@/lib/email/project-notify";
 import { sendSms } from "@/lib/sms/ghl";
 import { sendPushToProfile } from "@/lib/notify/push";
@@ -48,14 +47,13 @@ export async function createProjectUpdate(formData: FormData) {
 
   // Clients are always notified of new updates — no opt-in checkbox to forget.
   {
-    const admin = createAdminClient();
-    const { data: project } = await admin
+    const { data: project } = await supabase
       .from("projects")
       .select("title, client_id")
       .eq("id", projectId)
       .single();
     if (project?.client_id) {
-      const { data: client } = await admin
+      const { data: client } = await supabase
         .from("profiles")
         .select("email, phone, first_name")
         .eq("id", project.client_id)

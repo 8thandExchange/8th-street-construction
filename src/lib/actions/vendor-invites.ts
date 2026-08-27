@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { Resend } from "resend";
 import { requireAdmin } from "@/lib/actions/admin-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { vendorOnboardingEmail } from "@/lib/email/templates/vendor-onboarding";
 import {
   generateInviteToken,
@@ -27,7 +26,7 @@ function formatExpiry(date: Date) {
  * company domain isn't monitored.
  */
 export async function sendVendorInvite(formData: FormData) {
-  const { user } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("contact_email") ?? "").trim().toLowerCase();
@@ -37,24 +36,22 @@ export async function sendVendorInvite(formData: FormData) {
   if (!existingVendorId && !name) return { error: "Vendor name is required" };
   if (!email || !email.includes("@")) return { error: "A valid email address is required" };
 
-  const admin = createAdminClient();
-
   let vendorId = existingVendorId;
   let vendorName = name;
 
   if (vendorId) {
-    const { data: vendor } = await admin
+    const { data: vendor } = await supabase
       .from("vendors")
       .select("id, name")
       .eq("id", vendorId)
       .maybeSingle();
     if (!vendor) return { error: "Vendor not found" };
     vendorName = vendor.name;
-    await admin.from("vendors").update({ contact_email: email }).eq("id", vendorId);
+    await supabase.from("vendors").update({ contact_email: email }).eq("id", vendorId);
   } else {
     // lower(name) is uniquely indexed, so "add" on an existing name is an
     // update rather than a duplicate row.
-    const { data: existing } = await admin
+    const { data: existing } = await supabase
       .from("vendors")
       .select("id, name")
       .ilike("name", name)
@@ -63,9 +60,9 @@ export async function sendVendorInvite(formData: FormData) {
     if (existing) {
       vendorId = existing.id;
       vendorName = existing.name;
-      await admin.from("vendors").update({ contact_email: email }).eq("id", vendorId);
+      await supabase.from("vendors").update({ contact_email: email }).eq("id", vendorId);
     } else {
-      const { data: created, error } = await admin
+      const { data: created, error } = await supabase
         .from("vendors")
         .insert({
           name,
@@ -87,7 +84,7 @@ export async function sendVendorInvite(formData: FormData) {
   const { token, tokenHash } = generateInviteToken();
   const expiresAt = inviteExpiryDate();
 
-  const { error: inviteError } = await admin.from("vendor_invites").insert({
+  const { error: inviteError } = await supabase.from("vendor_invites").insert({
     vendor_id: vendorId,
     token_hash: tokenHash,
     email,

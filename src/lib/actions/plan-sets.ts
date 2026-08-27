@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveJurisdiction } from "@/lib/building-regulations/registry";
 import {
   sendPlanRevisionAdminEmail,
@@ -94,14 +93,13 @@ export async function createPlanSet(formData: FormData) {
   if (filesErr) return { error: filesErr.message };
 
   if (sendToClient) {
-    const admin = createAdminClient();
-    const { data: proj } = await admin
+    const { data: proj } = await supabase
       .from("projects")
       .select("title, client_id")
       .eq("id", projectId)
       .single();
     if (proj?.client_id) {
-      const { data: client } = await admin
+      const { data: client } = await supabase
         .from("profiles")
         .select("email, first_name")
         .eq("id", proj.client_id)
@@ -150,14 +148,13 @@ export async function sendPlanSetToClient(formData: FormData) {
 
   if (error) return { error: error.message };
 
-  const admin = createAdminClient();
-  const { data: proj } = await admin
+  const { data: proj } = await supabase
     .from("projects")
     .select("title, client_id")
     .eq("id", projectId)
     .single();
   if (proj?.client_id) {
-    const { data: client } = await admin
+    const { data: client } = await supabase
       .from("profiles")
       .select("email, first_name")
       .eq("id", proj.client_id)
