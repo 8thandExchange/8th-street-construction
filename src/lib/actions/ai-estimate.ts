@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/actions/admin-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { anthropicConfigured, BRAND_VOICE } from "@/lib/ai/config";
 import { AiNotConfiguredError, generateJson } from "@/lib/ai/client";
 import { ESTIMATE_DIVISIONS } from "@/lib/estimate/divisions";
@@ -33,14 +32,13 @@ export async function draftEstimate(input: {
   projectId: string;
   planUrls?: string[];
 }): Promise<DraftResult> {
-  await requireAdmin();
+  const { supabase } = await requireAdmin();
 
   if (!anthropicConfigured()) {
     return { ok: false, error: "Add ANTHROPIC_API_KEY in Vercel to enable AI estimating." };
   }
 
-  const admin = createAdminClient();
-  const { data: project } = await admin
+  const { data: project } = await supabase
     .from("projects")
     .select("title, location, square_footage, project_type")
     .eq("id", input.projectId)
@@ -56,7 +54,7 @@ export async function draftEstimate(input: {
 
   // Our own recorded actuals from past jobs are worth more than any market
   // rule of thumb — put them in front of the model as the primary anchor.
-  const benchmarks = await loadCostBenchmarks(admin, { excludeProjectId: input.projectId });
+  const benchmarks = await loadCostBenchmarks(supabase, { excludeProjectId: input.projectId });
   const benchmarkLines = Object.values(benchmarks)
     .sort((a, b) => b.avgActual - a.avgActual)
     .map((b) => `- ${b.tradeLabel} (code ${b.code}): ${describeBenchmark(b)}`)
@@ -122,10 +120,9 @@ export async function applyEstimateDraft(input: {
   projectId: string;
   lines: EstimateLineDraft[];
 }): Promise<{ ok: boolean; error?: string }> {
-  await requireAdmin();
-  const admin = createAdminClient();
+  const { supabase } = await requireAdmin();
 
-  const { count } = await admin
+  const { count } = await supabase
     .from("project_estimate_lines")
     .select("id", { count: "exact", head: true })
     .eq("project_id", input.projectId);
@@ -144,11 +141,11 @@ export async function applyEstimateDraft(input: {
     display_order: order.get(l.division_code) ?? 99,
   }));
 
-  const { error } = await admin.from("project_estimate_lines").insert(rows);
+  const { error } = await supabase.from("project_estimate_lines").insert(rows);
   if (error) return { ok: false, error: error.message };
 
   const total = rows.reduce((s, r) => s + r.estimated_amount, 0);
-  await admin
+  await supabase
     .from("projects")
     .update({
       estimated_cost: total,

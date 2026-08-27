@@ -1,7 +1,6 @@
 "use server";
 
 import { requireAdmin } from "@/lib/actions/admin-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { anthropicConfigured } from "@/lib/ai/config";
 import { BRAND_VOICE } from "@/lib/ai/config";
 import { AiNotConfiguredError, generateJson } from "@/lib/ai/client";
@@ -20,7 +19,7 @@ type DraftResult =
  * daily logs, milestone status, and recently completed tasks.
  */
 export async function draftClientUpdate(projectId: string): Promise<DraftResult> {
-  await requireAdmin();
+  const { supabase } = await requireAdmin();
 
   if (!anthropicConfigured()) {
     return {
@@ -29,23 +28,22 @@ export async function draftClientUpdate(projectId: string): Promise<DraftResult>
     };
   }
 
-  const admin = createAdminClient();
 
   const [{ data: project }, { data: logs }, { data: milestones }, { data: recentTasks }] =
     await Promise.all([
-      admin.from("projects").select("title, location").eq("id", projectId).single(),
-      admin
+      supabase.from("projects").select("title, location").eq("id", projectId).single(),
+      supabase
         .from("project_daily_logs")
         .select("log_date, weather, crew_count, summary, issues")
         .eq("project_id", projectId)
         .order("log_date", { ascending: false })
         .limit(7),
-      admin
+      supabase
         .from("project_milestones")
         .select("title, status, target_date")
         .eq("project_id", projectId)
         .order("display_order", { ascending: true }),
-      admin
+      supabase
         .from("project_tasks")
         .select("title, status, completed_at")
         .eq("project_id", projectId)

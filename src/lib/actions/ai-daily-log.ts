@@ -1,7 +1,6 @@
 "use server";
 
 import { requireAdmin } from "@/lib/actions/admin-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { anthropicConfigured, BRAND_VOICE } from "@/lib/ai/config";
 import { AiNotConfiguredError, generateJson } from "@/lib/ai/client";
 
@@ -22,7 +21,7 @@ export async function draftDailyLog(input: {
   notes?: string;
   imageUrls?: string[];
 }): Promise<DraftResult> {
-  await requireAdmin();
+  const { supabase } = await requireAdmin();
 
   if (!anthropicConfigured()) {
     return { ok: false, error: "Add ANTHROPIC_API_KEY in Vercel to enable AI drafting." };
@@ -35,8 +34,7 @@ export async function draftDailyLog(input: {
     return { ok: false, error: "Add a few notes or photos for the AI to work from." };
   }
 
-  const admin = createAdminClient();
-  const { data: project } = await admin
+  const { data: project } = await supabase
     .from("projects")
     .select("title")
     .eq("id", input.projectId)

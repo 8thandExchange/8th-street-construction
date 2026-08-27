@@ -1,7 +1,6 @@
 "use server";
 
 import { requireAdmin } from "@/lib/actions/admin-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { anthropicConfigured, BRAND_VOICE } from "@/lib/ai/config";
 import { AiNotConfiguredError, generateJson } from "@/lib/ai/client";
 import { matchRecommendedBidId } from "@/lib/procurement/bid-compare";
@@ -22,14 +21,13 @@ export type BidLevelingResult = {
 type Result = { ok: true; analysis: BidLevelingResult } | { ok: false; error: string };
 
 export async function levelBids(bidRequestId: string): Promise<Result> {
-  const { user } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
   if (!anthropicConfigured()) {
     return { ok: false, error: "Add ANTHROPIC_API_KEY in Vercel to enable AI bid leveling." };
   }
 
-  const admin = createAdminClient();
-  const { data: rfq } = await admin
+  const { data: rfq } = await supabase
     .from("bid_requests")
     .select(
       "title, trade, scope_of_work, bids(id, amount, notes, alternates, exclusions, qualifications, status, subcontractors(company_name))"
@@ -128,7 +126,7 @@ Include every bid. Do not invent scope items not implied by the notes.`;
       { recommendation: analysis.recommendation, bids: analysis.bids }
     );
 
-    await admin.from("bid_request_reviews").insert({
+    await supabase.from("bid_request_reviews").insert({
       bid_request_id: bidRequestId,
       recommended_bid_id: recommendedBidId,
       summary: analysis.summary,
