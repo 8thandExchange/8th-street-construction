@@ -5199,23 +5199,33 @@ export type Database = {
       site_settings: {
         Row: {
           key: string
+          org_id: string
           updated_at: string
           updated_by: string | null
           value: Json
         }
         Insert: {
           key: string
+          org_id: string
           updated_at?: string
           updated_by?: string | null
           value: Json
         }
         Update: {
           key?: string
+          org_id?: string
           updated_at?: string
           updated_by?: string | null
           value?: Json
         }
         Relationships: [
+          {
+            foreignKeyName: "site_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "site_settings_updated_by_fkey"
             columns: ["updated_by"]

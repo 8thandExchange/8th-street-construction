@@ -22,9 +22,22 @@ async function updateSetting(formData: FormData) {
     throw new Error(`Invalid JSON for setting "${key}"`);
   }
 
+  // site_settings is keyed (org_id, key); the acting admin's JWT claim
+  // names the tenant. RLS enforces the write itself.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const orgId = user?.app_metadata?.org_id;
+  if (typeof orgId !== "string" || !orgId) {
+    throw new Error("No organization claim on this session.");
+  }
+
   await supabase
     .from("site_settings")
-    .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    .upsert(
+      { org_id: orgId, key, value, updated_at: new Date().toISOString() },
+      { onConflict: "org_id,key" }
+    );
 
   revalidateTag(SITE_CONTACT_TAG);
   revalidatePath("/", "layout");
