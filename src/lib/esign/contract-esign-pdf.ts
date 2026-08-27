@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createElement as h, type ReactNode } from "react";
 import {
   Document,
+  Image,
   Page,
   Text,
   View,
@@ -26,6 +29,24 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 const INK = "#1a1a18";
 const MUTED = "#6b645a";
+const NAVY = "#101c2a";
+const COPPER = "#b5451b";
+const PARCHMENT = "#f0ead9";
+const GRID = "#e0ddd6";
+const TINT = "#f7f5f0";
+
+/** The brand icon, parchment-recolored for the navy masthead. Best-effort:
+ * a missing file just renders the masthead without the mark. */
+function loadBrandIcon(): string | null {
+  try {
+    const png = readFileSync(
+      join(process.cwd(), "public", "brand", "esign-icon-parchment.png")
+    );
+    return `data:image/png;base64,${png.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
 
 // Letter, points, origin top-left — the space BoldSign bounds use too.
 const PAGE = { width: 612, height: 792 } as const;
@@ -40,7 +61,7 @@ export const EXECUTION_FIELDS = {
 
 const styles = {
   page: {
-    paddingTop: 56,
+    paddingTop: 76,
     paddingBottom: 64,
     paddingHorizontal: MARGIN,
     fontFamily: "Times-Roman",
@@ -108,6 +129,219 @@ function flowingBlocks(blocks: string[]): ReactNode[] {
 // count in each part), so the react-pdf footer carries only the label.
 function footer(label: string): ReactNode {
   return h(View, { style: styles.footer, fixed: true }, h(Text, null, label));
+}
+
+/** The small brand line that runs across the top of every page, exactly as
+ * the executed 608 Macon agreement carries it. */
+function runningHeader(): ReactNode {
+  return h(
+    View,
+    {
+      fixed: true,
+      style: {
+        position: "absolute",
+        top: 26,
+        left: MARGIN,
+        right: MARGIN,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "baseline",
+        borderBottomWidth: 0.8,
+        borderBottomColor: GRID,
+        paddingBottom: 6,
+      },
+    },
+    h(
+      Text,
+      {
+        style: {
+          fontFamily: "Helvetica-Bold",
+          fontSize: 7.5,
+          letterSpacing: 1.5,
+          color: NAVY,
+        },
+      },
+      "8TH STREET CONSTRUCTION"
+    ),
+    h(
+      Text,
+      { style: { fontFamily: "Helvetica", fontSize: 7.5, color: MUTED } },
+      "Residential Construction Agreement"
+    )
+  );
+}
+
+type HeaderRow = { label: string; value: string };
+
+/** Pull the title, subtitle, and **Key** value rows out of the blocks that
+ * precede the first horizontal rule; everything else keeps flowing. */
+export function parseContractHeader(blocks: string[]): {
+  title: string | null;
+  subtitle: string | null;
+  rows: HeaderRow[];
+  rest: string[];
+} {
+  const firstRule = blocks.indexOf("---");
+  if (firstRule < 0) return { title: null, subtitle: null, rows: [], rest: blocks };
+
+  let title: string | null = null;
+  let subtitle: string | null = null;
+  const rows: HeaderRow[] = [];
+  const leftovers: string[] = [];
+
+  for (const block of blocks.slice(0, firstRule)) {
+    const kv = block.match(/^\*\*(.+?)\*\*\s*([\s\S]*)$/);
+    if (block.startsWith("# ")) title = block.slice(2);
+    else if (kv) rows.push({ label: kv[1], value: kv[2].trim() });
+    else if (!subtitle && block.length < 90) subtitle = block;
+    else leftovers.push(block);
+  }
+
+  return { title, subtitle, rows, rest: [...leftovers, ...blocks.slice(firstRule + 1)] };
+}
+
+/** The navy masthead + tinted info table from the executed Macon layout. */
+function brandedFrontMatter(header: ReturnType<typeof parseContractHeader>): ReactNode[] {
+  const icon = loadBrandIcon();
+  const out: ReactNode[] = [
+    h(
+      View,
+      {
+        style: {
+          backgroundColor: NAVY,
+          borderRadius: 3,
+          paddingVertical: 18,
+          paddingHorizontal: 22,
+          flexDirection: "row",
+          alignItems: "center",
+          marginBottom: 18,
+        },
+      },
+      icon
+        ? h(Image, {
+            src: icon,
+            style: { width: 42, height: 54, marginRight: 18 },
+          })
+        : null,
+      h(
+        View,
+        { style: { flexGrow: 1 } },
+        h(
+          Text,
+          { style: { fontFamily: "Times-Bold", fontSize: 24, color: PARCHMENT } },
+          "8th Street"
+        ),
+        h(
+          Text,
+          {
+            style: {
+              fontFamily: "Helvetica",
+              fontSize: 8.5,
+              letterSpacing: 4,
+              color: "#8fa0b5",
+              marginTop: 2,
+            },
+          },
+          "CONSTRUCTION"
+        ),
+        h(View, {
+          style: {
+            borderBottomWidth: 1.2,
+            borderBottomColor: COPPER,
+            width: 200,
+            marginTop: 8,
+            marginBottom: 6,
+          },
+        }),
+        h(
+          Text,
+          { style: { fontFamily: "Times-Italic", fontSize: 9, color: "#8fa0b5" } },
+          "Augusta, Georgia"
+        )
+      )
+    ),
+  ];
+
+  if (header.title) {
+    out.push(
+      h(
+        Text,
+        {
+          style: {
+            fontFamily: "Helvetica-Bold",
+            fontSize: 20,
+            color: NAVY,
+            marginBottom: 2,
+            lineHeight: 1.2,
+          },
+        },
+        header.title
+      )
+    );
+  }
+  if (header.subtitle) {
+    out.push(
+      h(
+        Text,
+        { style: { fontFamily: "Helvetica", fontSize: 10, color: MUTED, marginBottom: 12 } },
+        header.subtitle
+      )
+    );
+  }
+
+  if (header.rows.length > 0) {
+    out.push(
+      h(
+        View,
+        { style: { borderWidth: 0.8, borderColor: GRID, marginBottom: 16 } },
+        ...header.rows.map((row, i) =>
+          h(
+            View,
+            {
+              key: i,
+              style: {
+                flexDirection: "row",
+                borderTopWidth: i === 0 ? 0 : 0.8,
+                borderTopColor: GRID,
+              },
+            },
+            h(
+              Text,
+              {
+                style: {
+                  width: 110,
+                  backgroundColor: TINT,
+                  fontFamily: "Helvetica-Bold",
+                  fontSize: 9,
+                  color: NAVY,
+                  paddingVertical: 6,
+                  paddingHorizontal: 8,
+                },
+              },
+              row.label
+            ),
+            h(
+              Text,
+              {
+                style: {
+                  flexGrow: 1,
+                  flexShrink: 1,
+                  fontFamily: "Helvetica",
+                  fontSize: 9.5,
+                  color: INK,
+                  paddingVertical: 6,
+                  paddingHorizontal: 8,
+                },
+              },
+              row.value
+            )
+          )
+        )
+      )
+    );
+  }
+
+  return out;
 }
 
 type PartyBlock = { heading: string; signatory: string };
@@ -194,6 +428,7 @@ function executionPage(props: {
     h(
       Page,
       { size: "LETTER", style: styles.page },
+      runningHeader(),
       h(Text, { style: styles.h2 }, "Execution"),
       h(
         Text,
@@ -285,7 +520,7 @@ export async function renderContractEsignPdf(input: {
     input.bodyMd
   );
 
-  const renderFlow = (blocks: string[]) =>
+  const renderFlow = (blocks: string[], frontMatter: ReactNode[] = []) =>
     renderToBuffer(
       h(
         Document,
@@ -293,14 +528,17 @@ export async function renderContractEsignPdf(input: {
         h(
           Page,
           { size: "LETTER", style: styles.page },
+          runningHeader(),
+          ...frontMatter,
           ...flowingBlocks(blocks),
           footer(input.footerLabel)
         )
       ) as Parameters<typeof renderToBuffer>[0]
     );
 
+  const header = parseContractHeader(before);
   const [bodyPdf, executionPdf, exhibitsPdf] = await Promise.all([
-    renderFlow(before),
+    renderFlow(header.rest, brandedFrontMatter(header)),
     renderToBuffer(
       executionPage({
         label: input.footerLabel,
