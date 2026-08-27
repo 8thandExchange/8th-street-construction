@@ -4,9 +4,23 @@ export function BuildingRegulationsPanel({
   regulations,
   compact = false,
 }: {
-  regulations: JurisdictionRegulations;
+  regulations: JurisdictionRegulations | null;
   compact?: boolean;
 }) {
+  if (!regulations) {
+    return (
+      <div className={`bg-paper border border-ink/15 ${compact ? "p-5" : "p-8"}`}>
+        <span className="eyebrow">Local Building Regulations</span>
+        <h3 className="mt-2 font-display text-xl text-ink">Jurisdiction not configured</h3>
+        <p className="text-sm text-ink/60 mt-2 max-w-prose">
+          This project&apos;s jurisdiction doesn&apos;t match a known authority, so no
+          local code requirements are shown. Set the jurisdiction in the
+          project&apos;s details to bring in adopted codes, permit thresholds, and
+          the plan review checklist.
+        </p>
+      </div>
+    );
+  }
   return (
     <div className={`bg-paper border border-ink/15 ${compact ? "p-5" : "p-8"}`}>
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">

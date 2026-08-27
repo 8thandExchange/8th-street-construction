@@ -21,12 +21,19 @@ function normalizeJurisdiction(value: string) {
     .trim();
 }
 
+/**
+ * Null when neither field names a known jurisdiction. There used to be a
+ * silent Augusta default here — one tenant's home county baked in as
+ * everyone's answer, which also hid data problems: a project with a
+ * misspelled or missing jurisdiction showed Augusta's regulations as if
+ * they'd been chosen. Callers render an explicit "not configured" state
+ * instead.
+ */
 export function resolveJurisdiction(
   jurisdiction?: string | null,
   location?: string | null
-): JurisdictionRegulations {
+): JurisdictionRegulations | null {
   const candidates = [jurisdiction, location].filter(Boolean) as string[];
-  if (!candidates.length) return AUGUSTA_RICHMOND_GA;
 
   for (const raw of candidates) {
     const normalized = normalizeJurisdiction(raw);
@@ -48,7 +55,7 @@ export function resolveJurisdiction(
     }
   }
 
-  return AUGUSTA_RICHMOND_GA;
+  return null;
 }
 
 export function listJurisdictions() {
