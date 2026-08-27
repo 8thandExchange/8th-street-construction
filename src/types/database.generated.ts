@@ -628,6 +628,56 @@ export type Database = {
           },
         ]
       }
+      client_orgs: {
+        Row: {
+          created_at: string
+          default_funding: string
+          default_hud_notes: string | null
+          description: string | null
+          email: string
+          id: string
+          name: string
+          org_id: string
+          quick_assign: boolean
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_funding?: string
+          default_hud_notes?: string | null
+          description?: string | null
+          email: string
+          id?: string
+          name: string
+          org_id: string
+          quick_assign?: boolean
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_funding?: string
+          default_hud_notes?: string | null
+          description?: string | null
+          email?: string
+          id?: string
+          name?: string
+          org_id?: string
+          quick_assign?: boolean
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_orgs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_compliance_items: {
         Row: {
           category: Database["public"]["Enums"]["compliance_category"]

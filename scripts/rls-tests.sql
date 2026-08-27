@@ -135,7 +135,7 @@ declare
   n int;
 begin
   foreach t in array array['vendors', 'vendor_bills', 'invoices', 'organizations', 'org_members',
-                           'project_documents', 'project_contracts', 'meetings']
+                           'project_documents', 'project_contracts', 'meetings', 'client_orgs']
   loop
     begin
       execute format('select count(*) from public.%I', t) into n;

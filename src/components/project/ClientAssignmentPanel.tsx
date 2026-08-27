@@ -1,13 +1,14 @@
 import Link from "next/link";
 import {
-  KNOWN_CLIENT_ORGS,
+  FUNDING_TYPE_SHORT,
   parseFundingType,
+  type ClientOrg,
   type ProjectFundingType,
 } from "@/lib/project/funding";
 import { ProjectFundingBadge } from "@/components/project/ProjectFundingBadge";
 import {
   assignProjectClient,
-  assignHabitatHudHome,
+  assignClientOrg,
   clearProjectClient,
 } from "@/lib/actions/project-client";
 import { FundingProgramFields } from "@/components/project/FundingProgramFields";
@@ -41,6 +42,8 @@ type ClientAssignmentPanelProps = {
   hudProgramNotes: string | null;
   clients: ClientOption[];
   portalMembers: PortalMember[];
+  /** client_orgs rows flagged quick_assign — each renders a one-click card. */
+  quickAssignOrgs: ClientOrg[];
 };
 
 
@@ -59,12 +62,14 @@ export function ClientAssignmentPanel({
   hudProgramNotes,
   clients,
   portalMembers,
+  quickAssignOrgs,
 }: ClientAssignmentPanelProps) {
   const currentFunding = parseFundingType(fundingType ?? "private");
   const selectedClient = clients.find((c) => c.id === clientId);
-  const habitatOrg = KNOWN_CLIENT_ORGS[0];
-  const habitatProfile = clients.find(
-    (c) => c.email === habitatOrg.email || c.organization_slug === habitatOrg.slug
+  // A card only renders when the partner's portal profile actually exists —
+  // the one-click assign needs somebody to link.
+  const quickAssignCards = quickAssignOrgs.filter((org) =>
+    clients.some((c) => c.email === org.email || c.organization_slug === org.slug)
   );
 
   return (
@@ -91,26 +96,27 @@ export function ClientAssignmentPanel({
       </div>
 
       <div className="client-assignment-body">
-        {/* Quick assign Habitat */}
-        {habitatProfile && (
-          <div className="mb-8 p-5 border border-emerald-500/25 bg-emerald-950/20">
+        {/* Quick assign known client orgs */}
+        {quickAssignCards.map((org) => (
+          <div key={org.id} className="mb-8 p-5 border border-emerald-500/25 bg-emerald-950/20">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-wider text-emerald-400/90">
-                  Primary partner
+                  {org.description ?? "Partner organization"}
                 </p>
-                <p className="mt-1 font-display text-lg text-bone">{habitatOrg.name}</p>
-                <p className="text-xs text-bone/50 mt-1">{habitatOrg.email}</p>
+                <p className="mt-1 font-display text-lg text-bone">{org.name}</p>
+                <p className="text-xs text-bone/50 mt-1">{org.email}</p>
               </div>
-              <form action={assignHabitatHudHome}>
+              <form action={assignClientOrg}>
                 <input type="hidden" name="project_id" value={projectId} />
+                <input type="hidden" name="client_org_id" value={org.id} />
                 <button type="submit" className="funding-quick-btn-habitat">
-                  Assign Habitat + HUD HOME →
+                  Assign {FUNDING_TYPE_SHORT[parseFundingType(org.default_funding)]} client →
                 </button>
               </form>
             </div>
           </div>
-        )}
+        ))}
 
         <form action={assignProjectClient} className="space-y-8">
           <input type="hidden" name="project_id" value={projectId} />
