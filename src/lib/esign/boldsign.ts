@@ -71,6 +71,12 @@ export async function sendDocumentForSignature(
   const form = new FormData();
   form.append("Title", input.title);
   form.append("Message", input.message);
+  // Account branding (logo/colors on the signing pages and emails). BoldSign
+  // applies the default brand on its own; set BOLDSIGN_BRAND_ID to pin a
+  // specific one (BoldSign -> Branding -> the brand's id).
+  if (process.env.BOLDSIGN_BRAND_ID) {
+    form.append("BrandId", process.env.BOLDSIGN_BRAND_ID);
+  }
   form.append(
     "Files",
     new Blob([new Uint8Array(input.pdf)], { type: "application/pdf" }),
