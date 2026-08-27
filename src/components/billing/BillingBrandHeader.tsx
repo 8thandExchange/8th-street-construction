@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BRAND } from "@/lib/brand/assets";
+import { getSiteIdentity } from "@/lib/brand/identity";
 
 type BillingBrandHeaderProps = {
   eyebrow?: string;
@@ -9,20 +9,21 @@ type BillingBrandHeaderProps = {
   projectTitle?: string;
 };
 
-export function BillingBrandHeader({
+export async function BillingBrandHeader({
   eyebrow = "Client billing",
   title,
   description,
   projectTitle,
 }: BillingBrandHeaderProps) {
+  const identity = await getSiteIdentity();
   return (
     <header className="app-card relative overflow-hidden mb-8">
       <div className="bg-navy px-6 md:px-8 py-7 md:py-8">
         <div className="flex flex-wrap items-center justify-between gap-6">
-          <Link href="/" className="shrink-0" aria-label={`${BRAND.name} home`}>
+          <Link href="/" className="shrink-0" aria-label={`${identity.name} home`}>
             <Image
               src="/img/logo-horizontal-navy.svg"
-              alt={BRAND.name}
+              alt={identity.name}
               width={220}
               height={52}
               className="h-11 w-auto md:h-12"
@@ -31,10 +32,10 @@ export function BillingBrandHeader({
           </Link>
           <div className="text-right hidden sm:block">
             <p className="app-label !text-parchment/60">
-              {BRAND.tagline}
+              {identity.tagline}
             </p>
             <p className="app-label !text-parchment/40 !text-[10px] mt-1">
-              {BRAND.parent}
+              {identity.parent}
             </p>
           </div>
         </div>

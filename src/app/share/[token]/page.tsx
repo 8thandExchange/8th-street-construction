@@ -7,7 +7,7 @@ import {
   loadShareUpdates,
   resolveShareAccess,
 } from "@/lib/share/access";
-import { BRAND } from "@/lib/brand/assets";
+import { getSiteIdentity } from "@/lib/brand/identity";
 
 export const dynamic = "force-dynamic";
 
@@ -26,9 +26,10 @@ export default async function SharePage(props: { params: Promise<{ token: string
   }
 
   const project = access.project;
-  const [milestones, updates] = await Promise.all([
+  const [milestones, updates, identity] = await Promise.all([
     loadShareMilestones(project.id),
     loadShareUpdates(project.id),
+    getSiteIdentity(),
   ]);
 
   return (
@@ -37,7 +38,7 @@ export default async function SharePage(props: { params: Promise<{ token: string
         <div className="max-w-4xl mx-auto px-6 md:px-8 py-6 flex flex-wrap items-center justify-between gap-4">
           <Image
             src="/img/logo-horizontal-navy.svg"
-            alt={BRAND.name}
+            alt={identity.name}
             width={220}
             height={52}
             className="h-10 w-auto"
@@ -45,7 +46,7 @@ export default async function SharePage(props: { params: Promise<{ token: string
           />
           <div className="text-right">
             <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-parchment/50">
-              {BRAND.tagline}
+              {identity.tagline}
             </p>
           </div>
         </div>
@@ -124,7 +125,7 @@ export default async function SharePage(props: { params: Promise<{ token: string
 
         <footer className="mt-16 pt-8 border-t border-ink/10 text-center">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-400">
-            {BRAND.name} · {BRAND.parent}
+            {identity.name} · {identity.parent}
           </p>
         </footer>
       </main>
