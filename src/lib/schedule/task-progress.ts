@@ -9,6 +9,14 @@ export type MilestoneProgressKey = {
   phase_key: string | null;
 };
 
+/**
+ * Cancelled work has been taken out of scope, so it must not sit in the
+ * progress denominator — otherwise a phase can never reach 100%.
+ */
+export function isCountableTask(task: { status: string }) {
+  return task.status !== "cancelled";
+}
+
 export function computeMilestoneTaskProgress(
   milestones: MilestoneProgressKey[],
   tasks: TaskProgressRow[]
@@ -21,6 +29,8 @@ export function computeMilestoneTaskProgress(
   const counts = new Map<string, { done: number; total: number }>();
 
   for (const task of tasks) {
+    if (!isCountableTask(task)) continue;
+
     const milestoneId =
       task.milestone_id ??
       (task.phase_key ? phaseToMilestone.get(task.phase_key) : undefined);

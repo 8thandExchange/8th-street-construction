@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getPlaybookById, DEFAULT_PLAYBOOK_ID } from "@/lib/build/playbook-registry";
+import { isCountableTask } from "@/lib/schedule/task-progress";
 import type { HubAlert } from "@/components/hub/HubUI";
 
 export type ProjectHubSummary = {
@@ -105,13 +106,16 @@ export async function loadProjectForHub(projectId: string) {
   ).length;
   const unpaidInvoices = invoices.filter((i) => i.status !== "paid" && i.status !== "void").length;
 
-  const taskPct = tasks.length
-    ? Math.round((tasks.filter((t) => t.status === "done").length / tasks.length) * 100)
+  // Cancelled tasks are out of scope — they must not drag the percentage down.
+  const countableTasks = tasks.filter(isCountableTask);
+  const completedTasks = countableTasks.filter((t) => t.status === "done").length;
+  const taskPct = countableTasks.length
+    ? Math.round((completedTasks / countableTasks.length) * 100)
     : 0;
   const milestonePct = milestones.length
     ? Math.round((milestones.filter((m) => m.status === "completed").length / milestones.length) * 100)
     : 0;
-  const overallProgress = tasks.length ? taskPct : milestonePct;
+  const overallProgress = countableTasks.length ? taskPct : milestonePct;
 
   const base = `/admin/projects/${projectId}`;
   const alerts: HubAlert[] = [];
@@ -247,8 +251,8 @@ export async function loadProjectForHub(projectId: string) {
   const summary: ProjectHubSummary = {
     milestoneTotal: milestones.length,
     milestoneCompleted: milestones.filter((m) => m.status === "completed").length,
-    taskTotal: tasks.length,
-    taskCompleted: tasks.filter((t) => t.status === "done").length,
+    taskTotal: countableTasks.length,
+    taskCompleted: completedTasks,
     playbookApplied: Boolean(project.playbook_applied_at),
     playbookId: project.playbook_id,
     updateCount: updatesRes.count ?? 0,
